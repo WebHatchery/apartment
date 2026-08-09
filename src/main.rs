@@ -42,14 +42,16 @@ async fn main() {
 
     // Screenshot harness: when APARTMENT_CAPTURE_PATH is set, seed a scene,
     // simulate deterministic frames, write a PNG, and exit.
-    if let Some(config) = capture::CaptureConfig::from_env("APARTMENT") {
-        game.begin_capture_scene(&config.scene);
-        capture::run_capture(&config, |_dt| {
-            clear_background(ui::theme::color::BACKGROUND());
-            game.update();
-            game.draw();
-        })
-        .await;
+    if let Some(configs) = capture::CaptureConfig::all_from_env("APARTMENT") {
+        for config in configs {
+            game.begin_capture_scene(&config.scene);
+            capture::run_capture_once(&config, |_dt| {
+                clear_background(ui::theme::color::BACKGROUND());
+                game.update();
+                game.draw();
+            })
+            .await;
+        }
         return;
     }
 
