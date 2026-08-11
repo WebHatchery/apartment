@@ -190,31 +190,15 @@ impl Neighborhood {
 
 fn load_neighborhood_config() -> HashMap<String, NeighborhoodStats> {
     #[cfg(target_arch = "wasm32")]
-    let json = include_str!("../../assets/neighborhoods.json");
+    let json = macroquad_toolkit::include_json_str!("../../assets/neighborhoods.json");
 
     #[cfg(not(target_arch = "wasm32"))]
-    let json = std::fs::read_to_string("assets/neighborhoods.json")
-        .unwrap_or_else(|_| include_str!("../../assets/neighborhoods.json").to_string());
+    let json = std::fs::read_to_string("assets/neighborhoods.json").unwrap_or_else(|_| {
+        macroquad_toolkit::include_json_str!("../../assets/neighborhoods.json").to_string()
+    });
 
     serde_json::from_str(&json).unwrap_or_default()
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_neighborhood_creation() {
-        let neighborhood = Neighborhood::new(0, NeighborhoodType::Downtown, "Central District");
-        assert_eq!(neighborhood.name, "Central District");
-        assert!(neighborhood.can_add_building());
-    }
-
-    #[test]
-    fn test_neighborhood_stats() {
-        let stats = NeighborhoodStats::for_type(&NeighborhoodType::Suburbs);
-        // assert!(stats.crime_level < 30); // Suburbs are safe  <-- Depends on config now, keep existing logic or update test
-        // Allow for config values
-        assert!(stats.crime_level <= 50);
-    }
-}
+mod tests;

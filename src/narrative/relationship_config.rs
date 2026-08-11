@@ -41,11 +41,12 @@ pub struct RelationshipChoiceTemplate {
 
 pub fn load_relationship_config() -> RelationshipEventsConfig {
     #[cfg(target_arch = "wasm32")]
-    let json = include_str!("../../assets/relationship_events.json");
+    let json = macroquad_toolkit::include_json_str!("../../assets/relationship_events.json");
 
     #[cfg(not(target_arch = "wasm32"))]
-    let json = std::fs::read_to_string("assets/relationship_events.json")
-        .unwrap_or_else(|_| include_str!("../../assets/relationship_events.json").to_string());
+    let json = std::fs::read_to_string("assets/relationship_events.json").unwrap_or_else(|_| {
+        macroquad_toolkit::include_json_str!("../../assets/relationship_events.json").to_string()
+    });
 
     serde_json::from_str(&json).unwrap_or_else(|e| {
         eprintln!("Failed to parse relationship_events.json: {}", e);
@@ -54,16 +55,4 @@ pub fn load_relationship_config() -> RelationshipEventsConfig {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::load_relationship_config;
-
-    #[test]
-    fn relationship_events_load_and_parse_all_categories() {
-        let cfg = load_relationship_config();
-        // Every authored event (incl. the expanded banks) must deserialize.
-        assert!(cfg.hostile.len() >= 8, "hostile: {}", cfg.hostile.len());
-        assert!(cfg.friendly.len() >= 7, "friendly: {}", cfg.friendly.len());
-        assert!(cfg.romance.len() >= 3, "romance: {}", cfg.romance.len());
-        assert!(cfg.dilemma.len() >= 3, "dilemma: {}", cfg.dilemma.len());
-    }
-}
+mod tests;

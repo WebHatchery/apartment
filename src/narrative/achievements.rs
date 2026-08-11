@@ -119,11 +119,12 @@ fn load_achievements_config() -> Vec<Achievement> {
     // build (wasm has no filesystem; the Windows zip ships assets.zip, not loose
     // assets/), so the fallback is what actually loads in released builds.
     #[cfg(target_arch = "wasm32")]
-    let json = include_str!("../../assets/achievements.json").to_string();
+    let json = macroquad_toolkit::include_json_str!("../../assets/achievements.json").to_string();
 
     #[cfg(not(target_arch = "wasm32"))]
-    let json = std::fs::read_to_string("assets/achievements.json")
-        .unwrap_or_else(|_| include_str!("../../assets/achievements.json").to_string());
+    let json = std::fs::read_to_string("assets/achievements.json").unwrap_or_else(|_| {
+        macroquad_toolkit::include_json_str!("../../assets/achievements.json").to_string()
+    });
 
     serde_json::from_str(&json).unwrap_or_else(|e| {
         eprintln!("Failed to parse achievements.json: {}", e);
@@ -132,22 +133,4 @@ fn load_achievements_config() -> Vec<Achievement> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::AchievementSystem;
-
-    #[test]
-    fn achievements_load_from_json() {
-        let system = AchievementSystem::new();
-        // The full expanded set must deserialize (incl. HappinessAtLeast).
-        assert!(system.list.len() >= 20, "loaded {}", system.list.len());
-        // Ids are unique.
-        let mut ids: Vec<&str> = system.list.iter().map(|a| a.id.as_str()).collect();
-        ids.sort_unstable();
-        let unique = {
-            let mut u = ids.clone();
-            u.dedup();
-            u.len()
-        };
-        assert_eq!(ids.len(), unique, "duplicate achievement ids");
-    }
-}
+mod tests;

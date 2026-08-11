@@ -47,11 +47,12 @@ impl ArchetypeRegistry {
     /// Load archetypes from JSON file
     pub fn load() -> Self {
         #[cfg(target_arch = "wasm32")]
-        let json = include_str!("../../assets/tenant_archetypes.json");
+        let json = macroquad_toolkit::include_json_str!("../../assets/tenant_archetypes.json");
 
         #[cfg(not(target_arch = "wasm32"))]
-        let json = std::fs::read_to_string("assets/tenant_archetypes.json")
-            .unwrap_or_else(|_| include_str!("../../assets/tenant_archetypes.json").to_string());
+        let json = std::fs::read_to_string("assets/tenant_archetypes.json").unwrap_or_else(|_| {
+            macroquad_toolkit::include_json_str!("../../assets/tenant_archetypes.json").to_string()
+        });
 
         match serde_json::from_str::<ArchetypeData>(&json) {
             Ok(data) => {
