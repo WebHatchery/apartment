@@ -179,6 +179,12 @@
                     "prompt": "Clean 2x2 pixel-art status atlas with crop-safe icons for coins and wallet cash, calendar with sun-moon cycle, apartment doorway with key and lit window occupancy, and ledger with balanced green up and terracotta down arrows for monthly net; deep charcoal-brown cells, readable at 20x20, no text or numerals"
                 },
                 {
+                    "id": "mission_icons",
+                    "filename": "mission_icons.png",
+                    "resolution": "1254x1254",
+                    "prompt": "Clean 3x2 pixel-art mission atlas with crop-safe icons for welcoming doorway with residents, fully lit apartment and key occupancy, home cradled by hands with heart, ledger and coins with green seal, restored brick wall with repair tools, and two properties with deed keyring; deep charcoal-brown cells, warm cream terracotta teal amber moss and plum palette, readable at 34x34, no text"
+                },
+                {
                     "id": "achievement_emblems",
                     "filename": "achievement_emblems.png",
                     "resolution": "1254x1254",

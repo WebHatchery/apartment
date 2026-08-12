@@ -69,6 +69,7 @@ impl AssetManager {
             "workspace_icons",
             "upgrade_icons",
             "status_icons",
+            "mission_icons",
             "icon_money",
             "icon_repair",
             "icon_upgrade",
@@ -136,6 +137,7 @@ impl AssetManager {
                             | "workspace_icons"
                             | "upgrade_icons"
                             | "status_icons"
+                            | "mission_icons"
                     ) {
                     FilterMode::Linear
                 } else {

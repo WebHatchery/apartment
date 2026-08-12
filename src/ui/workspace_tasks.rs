@@ -104,9 +104,22 @@ pub fn draw_tasks_view(state: &GameplayState, assets: &AssetManager) -> Option<U
             Rect::new(missions.x, y, missions.w, card_h),
             mission.status == MissionStatus::Active,
         );
+        let icon_rect = Rect::new(missions.x + space::SM, y + 10.0, 52.0, 52.0);
+        let has_icon = draw_mission_icon(&mission.goal, icon_rect, assets);
+        let text_x = if has_icon {
+            icon_rect.right() + space::SM
+        } else {
+            missions.x + space::MD
+        };
+        let action_reserve = if mission.status == MissionStatus::Available {
+            116.0
+        } else {
+            space::MD
+        };
+        let text_w = (missions.right() - action_reserve - text_x).max(60.0);
         draw_ui_text(
-            &truncate_text_to_width(&mission.title, missions.w - 130.0, scale::BODY),
-            missions.x + space::MD,
+            &truncate_text_to_width(&mission.title, text_w, scale::BODY),
+            text_x,
             y + 22.0,
             scale::BODY,
             color::TEXT_BRIGHT(),
@@ -116,17 +129,17 @@ pub fn draw_tasks_view(state: &GameplayState, assets: &AssetManager) -> Option<U
         draw_ui_text(
             &truncate_text_to_width(
                 &format!("{} · Reward: {}", progress, reward),
-                missions.w - space::MD * 2.0,
+                text_w,
                 scale::LABEL,
             ),
-            missions.x + space::MD,
+            text_x,
             y + 45.0,
             scale::LABEL,
             color::TEXT_DIM(),
         );
         draw_ui_text(
-            &truncate_text_to_width(&mission.description, missions.w - 130.0, scale::CAPTION),
-            missions.x + space::MD,
+            &truncate_text_to_width(&mission.description, text_w, scale::CAPTION),
+            text_x,
             y + 64.0,
             scale::CAPTION,
             color::TEXT_DIM(),
@@ -285,6 +298,48 @@ pub fn draw_tasks_view(state: &GameplayState, assets: &AssetManager) -> Option<U
     }
     None
 }
+
+fn mission_icon_tile(goal: &MissionGoal) -> (f32, f32) {
+    match goal {
+        MissionGoal::HouseTenants { .. } => (0.0, 0.0),
+        MissionGoal::ReachOccupancy { .. } => (1.0, 0.0),
+        MissionGoal::MaintainHappiness { .. } => (2.0, 0.0),
+        MissionGoal::PerfectCollection { .. } => (0.0, 1.0),
+        MissionGoal::FullRepair { .. } => (1.0, 1.0),
+        MissionGoal::AcquireBuilding => (2.0, 1.0),
+    }
+}
+
+fn draw_mission_icon(goal: &MissionGoal, rect: Rect, assets: &AssetManager) -> bool {
+    let Some(texture) = assets.get_texture("mission_icons") else {
+        return false;
+    };
+    let (column, row) = mission_icon_tile(goal);
+    let tile_w = texture.width() / 3.0;
+    let tile_h = texture.height() * 0.5;
+    let inset_x = tile_w * 0.08;
+    let inset_y = tile_h * 0.08;
+    draw_texture_ex(
+        texture,
+        rect.x,
+        rect.y,
+        WHITE,
+        DrawTextureParams {
+            dest_size: Some(vec2(rect.w, rect.h)),
+            source: Some(Rect::new(
+                column * tile_w + inset_x,
+                row * tile_h + inset_y,
+                tile_w - inset_x * 2.0,
+                tile_h - inset_y * 2.0,
+            )),
+            ..Default::default()
+        },
+    );
+    true
+}
+
+#[cfg(test)]
+mod tests;
 
 fn mission_progress(state: &GameplayState, goal: &MissionGoal) -> String {
     match goal {
