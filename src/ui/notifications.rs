@@ -134,18 +134,21 @@ fn draw_event_icon(event: &GameEvent, rect: Rect, assets: &AssetManager) -> bool
         GameEvent::MonthEnd { .. } => "icon_calendar",
         _ => return false,
     };
-    let Some(texture) = assets.get_texture(id) else {
-        return false;
-    };
-    draw_texture_ex(
-        texture,
-        rect.x,
-        rect.y,
-        WHITE,
-        DrawTextureParams {
-            dest_size: Some(vec2(rect.w, rect.h)),
-            ..Default::default()
-        },
-    );
-    true
+    if id.starts_with("event_") {
+        crate::ui::event_art::draw_event_art(id, rect, assets)
+    } else if let Some(texture) = assets.get_texture(id) {
+        draw_texture_ex(
+            texture,
+            rect.x,
+            rect.y,
+            WHITE,
+            DrawTextureParams {
+                dest_size: Some(vec2(rect.w, rect.h)),
+                ..Default::default()
+            },
+        );
+        true
+    } else {
+        false
+    }
 }

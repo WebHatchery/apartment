@@ -13,13 +13,10 @@ pub fn draw_event_modal(event: &NarrativeEvent, assets: &AssetManager) -> Option
     draw_rectangle(0., 0., screen_w, screen_h, Color::new(0., 0., 0., 0.6));
 
     let modal_w = (screen_w * 0.55).clamp(480.0, 680.0);
-    let illustration = assets.get_texture(event_texture_id(&event.event_type));
-    let art_size = if illustration.is_some() { 104.0 } else { 0.0 };
-    let art_gap = if illustration.is_some() {
-        space::LG
-    } else {
-        0.0
-    };
+    let illustration_id = event_texture_id(&event.event_type);
+    let has_illustration = crate::ui::event_art::has_event_art(illustration_id, assets);
+    let art_size = if has_illustration { 104.0 } else { 0.0 };
+    let art_gap = if has_illustration { space::LG } else { 0.0 };
     let content_w = modal_w - space::PAD * 2.0 - art_size - art_gap;
 
     let body_lines = wrap(&event.description, content_w, scale::BODY);
@@ -42,16 +39,11 @@ pub fn draw_event_modal(event: &NarrativeEvent, assets: &AssetManager) -> Option
 
     let content = draw_panel(Rect::new(x, y, modal_w, modal_h), &event.headline);
 
-    if let Some(texture) = illustration {
-        draw_texture_ex(
-            texture,
-            content.x,
-            content.y,
-            WHITE,
-            DrawTextureParams {
-                dest_size: Some(vec2(art_size, art_size)),
-                ..Default::default()
-            },
+    if has_illustration {
+        crate::ui::event_art::draw_event_art(
+            illustration_id,
+            Rect::new(content.x, content.y, art_size, art_size),
+            assets,
         );
         draw_rectangle_lines(
             content.x,

@@ -288,6 +288,13 @@
             "Height": 128
         },
         {
+            "id": "event_atlas",
+            "title": "Narrative Event Atlas",
+            "description": "A 3x3 crop-safe atlas covering rent, arrivals, departures, noise, plumbing, inspections, heatwaves, neighborhood openings, and developer offers in one cohesive style.",
+            "Width": 1254,
+            "Height": 1254
+        },
+        {
             "id": "event_tenant_moved_in",
             "title": "Event Tenant Moved In",
             "description": "2D pixel art illustration of moving boxes and open door, new tenant arrival theme, warm welcoming tones, simple clean design, apartment management game style, transparent background",

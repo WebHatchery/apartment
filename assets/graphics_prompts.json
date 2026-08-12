@@ -291,6 +291,12 @@
             "description": "Small illustrations for events and notifications.",
             "images": [
                 {
+                    "id": "event_atlas",
+                    "filename": "event_atlas.png",
+                    "resolution": "1254x1254",
+                    "prompt": "Clean 3x3 pixel-art event atlas with crop-safe scenes for rent ledger and coins, resident moving in, resident moving out, neighbor noise complaint, burst pipe and wrench, building inspection, rooftop heatwave and water, welcoming new storefront, and developer plans with miniature apartment tower; deep charcoal-brown backgrounds, amber light, muted cream terracotta teal moss and plum palette, no text"
+                },
+                {
                     "id": "event_rent_collected",
                     "filename": "event_rent_collected.png",
                     "resolution": "128x128",

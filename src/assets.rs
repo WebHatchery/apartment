@@ -87,6 +87,7 @@ impl AssetManager {
             "happiness_unhappy",
             "happiness_miserable",
             // Events
+            "event_atlas",
             "event_rent_collected",
             "event_tenant_moved_in",
             "event_tenant_moved_out",
@@ -128,6 +129,7 @@ impl AssetManager {
                             | "property_facades"
                             | "staff_portraits"
                             | "achievement_emblems"
+                            | "event_atlas"
                     ) {
                     FilterMode::Linear
                 } else {

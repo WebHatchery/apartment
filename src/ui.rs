@@ -18,6 +18,7 @@ pub mod career_summary;
 pub mod city_view; // Phase 3 city map
 mod city_view_widgets;
 mod common;
+mod event_art;
 pub mod event_modal; // Phase 4 event modal
 mod hallway_panel;
 mod header;

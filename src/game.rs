@@ -166,13 +166,13 @@ impl Game {
                     state.requests_page = 1;
                 }
             }
-            "pause_showcase" | "pause_compact" => {
+            "pause_showcase" | "pause_compact" | "pause_tiny" => {
                 self.seed_gameplay_capture(true);
                 if let GameState::Gameplay(state) = &mut self.state {
                     state.show_pause_menu = true;
                 }
             }
-            "history_showcase" | "history_compact" => {
+            "history_showcase" | "history_compact" | "history_tiny" => {
                 self.seed_gameplay_capture(true);
                 if let GameState::Gameplay(state) = &mut self.state {
                     seed_showcase_activity(state);
@@ -192,28 +192,28 @@ impl Game {
                     state.career_badges_page = 1;
                 }
             }
-            "tutorial_showcase" | "tutorial_compact" | "tutorial_wide" => {
+            "tutorial_showcase" | "tutorial_compact" | "tutorial_wide" | "tutorial_tiny" => {
                 self.seed_gameplay_capture(false)
             }
-            "tutorial_coach_showcase" | "tutorial_coach_compact" => {
+            "tutorial_coach_showcase" | "tutorial_coach_compact" | "tutorial_coach_tiny" => {
                 self.seed_gameplay_capture(false);
                 if let GameState::Gameplay(state) = &mut self.state {
                     state.tutorial.pending_messages.clear();
                 }
             }
-            "event_showcase" | "event_compact" => {
+            "event_showcase" | "event_compact" | "event_tiny" => {
                 self.seed_gameplay_capture(true);
                 if let GameState::Gameplay(state) = &mut self.state {
                     seed_showcase_event(state);
                 }
             }
-            "event_notice_showcase" | "event_notice_compact" => {
+            "event_notice_showcase" | "event_notice_compact" | "event_notice_tiny" => {
                 self.seed_gameplay_capture(true);
                 if let GameState::Gameplay(state) = &mut self.state {
                     seed_showcase_notice(state);
                 }
             }
-            "notification_showcase" | "notification_compact" => {
+            "notification_showcase" | "notification_compact" | "notification_tiny" => {
                 self.seed_gameplay_capture(true);
                 if let GameState::Gameplay(state) = &mut self.state {
                     state.notifications.pending.push(
