@@ -38,6 +38,7 @@ param(
         "pause_showcase",
         "history_showcase",
         "career_showcase",
+        "career_more_showcase",
         "tutorial_showcase",
         "tutorial_coach_showcase",
         "event_showcase",

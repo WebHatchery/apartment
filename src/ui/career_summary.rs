@@ -61,7 +61,9 @@ pub fn draw_career_summary(state: &GameplayState) -> Option<UiAction> {
     let achievement_y = stat_y + 72.0 + space::LG;
     let button_h = 48.0;
     let button_y = page.bottom() - button_h;
-    draw_achievements(state, page, achievement_y, button_y - space::LG);
+    if let Some(action) = draw_achievements(state, page, achievement_y, button_y - space::LG) {
+        return Some(action);
+    }
 
     let button_w = page.w.min(280.0);
     if button_at(
@@ -203,7 +205,7 @@ fn draw_stat_cards(page: Rect, y: f32, stats: &[(String, String, Color); 5]) {
     }
 }
 
-fn draw_achievements(state: &GameplayState, page: Rect, y: f32, bottom: f32) {
+fn draw_achievements(state: &GameplayState, page: Rect, y: f32, bottom: f32) -> Option<UiAction> {
     let unlocked = state.achievements.unlocked.len();
     let total = state.achievements.list.len().max(1);
     draw_ui_text(
@@ -228,8 +230,13 @@ fn draw_achievements(state: &GameplayState, page: Rect, y: f32, bottom: f32) {
     let columns = if page.w >= 1000.0 { 4 } else { 3 };
     let gap = space::SM;
     let card_h = 68.0;
-    let rows = ((bottom - grid_y + gap) / (card_h + gap)).floor().max(1.0) as usize;
-    let visible = rows * columns;
+    let pager_h = 48.0;
+    let rows = ((bottom - grid_y - pager_h + gap) / (card_h + gap))
+        .floor()
+        .max(1.0) as usize;
+    let page_size = rows * columns;
+    let page_count = total.div_ceil(page_size);
+    let badge_page = state.career_badges_page.min(page_count - 1);
     let card_w = (page.w - gap * (columns - 1) as f32) / columns as f32;
 
     let ordered = state
@@ -244,7 +251,11 @@ fn draw_achievements(state: &GameplayState, page: Rect, y: f32, bottom: f32) {
                 .iter()
                 .filter(|achievement| !state.achievements.is_unlocked(&achievement.id)),
         );
-    for (index, achievement) in ordered.take(visible).enumerate() {
+    for (index, achievement) in ordered
+        .skip(badge_page * page_size)
+        .take(page_size)
+        .enumerate()
+    {
         let row = index / columns;
         let column = index % columns;
         draw_achievement_card(
@@ -258,6 +269,33 @@ fn draw_achievements(state: &GameplayState, page: Rect, y: f32, bottom: f32) {
             ),
         );
     }
+    if page_count > 1 {
+        let controls_y = bottom - 40.0;
+        let controls_w = page.w.min(360.0);
+        let gap = space::SM;
+        let button_w = (controls_w - gap) * 0.5;
+        if button_at(
+            Rect::new(page.x, controls_y, button_w, 40.0),
+            "Earlier badges",
+            badge_page > 0,
+            Tone::Secondary,
+        ) {
+            return Some(UiAction::SetCareerBadgesPage {
+                page: badge_page - 1,
+            });
+        }
+        if button_at(
+            Rect::new(page.x + button_w + gap, controls_y, button_w, 40.0),
+            "More badges",
+            badge_page + 1 < page_count,
+            Tone::Primary,
+        ) {
+            return Some(UiAction::SetCareerBadgesPage {
+                page: badge_page + 1,
+            });
+        }
+    }
+    None
 }
 
 fn draw_achievement_card(state: &GameplayState, achievement: &Achievement, rect: Rect) {

@@ -185,6 +185,13 @@ impl Game {
                     seed_showcase_career(state);
                 }
             }
+            "career_more_showcase" | "career_more_tiny" => {
+                self.seed_workspace_capture(ViewMode::CareerSummary);
+                if let GameState::Gameplay(state) = &mut self.state {
+                    seed_showcase_career(state);
+                    state.career_badges_page = 1;
+                }
+            }
             "tutorial_showcase" | "tutorial_compact" | "tutorial_wide" => {
                 self.seed_gameplay_capture(false)
             }

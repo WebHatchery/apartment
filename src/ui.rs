@@ -114,6 +114,9 @@ pub enum UiAction {
     SetRequestsPage {
         page: usize,
     },
+    SetCareerBadgesPage {
+        page: usize,
+    },
     AcceptMission {
         mission_id: u32,
     },
