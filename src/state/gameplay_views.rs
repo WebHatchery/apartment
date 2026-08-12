@@ -42,6 +42,7 @@ impl GameplayState {
                 if let Some(action) = crate::ui::city_view::draw_portfolio_panel(
                     &self.city,
                     self.city.active_building_index,
+                    self.city_page,
                     assets,
                 ) {
                     self.handle_city_action(action);
@@ -54,13 +55,14 @@ impl GameplayState {
                     &listings,
                     &self.city.neighborhoods,
                     self.funds.balance,
+                    self.market_page,
                     assets,
                 ) {
                     self.handle_city_action(action);
                 }
             }
             ViewMode::Mail => {
-                if let Some(action) = crate::ui::workspace_inbox::draw_inbox_view(self) {
+                if let Some(action) = crate::ui::workspace_inbox::draw_inbox_view(self, assets) {
                     self.pending_actions.push(action);
                 }
             }

@@ -54,8 +54,12 @@ impl Game {
     /// Seed a specific scene for the screenshot harness.
     pub fn begin_capture_scene(&mut self, scene: &str) {
         match scene {
-            "menu" | "menu_compact" | "menu_wide" => self.state = GameState::Menu(MenuState::new()),
-            "showcase" | "showcase_compact" | "showcase_wide" => self.seed_gameplay_capture(true),
+            "menu" | "menu_compact" | "menu_wide" | "menu_tiny" => {
+                self.state = GameState::Menu(MenuState::new())
+            }
+            "showcase" | "showcase_compact" | "showcase_wide" | "showcase_tiny" => {
+                self.seed_gameplay_capture(true)
+            }
             "unit_showcase" | "unit_compact" => {
                 self.seed_gameplay_capture(true);
                 if let GameState::Gameplay(state) = &mut self.state {
@@ -88,7 +92,7 @@ impl Game {
                     state.selection = crate::ui::Selection::Applications(None);
                 }
             }
-            "ownership_showcase" | "ownership_compact" | "ownership_wide" => {
+            "ownership_showcase" | "ownership_compact" | "ownership_wide" | "ownership_tiny" => {
                 self.seed_gameplay_capture(true);
                 if let GameState::Gameplay(state) = &mut self.state {
                     state.selection = crate::ui::Selection::Ownership;
@@ -101,25 +105,25 @@ impl Game {
                     state.panel_scroll_offset = 174.0;
                 }
             }
-            "tenants_showcase" | "tenants_compact" => {
+            "tenants_showcase" | "tenants_compact" | "tenants_tiny" => {
                 self.seed_workspace_capture(ViewMode::Tenants);
             }
-            "finances_showcase" | "finances_compact" | "finances_wide" => {
+            "finances_showcase" | "finances_compact" | "finances_wide" | "finances_tiny" => {
                 self.seed_workspace_capture(ViewMode::Finances);
             }
-            "city_showcase" | "city_compact" | "city_wide" => {
+            "city_showcase" | "city_compact" | "city_wide" | "city_tiny" => {
                 self.seed_workspace_capture(ViewMode::CityMap);
             }
-            "market_showcase" | "market_compact" | "market_wide" => {
+            "market_showcase" | "market_compact" | "market_wide" | "market_tiny" => {
                 self.seed_workspace_capture(ViewMode::Market);
                 if let GameState::Gameplay(state) = &mut self.state {
                     seed_showcase_market(state);
                 }
             }
-            "inbox_showcase" | "inbox_compact" => {
+            "inbox_showcase" | "inbox_compact" | "inbox_tiny" => {
                 self.seed_workspace_capture(ViewMode::Mail);
             }
-            "tasks_showcase" | "tasks_compact" => {
+            "tasks_showcase" | "tasks_compact" | "tasks_tiny" => {
                 self.seed_workspace_capture(ViewMode::Tasks);
             }
             "pause_showcase" | "pause_compact" => {
@@ -135,7 +139,7 @@ impl Game {
                     state.activity_drawer_open = true;
                 }
             }
-            "career_showcase" | "career_compact" | "career_wide" => {
+            "career_showcase" | "career_compact" | "career_wide" | "career_tiny" => {
                 self.seed_workspace_capture(ViewMode::CareerSummary);
                 if let GameState::Gameplay(state) = &mut self.state {
                     seed_showcase_career(state);
@@ -511,6 +515,8 @@ fn seed_showcase_finances(state: &mut crate::state::GameplayState) {
 }
 
 fn seed_showcase_mail(state: &mut crate::state::GameplayState) {
+    use crate::narrative::dialogue::{DialogueChoice, DialogueEffect, DialogueType};
+
     state.mailbox = crate::narrative::Mailbox::new();
     state.mailbox.receive(MailItem::tenant_letter(
         0,
@@ -530,4 +536,28 @@ fn seed_showcase_mail(state: &mut crate::state::GameplayState) {
         "Fresh paint, brighter windows and a busy lobby are changing how the neighbourhood sees Sunset Apartments.",
     ));
     state.selected_mail_id = Some(0);
+    state.dialogue_system.add_dialogue(
+        DialogueType::FaceToFaceRequest,
+        1,
+        None,
+        "Quiet for late shifts",
+        "Could we keep the laundry room quiet after ten? My early shifts start before sunrise.",
+        vec![
+            DialogueChoice {
+                text: "Post quiet hours".to_string(),
+                effects: vec![DialogueEffect::HappinessChange {
+                    tenant_id: 1,
+                    amount: 6,
+                }],
+            },
+            DialogueChoice {
+                text: "Leave it informal".to_string(),
+                effects: vec![DialogueEffect::HappinessChange {
+                    tenant_id: 1,
+                    amount: -3,
+                }],
+            },
+        ],
+        None,
+    );
 }

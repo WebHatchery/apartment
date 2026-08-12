@@ -76,8 +76,7 @@ pub fn draw_tasks_view(state: &GameplayState, assets: &AssetManager) -> Option<U
         mission_rect.h,
     );
     let missions = draw_panel(mission_rect, "Missions");
-    let mut y = missions.y;
-    for mission in state
+    let visible_missions: Vec<_> = state
         .missions
         .missions
         .iter()
@@ -87,9 +86,20 @@ pub fn draw_tasks_view(state: &GameplayState, assets: &AssetManager) -> Option<U
                 MissionStatus::Active | MissionStatus::Available
             )
         })
-        .take(5)
+        .collect();
+    let card_h = 76.0;
+    let row_h = card_h + space::SM;
+    let needs_pager = visible_missions.len() as f32 * row_h > missions.h;
+    let pager_h = if needs_pager { 44.0 } else { 0.0 };
+    let page_size = (((missions.h - pager_h) / row_h).floor() as usize).max(1);
+    let page_count = visible_missions.len().max(1).div_ceil(page_size);
+    let page = state.tasks_page.min(page_count - 1);
+    let mut y = missions.y;
+    for mission in visible_missions
+        .iter()
+        .skip(page * page_size)
+        .take(page_size)
     {
-        let card_h = 76.0;
         draw_card(
             Rect::new(missions.x, y, missions.w, card_h),
             mission.status == MissionStatus::Active,
@@ -134,6 +144,27 @@ pub fn draw_tasks_view(state: &GameplayState, assets: &AssetManager) -> Option<U
             });
         }
         y += card_h + space::SM;
+    }
+    if needs_pager {
+        let pager_y = missions.bottom() - 40.0;
+        let gap = space::SM;
+        let button_w = (missions.w - gap) / 2.0;
+        if button_at(
+            Rect::new(missions.x, pager_y, button_w, 40.0),
+            "Earlier",
+            page > 0,
+            Tone::Secondary,
+        ) {
+            return Some(UiAction::SetTasksPage { page: page - 1 });
+        }
+        if button_at(
+            Rect::new(missions.x + button_w + gap, pager_y, button_w, 40.0),
+            "More",
+            page + 1 < page_count,
+            Tone::Primary,
+        ) {
+            return Some(UiAction::SetTasksPage { page: page + 1 });
+        }
     }
     let request_panel = draw_panel(request_rect, "Tenant requests");
     let mut ry = request_panel.y;

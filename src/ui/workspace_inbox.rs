@@ -3,6 +3,7 @@
 use macroquad::prelude::*;
 use macroquad_toolkit::ui::{draw_ui_text, truncate_text_to_width};
 
+use crate::assets::AssetManager;
 use crate::narrative::MailType;
 use crate::state::GameplayState;
 
@@ -22,7 +23,7 @@ fn content_rect() -> Rect {
     )
 }
 
-pub fn draw_inbox_view(state: &GameplayState) -> Option<UiAction> {
+pub fn draw_inbox_view(state: &GameplayState, assets: &AssetManager) -> Option<UiAction> {
     let rect = content_rect();
     let pending_dialogues = state.dialogue_system.pending_dialogues();
     let body_y = draw_title(
@@ -52,13 +53,15 @@ pub fn draw_inbox_view(state: &GameplayState) -> Option<UiAction> {
     let detail = draw_panel(detail_rect, "Reading room");
     let dialogue_h = if pending_dialogues.is_empty() {
         0.0
+    } else if detail.h < 300.0 {
+        (detail.h * 0.58).max(150.0)
     } else {
         (detail.h * 0.44).max(150.0)
     };
     let mail_h = detail.h - dialogue_h - if dialogue_h > 0.0 { space::LG } else { 0.0 };
     draw_selected_mail(state, detail, selected_id, mail_h);
     if let Some(dialogue) = pending_dialogues.first() {
-        return draw_dialogue(detail, mail_h, dialogue);
+        return draw_dialogue(state, assets, detail, mail_h, dialogue);
     }
     None
 }
@@ -204,34 +207,64 @@ fn draw_selected_mail(state: &GameplayState, detail: Rect, selected_id: Option<u
 }
 
 fn draw_dialogue(
+    state: &GameplayState,
+    assets: &AssetManager,
     detail: Rect,
     mail_h: f32,
     dialogue: &crate::narrative::ActiveDialogue,
 ) -> Option<UiAction> {
     let y = detail.y + mail_h + space::LG;
+    draw_rectangle(
+        detail.x - space::SM,
+        y - space::SM,
+        detail.w + space::SM * 2.0,
+        detail.bottom() - y + space::SM,
+        color::SURFACE(),
+    );
+    let tenant = state
+        .tenants
+        .iter()
+        .find(|tenant| tenant.id == dialogue.initiator_id);
+    let portrait_size = if tenant.is_some() { 42.0 } else { 0.0 };
+    let text_x = if let Some(tenant) = tenant {
+        super::resident_sprite::draw_face_portrait(
+            tenant,
+            Rect::new(detail.x, y, portrait_size, portrait_size),
+            assets,
+        );
+        detail.x + portrait_size + space::SM
+    } else {
+        detail.x
+    };
     draw_ui_text(
         "CONVERSATION NEEDS A RESPONSE",
-        detail.x,
+        text_x,
         y + scale::LABEL,
         scale::LABEL,
         color::WARNING(),
     );
+    let speaker = tenant.map_or("Resident", |tenant| tenant.name.as_str());
     draw_ui_text(
-        &truncate_text_to_width(&dialogue.headline, detail.w, scale::BODY),
-        detail.x,
+        &truncate_text_to_width(
+            &format!("{} · {}", speaker, dialogue.headline),
+            detail.right() - text_x,
+            scale::BODY,
+        ),
+        text_x,
         y + line_height(scale::LABEL) + scale::BODY,
         scale::BODY,
         color::TEXT_BRIGHT(),
     );
     let desc_y = y + line_height(scale::LABEL) + line_height(scale::BODY);
     draw_ui_text(
-        &truncate_text_to_width(&dialogue.description, detail.w, scale::LABEL),
-        detail.x,
+        &truncate_text_to_width(&dialogue.description, detail.right() - text_x, scale::LABEL),
+        text_x,
         desc_y + scale::LABEL,
         scale::LABEL,
         color::TEXT_DIM(),
     );
-    let button_y = desc_y + line_height(scale::LABEL) + space::SM;
+    let button_y =
+        (desc_y + line_height(scale::LABEL) + space::SM).max(y + portrait_size + space::SM);
     let count = dialogue.choices.len().max(1);
     let button_w = (detail.w - space::SM * (count.saturating_sub(1)) as f32) / count as f32;
     for (index, choice) in dialogue.choices.iter().enumerate() {

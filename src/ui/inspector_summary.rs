@@ -49,6 +49,7 @@ pub fn draw_building_summary(
     } else {
         format_money(monthly_net as i64)
     };
+    let dense = inner.h < 300.0;
 
     let mut y = inner.y;
     y += section_label(inner.x, y, "AT A GLANCE");
@@ -64,25 +65,27 @@ pub fn draw_building_summary(
             color::TEXT()
         },
     );
-    y += kv_row(
-        inner.x,
-        y,
-        inner.w,
-        "Unit condition",
-        &format!("{}% avg", average_condition),
-        super::common::condition_color(average_condition),
-    );
-    y += kv_row(
-        inner.x,
-        y,
-        inner.w,
-        "Resident happiness",
-        &average_happiness.map_or_else(
-            || "No residents".to_string(),
-            |value| format!("{}% avg", value),
-        ),
-        average_happiness.map_or(color::TEXT_DIM(), super::common::happiness_color),
-    );
+    if !dense {
+        y += kv_row(
+            inner.x,
+            y,
+            inner.w,
+            "Unit condition",
+            &format!("{}% avg", average_condition),
+            super::common::condition_color(average_condition),
+        );
+        y += kv_row(
+            inner.x,
+            y,
+            inner.w,
+            "Resident happiness",
+            &average_happiness.map_or_else(
+                || "No residents".to_string(),
+                |value| format!("{}% avg", value),
+            ),
+            average_happiness.map_or(color::TEXT_DIM(), super::common::happiness_color),
+        );
+    }
     y += kv_row(
         inner.x,
         y,
@@ -95,7 +98,7 @@ pub fn draw_building_summary(
             color::POSITIVE()
         },
     );
-    y += space::SM;
+    y += if dense { space::XS } else { space::SM };
 
     let critical = building
         .apartments
@@ -156,30 +159,39 @@ pub fn draw_building_summary(
         )
     };
 
-    let priority_h = 70.0;
+    let priority_h = if dense { 42.0 } else { 70.0 };
     draw_card(Rect::new(inner.x, y, inner.w, priority_h), false);
     draw_ui_text(
         priority,
         inner.x + space::MD,
-        y + 23.0,
+        y + if dense { 27.0 } else { 23.0 },
         scale::BODY,
         priority_color,
     );
-    draw_ui_text(
-        &truncate_text_to_width(&detail, inner.w - space::MD * 2.0, scale::CAPTION),
-        inner.x + space::MD,
-        y + 48.0,
-        scale::CAPTION,
-        color::TEXT_DIM(),
-    );
-    y += priority_h + space::MD;
+    if !dense {
+        draw_ui_text(
+            &truncate_text_to_width(&detail, inner.w - space::MD * 2.0, scale::CAPTION),
+            inner.x + space::MD,
+            y + 48.0,
+            scale::CAPTION,
+            color::TEXT_DIM(),
+        );
+    }
+    y += priority_h + if dense { space::XS } else { space::MD };
 
     y += section_label(inner.x, y, "QUICK ACTIONS");
-    let button_h = 42.0;
+    let button_h = if dense { 38.0 } else { 42.0 };
     let mut action = None;
     let applications_label = format!("Review applications ({})", applications);
+    let button_gap = space::XS;
+    let compact_w = (inner.w - button_gap) * 0.5;
     if button_at(
-        Rect::new(inner.x, y, inner.w, button_h),
+        Rect::new(
+            inner.x,
+            y,
+            if dense { compact_w } else { inner.w },
+            button_h,
+        ),
         &applications_label,
         true,
         if applications > 0 {
@@ -190,9 +202,17 @@ pub fn draw_building_summary(
     ) {
         action = Some(UiAction::SelectApplications(None));
     }
-    y += button_h + space::SM;
     if button_at(
-        Rect::new(inner.x, y, inner.w, button_h),
+        Rect::new(
+            if dense {
+                inner.x + compact_w + button_gap
+            } else {
+                inner.x
+            },
+            if dense { y } else { y + button_h + space::SM },
+            if dense { compact_w } else { inner.w },
+            button_h,
+        ),
         "Inspect hallway",
         true,
         Tone::Secondary,
@@ -200,6 +220,9 @@ pub fn draw_building_summary(
         action = Some(UiAction::SelectHallway);
     }
     y += button_h + space::SM;
+    if !dense {
+        y += button_h + space::SM;
+    }
     if y + button_h <= inner.bottom() + line_height(scale::CAPTION)
         && button_at(
             Rect::new(inner.x, y, inner.w, button_h),

@@ -158,6 +158,7 @@ pub fn draw_tenants_view(state: &GameplayState, assets: &AssetManager) -> Option
     }
 
     let side_inner = draw_panel(side, "Leasing desk");
+    let dense_side = side_inner.h < 220.0;
     let mut sy = side_inner.y;
     sy += kv_row(
         side_inner.x,
@@ -171,18 +172,20 @@ pub fn draw_tenants_view(state: &GameplayState, assets: &AssetManager) -> Option
         ),
         color::TEXT(),
     );
-    sy += kv_row(
-        side_inner.x,
-        sy,
-        side_inner.w,
-        "Average happiness",
-        &format!("{}%", average),
-        if average >= 60 {
-            color::POSITIVE()
-        } else {
-            color::WARNING()
-        },
-    );
+    if !dense_side {
+        sy += kv_row(
+            side_inner.x,
+            sy,
+            side_inner.w,
+            "Average happiness",
+            &format!("{}%", average),
+            if average >= 60 {
+                color::POSITIVE()
+            } else {
+                color::WARNING()
+            },
+        );
+    }
     sy += kv_row(
         side_inner.x,
         sy,
@@ -207,7 +210,7 @@ pub fn draw_tenants_view(state: &GameplayState, assets: &AssetManager) -> Option
             color::TEXT_DIM()
         },
     );
-    sy += space::LG;
+    sy += if dense_side { space::SM } else { space::LG };
     if button_at(
         Rect::new(side_inner.x, sy, side_inner.w, 40.0),
         "Review applications",
@@ -351,6 +354,7 @@ fn draw_ledger(state: &GameplayState, rect: Rect) {
 fn draw_policies(state: &GameplayState, rect: Rect) -> Option<UiAction> {
     let inner = draw_panel(rect, "Operations");
     let show_explanations = inner.h >= 340.0;
+    let dense = inner.h < 280.0;
     let mut y = inner.y;
     draw_ui_text(
         "MARKETING",
@@ -385,7 +389,16 @@ fn draw_policies(state: &GameplayState, rect: Rect) -> Option<UiAction> {
                 button_w,
                 40.0,
             ),
-            label,
+            if dense {
+                match strategy {
+                    MarketingType::None => "Off",
+                    MarketingType::SocialMedia => "Social",
+                    MarketingType::LocalNewspaper => "Local",
+                    MarketingType::PremiumAgency => "Pro",
+                }
+            } else {
+                label
+            },
             !selected,
             if selected {
                 Tone::Primary
@@ -415,7 +428,7 @@ fn draw_policies(state: &GameplayState, rect: Rect) -> Option<UiAction> {
         scale::LABEL,
         color::TEXT_DIM(),
     );
-    y += line_height(scale::LABEL) + space::SM;
+    y += line_height(scale::LABEL) + if dense { space::XS } else { space::SM };
     let open_house_label = if state.building.open_house_remaining > 0 {
         format!(
             "Open house active · {} month(s)",
@@ -445,7 +458,7 @@ fn draw_policies(state: &GameplayState, rect: Rect) -> Option<UiAction> {
             color::TEXT_DIM(),
         );
         y += line_height(scale::LABEL) + space::MD;
-    } else {
+    } else if !dense {
         y += space::SM;
     }
 
@@ -456,7 +469,40 @@ fn draw_policies(state: &GameplayState, rect: Rect) -> Option<UiAction> {
         scale::LABEL,
         color::TEXT_DIM(),
     );
-    y += line_height(scale::LABEL) + space::XS;
+    y += line_height(scale::LABEL) + if dense { 0.0 } else { space::XS };
+    if dense {
+        let gap = space::XS;
+        let button_w = (inner.w - gap) * 0.5;
+        if button_at(
+            Rect::new(inner.x, y, button_w, 40.0),
+            &format!("Utilities: {}", on_off(state.building.utilities_included)),
+            true,
+            if state.building.utilities_included {
+                Tone::Positive
+            } else {
+                Tone::Secondary
+            },
+        ) {
+            return Some(UiAction::SetUtilitiesIncluded {
+                included: !state.building.utilities_included,
+            });
+        }
+        if button_at(
+            Rect::new(inner.x + button_w + gap, y, button_w, 40.0),
+            &format!("Insurance: {}", on_off(state.building.insurance_active)),
+            true,
+            if state.building.insurance_active {
+                Tone::Positive
+            } else {
+                Tone::Secondary
+            },
+        ) {
+            return Some(UiAction::SetInsuranceActive {
+                active: !state.building.insurance_active,
+            });
+        }
+        return None;
+    }
     let utility_cost = OperatingCosts::calculate_utilities(
         &policy_preview(&state.building, true, state.building.insurance_active),
         &state.config.operating_costs,
@@ -493,7 +539,7 @@ fn draw_policies(state: &GameplayState, rect: Rect) -> Option<UiAction> {
             color::TEXT_DIM(),
         );
         y += line_height(scale::LABEL) + space::SM;
-    } else {
+    } else if !dense {
         y += space::SM;
     }
     let insurance_cost = OperatingCosts::calculate_insurance(

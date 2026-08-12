@@ -7,7 +7,7 @@ use macroquad_toolkit::ui::{draw_ui_text, measure_ui_text, truncate_text_to_widt
 
 const CARD_W: f32 = 280.0;
 const CARD_SPACING: f32 = 20.0;
-const GRID_EDGE_MARGIN: f32 = 40.0;
+const GRID_EDGE_MARGIN: f32 = 24.0;
 
 fn grid_top() -> f32 {
     if screen_height() < 520.0 {
@@ -31,7 +31,8 @@ fn card_height(count: usize) -> f32 {
     let rows = count.div_ceil(grid_columns(count)).max(1);
     let spacing = card_spacing();
     let available = (screen_height() - grid_top() - 8.0).max(180.0);
-    ((available - spacing * (rows.saturating_sub(1)) as f32) / rows as f32).clamp(82.0, 120.0)
+    let minimum = if screen_height() < 520.0 { 72.0 } else { 82.0 };
+    ((available - spacing * (rows.saturating_sub(1)) as f32) / rows as f32).clamp(minimum, 120.0)
 }
 
 fn grid_columns(count: usize) -> usize {
@@ -178,17 +179,21 @@ impl MenuState {
             clear_background(Color::from_rgba(25, 25, 30, 255));
         }
 
-        // Section title
-        let section_title = "Tap a building to begin";
-        let section_size = 28.0;
-        let section_width = measure_ui_text(section_title, None, section_size as u16, 1.0).width;
-        draw_ui_text(
-            section_title,
-            screen_width() / 2.0 - section_width / 2.0,
-            grid_top() - 8.0,
-            section_size,
-            crate::ui::theme::color::TEXT_BRIGHT(),
-        );
+        // On very short screens the logo and cards communicate the same
+        // instruction without competing for the narrow strip between them.
+        if screen_height() >= 520.0 {
+            let section_title = "Tap a building to begin";
+            let section_size = 28.0;
+            let section_width =
+                measure_ui_text(section_title, None, section_size as u16, 1.0).width;
+            draw_ui_text(
+                section_title,
+                screen_width() / 2.0 - section_width / 2.0,
+                grid_top() - 8.0,
+                section_size,
+                crate::ui::theme::color::TEXT_BRIGHT(),
+            );
+        }
 
         let (mx, my) = mouse_position();
 

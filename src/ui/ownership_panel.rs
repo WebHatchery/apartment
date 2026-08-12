@@ -104,7 +104,8 @@ pub fn draw_ownership_panel(
     }
 
     let mut next_offset = first as f32 * row_h;
-    let close_w = inner.w.min(118.0);
+    let dense = inner.w < 230.0;
+    let close_w = inner.w.min(if dense { 92.0 } else { 118.0 });
     if button_at(
         Rect::new(inner.x, footer_y, close_w, footer_h),
         "Close",
@@ -120,7 +121,7 @@ pub fn draw_ownership_panel(
         let button_w = (pager_w - gap) / 2.0;
         if button_at(
             Rect::new(pager_x, footer_y, button_w, footer_h),
-            "Earlier",
+            if dense { "Prev" } else { "Earlier" },
             first > 0,
             Tone::Secondary,
         ) {
@@ -128,7 +129,7 @@ pub fn draw_ownership_panel(
         }
         if button_at(
             Rect::new(pager_x + button_w + gap, footer_y, button_w, footer_h),
-            "More",
+            if dense { "Next" } else { "More" },
             first < max_first,
             Tone::Primary,
         ) {

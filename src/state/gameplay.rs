@@ -121,6 +121,12 @@ pub struct GameplayState {
     #[serde(skip)]
     pub inbox_page: usize,
     #[serde(skip)]
+    pub tasks_page: usize,
+    #[serde(skip)]
+    pub city_page: usize,
+    #[serde(skip)]
+    pub market_page: usize,
+    #[serde(skip)]
     pub show_pause_menu: bool,
     #[serde(skip)]
     pub activity_drawer_open: bool,
@@ -276,6 +282,9 @@ impl GameplayState {
             panel_scroll_offset: 0.0,
             selected_mail_id: None,
             inbox_page: 0,
+            tasks_page: 0,
+            city_page: 0,
+            market_page: 0,
             show_pause_menu: false,
             activity_drawer_open: false,
             is_fullscreen: false,
@@ -369,6 +378,9 @@ impl GameplayState {
         self.panel_scroll_offset = 0.0;
         self.selected_mail_id = None;
         self.inbox_page = 0;
+        self.tasks_page = 0;
+        self.city_page = 0;
+        self.market_page = 0;
         self.show_pause_menu = false;
         self.activity_drawer_open = false;
         self.pending_quit_to_menu = false;

@@ -102,6 +102,9 @@ pub enum UiAction {
     SetInboxPage {
         page: usize,
     },
+    SetTasksPage {
+        page: usize,
+    },
     AcceptMission {
         mission_id: u32,
     },

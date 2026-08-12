@@ -320,6 +320,9 @@ impl GameplayState {
             UiAction::SetInboxPage { page } => {
                 self.inbox_page = page;
             }
+            UiAction::SetTasksPage { page } => {
+                self.tasks_page = page;
+            }
             UiAction::AcceptMission { mission_id } => {
                 if !self.missions.accept_mission(mission_id, self.current_tick) {
                     self.report_action_failure("That task is no longer available");
@@ -630,6 +633,7 @@ impl GameplayState {
                 self.view_mode = ViewMode::Building;
             }
             CityMapAction::OpenMarket => {
+                self.market_page = 0;
                 self.view_mode = ViewMode::Market;
             }
             CityMapAction::CloseMarket => {
@@ -638,6 +642,12 @@ impl GameplayState {
             CityMapAction::PurchaseBuilding(listing_id) => {
                 self.pending_actions
                     .push(UiAction::PurchaseBuilding { listing_id });
+            }
+            CityMapAction::SetPortfolioPage(page) => {
+                self.city_page = page;
+            }
+            CityMapAction::SetMarketPage(page) => {
+                self.market_page = page;
             }
         }
     }
