@@ -43,6 +43,13 @@
             "Height": 512
         },
         {
+            "id": "staff_portraits",
+            "title": "Staff Portrait Atlas",
+            "description": "A 2x2 atlas of crop-safe janitor, security, manager, and receptionist character busts on a charcoal-brown background.",
+            "Width": 1254,
+            "Height": 1254
+        },
+        {
             "id": "design_bare",
             "title": "Design Bare",
             "description": "2D pixel art side-view cross-section of a bare unfurnished apartment interior, empty room with plain walls, minimal furniture, exposed pipes or wires showing wear, dusty feel, dull muted colors suggesting neglect, apartment management game style, cozy illustration style",

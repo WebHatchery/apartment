@@ -10,7 +10,7 @@ pub fn draw_hallway_panel(
     money: i32,
     offset_x: f32,
     scroll_offset: f32,
-    _assets: &AssetManager,
+    assets: &AssetManager,
     config: &crate::data::config::GameConfig,
 ) -> (Option<UiAction>, f32) {
     let mut action = None;
@@ -111,16 +111,23 @@ pub fn draw_hallway_panel(
                 Some(f) => f.to_uppercase().collect::<String>() + chars.as_str(),
             };
 
+            let portrait_rect = Rect::new(content_x, y - 7.0, 38.0, 38.0);
+            let has_portrait = draw_staff_portrait(staff_type, portrait_rect, assets);
+            let staff_x = if has_portrait {
+                portrait_rect.right() + 8.0
+            } else {
+                content_x
+            };
             if y >= content_top && y + 16.0 <= content_bottom {
                 draw_ui_text(
                     &format!("{} (${}/mo)", label, cost),
-                    content_x,
+                    staff_x,
                     y,
                     16.0,
                     colors::TEXT(),
                 );
             }
-            y += 25.0;
+            y += 20.0;
             let benefit = match staff_type.as_str() {
                 "janitor" => format!(
                     "Maintains {} units against monthly wear",
@@ -143,9 +150,12 @@ pub fn draw_hallway_panel(
             };
             if !benefit.is_empty() {
                 if y >= content_top && y + 13.0 <= content_bottom {
-                    draw_ui_text(&benefit, content_x, y, 13.0, colors::TEXT_DIM());
+                    draw_ui_text(&benefit, staff_x, y, 13.0, colors::TEXT_DIM());
                 }
                 y += 20.0;
+            }
+            if has_portrait {
+                y = y.max(portrait_rect.bottom() + 6.0);
             }
             staff_count += 1;
         }
@@ -279,4 +289,31 @@ pub fn draw_hallway_panel(
     super::widgets::draw_panel_header(Rect::new(panel_x, panel_y, panel_w, panel_h), "Hallway");
 
     (action, new_scroll)
+}
+
+fn draw_staff_portrait(role: &str, rect: Rect, assets: &AssetManager) -> bool {
+    let Some(texture) = assets.get_texture("staff_portraits") else {
+        return false;
+    };
+    let (col, row) = match role {
+        "janitor" => (0.0, 0.0),
+        "security" => (1.0, 0.0),
+        "manager" => (0.0, 1.0),
+        "receptionist" => (1.0, 1.0),
+        _ => return false,
+    };
+    let tile_w = texture.width() * 0.5;
+    let tile_h = texture.height() * 0.5;
+    draw_texture_ex(
+        texture,
+        rect.x,
+        rect.y,
+        WHITE,
+        DrawTextureParams {
+            dest_size: Some(vec2(rect.w, rect.h)),
+            source: Some(Rect::new(col * tile_w, row * tile_h, tile_w, tile_h)),
+            ..Default::default()
+        },
+    );
+    true
 }

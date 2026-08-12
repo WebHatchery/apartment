@@ -55,6 +55,12 @@
                     "filename": "npc_uncle_artie.png",
                     "resolution": "512x512",
                     "prompt": "2D pixel art portrait of Uncle Artie, a kind retired apartment landlord in his late sixties, swept-back silver hair, gray mustache, brown cardigan and muted teal shirt, gentle encouraging smile, upper-body portrait against a deep charcoal-brown interior vignette, warm amber and terracotta palette, no text"
+                },
+                {
+                    "id": "staff_portraits",
+                    "filename": "staff_portraits.png",
+                    "resolution": "1254x1254",
+                    "prompt": "Clean 2x2 pixel-art staff atlas: friendly janitor with broom in green work shirt, calm security guard in navy with radio, confident property manager in rust blazer with clipboard, and attentive receptionist in teal cardigan with headset and folder; diverse cast, waist-up crop-safe poses, deep charcoal-brown background, no text"
                 }
             ]
         },

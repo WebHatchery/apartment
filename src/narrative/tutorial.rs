@@ -135,10 +135,12 @@ impl TutorialManager {
                     self.pending_messages.push(
                         "Great job cleaning up! Now let's find your first tenant.".to_string(),
                     );
-                    self.pending_messages.push("Select an apartment, adjust the Rent if needed, and click 'List for Lease'.".to_string());
                     self.pending_messages.push(
-                        "Then click 'End Month' to let time pass. Applicants will arrive!"
+                        "Tap an apartment, adjust RENT if needed, then tap LIST FOR LEASE."
                             .to_string(),
+                    );
+                    self.pending_messages.push(
+                        "Then tap END MONTH to let time pass. Applicants will arrive!".to_string(),
                     );
                     Some(TutorialMilestone::FirstResident)
                 }
