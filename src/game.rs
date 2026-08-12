@@ -114,10 +114,23 @@ impl Game {
             "city_showcase" | "city_compact" | "city_wide" | "city_tiny" => {
                 self.seed_workspace_capture(ViewMode::CityMap);
             }
+            "city_filtered_showcase" | "city_filtered_tiny" => {
+                self.seed_workspace_capture(ViewMode::CityMap);
+                if let GameState::Gameplay(state) = &mut self.state {
+                    state.selected_neighborhood_id = Some(1);
+                }
+            }
             "market_showcase" | "market_compact" | "market_wide" | "market_tiny" => {
                 self.seed_workspace_capture(ViewMode::Market);
                 if let GameState::Gameplay(state) = &mut self.state {
                     seed_showcase_market(state);
+                }
+            }
+            "market_filtered_showcase" | "market_filtered_tiny" => {
+                self.seed_workspace_capture(ViewMode::Market);
+                if let GameState::Gameplay(state) = &mut self.state {
+                    seed_showcase_market(state);
+                    state.selected_neighborhood_id = Some(1);
                 }
             }
             "inbox_showcase" | "inbox_compact" | "inbox_tiny" => {

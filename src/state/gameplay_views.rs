@@ -33,9 +33,12 @@ impl GameplayState {
                 }
             }
             ViewMode::CityMap => {
-                if let Some(action) =
-                    crate::ui::city_view::draw_city_map(&self.city, assets, &self.narrative_events)
-                {
+                if let Some(action) = crate::ui::city_view::draw_city_map(
+                    &self.city,
+                    self.selected_neighborhood_id,
+                    assets,
+                    &self.narrative_events,
+                ) {
                     self.handle_city_action(action);
                 }
 
@@ -43,6 +46,7 @@ impl GameplayState {
                     &self.city,
                     self.city.active_building_index,
                     self.city_page,
+                    self.selected_neighborhood_id,
                     assets,
                 ) {
                     self.handle_city_action(action);
@@ -56,6 +60,7 @@ impl GameplayState {
                     &self.city.neighborhoods,
                     self.funds.balance,
                     self.market_page,
+                    self.selected_neighborhood_id,
                     assets,
                 ) {
                     self.handle_city_action(action);

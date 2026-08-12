@@ -5,7 +5,7 @@ use crate::ui::theme::{self, scale, Tone};
 use macroquad::prelude::*;
 
 use super::city_view::CityMapAction;
-use macroquad_toolkit::ui::{draw_surface, draw_ui_text_ex, SurfaceStyle};
+use macroquad_toolkit::ui::{draw_surface, draw_ui_text_ex, truncate_text_to_width, SurfaceStyle};
 
 pub(super) fn draw_listing_card(
     listing: &PropertyListing,
@@ -25,7 +25,7 @@ pub(super) fn draw_listing_card(
 
     draw_listing_background(x, y, width, height, hovered, neighborhood);
     draw_neighborhood_preview(neighborhood, x, y, width, assets);
-    draw_listing_text(listing, neighborhood, x, y);
+    draw_listing_text(listing, neighborhood, x, y, width);
     draw_listing_purchase(listing, x, y, width, height, player_funds)
 }
 
@@ -124,9 +124,11 @@ fn draw_listing_text(
     neighborhood: Option<&Neighborhood>,
     x: f32,
     y: f32,
+    width: f32,
 ) {
+    let text_width = (width - 125.0).max(90.0);
     draw_ui_text_ex(
-        &listing.name,
+        &truncate_text_to_width(&listing.name, text_width, scale::HEADING),
         x + 15.0,
         y + 22.0,
         text_params(scale::HEADING as u16, colors::TEXT_BRIGHT()),
@@ -134,17 +136,21 @@ fn draw_listing_text(
 
     let location_name = neighborhood.map(|n| n.name.as_str()).unwrap_or("Unknown");
     draw_ui_text_ex(
-        location_name,
+        &truncate_text_to_width(location_name, text_width, scale::LABEL),
         x + 15.0,
         y + 40.0,
         text_params(scale::LABEL as u16, colors::TEXT_DIM()),
     );
     draw_ui_text_ex(
-        &format!(
-            "{} floors, {} units | {} condition",
-            listing.num_floors,
-            listing.total_units(),
-            listing.condition.name()
+        &truncate_text_to_width(
+            &format!(
+                "{} floors, {} units | {} condition",
+                listing.num_floors,
+                listing.total_units(),
+                listing.condition.name()
+            ),
+            text_width,
+            scale::CAPTION,
         ),
         x + 15.0,
         y + 58.0,

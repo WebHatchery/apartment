@@ -617,8 +617,19 @@ impl GameplayState {
         use crate::ui::city_view::CityMapAction;
 
         match action {
-            CityMapAction::SelectNeighborhood(_id) => {
-                // Could show neighborhood details
+            CityMapAction::SelectNeighborhood(id) => {
+                self.selected_neighborhood_id = if self.selected_neighborhood_id == Some(id) {
+                    None
+                } else {
+                    Some(id)
+                };
+                self.city_page = 0;
+                self.market_page = 0;
+            }
+            CityMapAction::ClearNeighborhood => {
+                self.selected_neighborhood_id = None;
+                self.city_page = 0;
+                self.market_page = 0;
             }
             CityMapAction::SelectBuilding(index) => {
                 self.save_building_to_city();

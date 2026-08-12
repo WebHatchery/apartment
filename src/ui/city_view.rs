@@ -22,6 +22,7 @@ fn text_params(font_size: f32, color: Color) -> TextParams<'static> {
 /// Draw the city map showing all neighborhoods
 pub fn draw_city_map(
     city: &City,
+    selected_neighborhood_id: Option<u32>,
     assets: &AssetManager,
     narrative: &NarrativeEventSystem,
 ) -> Option<CityMapAction> {
@@ -50,6 +51,7 @@ pub fn draw_city_map(
 
         if let Some(a) = draw_neighborhood_cell(
             neighborhood,
+            selected_neighborhood_id == Some(neighborhood.id),
             x,
             y,
             cell_width,
@@ -68,6 +70,7 @@ pub fn draw_city_map(
 /// Draw a single neighborhood cell
 fn draw_neighborhood_cell(
     neighborhood: &Neighborhood,
+    selected: bool,
     x: f32,
     y: f32,
     width: f32,
@@ -125,7 +128,27 @@ fn draw_neighborhood_cell(
         draw_rectangle(x, y, width, height, Color::new(0.0, 0.0, 0.0, 0.5));
     }
 
-    draw_rectangle_lines(x, y, width, height, 2.0, base_color);
+    draw_rectangle_lines(
+        x,
+        y,
+        width,
+        height,
+        if selected { 5.0 } else { 2.0 },
+        if selected {
+            colors::ACCENT()
+        } else {
+            base_color
+        },
+    );
+    if selected {
+        draw_rectangle(x + width - 78.0, y + 8.0, 70.0, 22.0, colors::ACCENT());
+        draw_ui_text_ex(
+            "FILTERED",
+            x + width - 71.0,
+            y + 23.0,
+            text_params(scale::CAPTION, colors::TEXT_BRIGHT()),
+        );
+    }
 
     // Neighborhood name
     draw_ui_text_ex(
@@ -230,6 +253,7 @@ pub fn draw_portfolio_panel(
     city: &City,
     selected_building: usize,
     requested_page: usize,
+    selected_neighborhood_id: Option<u32>,
     assets: &AssetManager,
 ) -> Option<CityMapAction> {
     let panel_x = screen_width() * 0.5 + 10.0;
@@ -237,19 +261,46 @@ pub fn draw_portfolio_panel(
     let panel_width = screen_width() * 0.5 - 30.0;
     let panel_height = screen_height() - panel_y - layout::FOOTER_HEIGHT() - 16.0;
 
+    let selected_name = selected_neighborhood_id.and_then(|id| {
+        city.neighborhoods
+            .iter()
+            .find(|neighborhood| neighborhood.id == id)
+            .map(|neighborhood| neighborhood.name.as_str())
+    });
+    let title = selected_name
+        .map(|name| format!("Properties · {}", name))
+        .unwrap_or_else(|| "Your Properties".to_string());
     let content = draw_panel(
         Rect::new(panel_x, panel_y, panel_width, panel_height),
-        "Your Properties",
+        &title,
     );
 
     let mut action = None;
     let item_height = 80.0;
-    let properties = city.buildings_with_info();
+    let properties: Vec<_> = city
+        .buildings_with_info()
+        .into_iter()
+        .filter(|(index, _, _)| {
+            selected_neighborhood_id.is_none_or(|id| {
+                city.neighborhood_for_building(*index)
+                    .is_some_and(|neighborhood| neighborhood.id == id)
+            })
+        })
+        .collect();
     let controls_height = 94.0;
     let page_size = (((content.h - controls_height) / item_height).floor() as usize).max(1);
     let page_count = properties.len().div_ceil(page_size).max(1);
     let page = requested_page.min(page_count - 1);
     let mut y = content.y;
+
+    if properties.is_empty() {
+        draw_ui_text_ex(
+            "No properties here yet.",
+            content.x,
+            y + 24.0,
+            text_params(scale::BODY, colors::TEXT_DIM()),
+        );
+    }
 
     for (index, building, neighborhood_name) in properties
         .iter()
@@ -363,7 +414,7 @@ pub fn draw_portfolio_panel(
     }
 
     let pager_y = content.bottom() - 40.0;
-    let acquire_y = if page_count > 1 {
+    let acquire_y = if page_count > 1 || selected_neighborhood_id.is_some() {
         pager_y - 48.0
     } else {
         pager_y
@@ -377,7 +428,11 @@ pub fn draw_portfolio_panel(
     ) {
         action = Some(CityMapAction::OpenMarket);
     }
-    if page_count > 1 {
+    if selected_neighborhood_id.is_some() {
+        if draw_button_mini("Show all properties", content.x, pager_y, content.w, 40.0) {
+            action = Some(CityMapAction::ClearNeighborhood);
+        }
+    } else if page_count > 1 {
         let gap = 8.0;
         let button_w = (content.w - gap) * 0.5;
         if page > 0 && draw_button_mini("Back", content.x, pager_y, button_w, 40.0) {
@@ -399,6 +454,7 @@ pub fn draw_market_panel(
     neighborhoods: &[Neighborhood],
     player_funds: i32,
     requested_page: usize,
+    selected_neighborhood_id: Option<u32>,
     assets: &AssetManager,
 ) -> Option<CityMapAction> {
     let panel_x = 20.0;
@@ -406,10 +462,24 @@ pub fn draw_market_panel(
     let panel_width = screen_width() - 40.0;
     let panel_height = screen_height() - panel_y - layout::FOOTER_HEIGHT() - 16.0;
 
+    let selected_name = selected_neighborhood_id.and_then(|id| {
+        neighborhoods
+            .iter()
+            .find(|neighborhood| neighborhood.id == id)
+            .map(|neighborhood| neighborhood.name.as_str())
+    });
+    let title = selected_name
+        .map(|name| format!("Market · {}", name))
+        .unwrap_or_else(|| "Property Market".to_string());
     let content = draw_panel(
         Rect::new(panel_x, panel_y, panel_width, panel_height),
-        "Property Market",
+        &title,
     );
+    let filtered: Vec<_> = listings
+        .iter()
+        .copied()
+        .filter(|listing| selected_neighborhood_id.is_none_or(|id| listing.neighborhood_id == id))
+        .collect();
 
     // Budget display
     let budget_text = format!("Your Budget: ${}", player_funds);
@@ -430,10 +500,10 @@ pub fn draw_market_panel(
     let rows_per_page =
         (((controls_y - start_y - 10.0) / (listing_height + 15.0)).floor() as usize).max(1);
     let page_size = rows_per_page * 2;
-    let page_count = listings.len().div_ceil(page_size).max(1);
+    let page_count = filtered.len().div_ceil(page_size).max(1);
     let page = requested_page.min(page_count - 1);
 
-    for (i, listing) in listings
+    for (i, listing) in filtered
         .iter()
         .skip(page * page_size)
         .take(page_size)
@@ -463,6 +533,11 @@ pub fn draw_market_panel(
     if draw_button_icon("Back to city", content.x, controls_y, 150.0, 40.0) {
         action = Some(CityMapAction::CloseMarket);
     }
+    if selected_neighborhood_id.is_some()
+        && draw_button_mini("All districts", content.x + 158.0, controls_y, 130.0, 40.0)
+    {
+        action = Some(CityMapAction::ClearNeighborhood);
+    }
     if page_count > 1 {
         let pager_w = (content.w - 170.0).min(250.0);
         let button_w = (pager_w - 8.0) * 0.5;
@@ -484,6 +559,7 @@ pub fn draw_market_panel(
 #[derive(Clone, Debug)]
 pub enum CityMapAction {
     SelectNeighborhood(u32),
+    ClearNeighborhood,
     SelectBuilding(usize),
     OpenMarket,
     CloseMarket,
