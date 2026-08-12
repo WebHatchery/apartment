@@ -24,7 +24,7 @@ pub(super) fn draw_listing_card(
         .find(|n| n.id == listing.neighborhood_id);
 
     draw_listing_background(x, y, width, height, hovered, neighborhood);
-    draw_neighborhood_preview(neighborhood, x, y, width, assets);
+    draw_listing_preview(neighborhood, x, y, width, assets);
     draw_listing_text(listing, neighborhood, x, y, width);
     draw_listing_purchase(listing, x, y, width, height, player_funds)
 }
@@ -87,7 +87,7 @@ fn draw_listing_background(
     draw_surface(Rect::new(x, y, width, height), &style);
 }
 
-fn draw_neighborhood_preview(
+fn draw_listing_preview(
     neighborhood: Option<&Neighborhood>,
     x: f32,
     y: f32,
@@ -98,14 +98,22 @@ fn draw_neighborhood_preview(
         return;
     };
 
-    let texture_id = match neighborhood.neighborhood_type {
-        NeighborhoodType::Downtown => "neighborhood_downtown",
-        NeighborhoodType::Industrial => "neighborhood_industrial",
-        NeighborhoodType::Suburbs => "neighborhood_suburbs",
-        NeighborhoodType::Historic => "neighborhood_historic",
-    };
-
-    if let Some(texture) = assets.get_texture(texture_id) {
+    if assets.get_texture("property_facades").is_some() {
+        draw_property_facade(
+            &neighborhood.neighborhood_type,
+            Rect::new(x + width - 100.0, y + 10.0, 90.0, 60.0),
+            assets,
+        );
+    } else {
+        let texture_id = match neighborhood.neighborhood_type {
+            NeighborhoodType::Downtown => "neighborhood_downtown",
+            NeighborhoodType::Industrial => "neighborhood_industrial",
+            NeighborhoodType::Suburbs => "neighborhood_suburbs",
+            NeighborhoodType::Historic => "neighborhood_historic",
+        };
+        let Some(texture) = assets.get_texture(texture_id) else {
+            return;
+        };
         draw_texture_ex(
             texture,
             x + width - 100.0,
@@ -117,6 +125,35 @@ fn draw_neighborhood_preview(
             },
         );
     }
+}
+
+pub(super) fn draw_property_facade(
+    neighborhood_type: &NeighborhoodType,
+    rect: Rect,
+    assets: &AssetManager,
+) {
+    let Some(texture) = assets.get_texture("property_facades") else {
+        return;
+    };
+    let (col, row) = match neighborhood_type {
+        NeighborhoodType::Downtown => (0.0, 0.0),
+        NeighborhoodType::Industrial => (1.0, 0.0),
+        NeighborhoodType::Historic => (0.0, 1.0),
+        NeighborhoodType::Suburbs => (1.0, 1.0),
+    };
+    let tile_w = texture.width() * 0.5;
+    let tile_h = texture.height() * 0.5;
+    draw_texture_ex(
+        texture,
+        rect.x,
+        rect.y,
+        WHITE,
+        DrawTextureParams {
+            dest_size: Some(vec2(rect.w, rect.h)),
+            source: Some(Rect::new(col * tile_w, row * tile_h, tile_w, tile_h)),
+            ..Default::default()
+        },
+    );
 }
 
 fn draw_listing_text(

@@ -53,6 +53,7 @@ impl AssetManager {
             "design_cozy",
             // Building Elements
             "building_exterior",
+            "property_facades",
             "hallway",
             "apartment_door",
             "window_street",
@@ -122,6 +123,7 @@ impl AssetManager {
                             | "tenant_face_emotions"
                             | "tenant_face_emotions_alt"
                             | "npc_uncle_artie"
+                            | "property_facades"
                     ) {
                     FilterMode::Linear
                 } else {

@@ -1,5 +1,5 @@
 use super::city_view_widgets::{
-    draw_button_icon, draw_button_mini, draw_listing_card, draw_progress_bar,
+    draw_button_icon, draw_button_mini, draw_listing_card, draw_progress_bar, draw_property_facade,
 };
 use crate::assets::AssetManager;
 use crate::city::{City, Neighborhood, NeighborhoodType, PropertyListing};
@@ -318,12 +318,21 @@ pub fn draw_portfolio_panel(
             is_selected,
         );
 
-        let thumbnail_w = if assets.get_texture("building_exterior").is_some() {
+        let neighborhood = city.neighborhood_for_building(index);
+        let thumbnail_w = if assets.get_texture("property_facades").is_some()
+            || assets.get_texture("building_exterior").is_some()
+        {
             64.0
         } else {
             0.0
         };
-        if let Some(texture) = assets.get_texture("building_exterior") {
+        if let Some(neighborhood) = neighborhood {
+            draw_property_facade(
+                &neighborhood.neighborhood_type,
+                Rect::new(item_x + 8.0, y + 8.0, 56.0, 59.0),
+                assets,
+            );
+        } else if let Some(texture) = assets.get_texture("building_exterior") {
             draw_texture_ex(
                 texture,
                 item_x + 8.0,

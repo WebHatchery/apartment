@@ -91,6 +91,12 @@
                     "prompt": "2D pixel art front view of a 3-story apartment building exterior, slightly worn brick facade, multiple windows showing different apartments, fire escape, entrance door, street-level view, urban setting, warm muted colors, apartment management game style, cozy illustration style"
                 },
                 {
+                    "id": "property_facades",
+                    "filename": "property_facades.png",
+                    "resolution": "1254x1254",
+                    "prompt": "Clean 2x2 sprite atlas of four distinct crop-safe apartment facades: downtown brick mid-rise with blue awnings, industrial loft with water tower and fire escape, plum historic rowhouse with bay windows, and leafy tan suburban garden apartment; front three-quarter view, charcoal dusk background, amber windows, terracotta cream teal and plum palette, no text"
+                },
+                {
                     "id": "hallway",
                     "filename": "hallway.png",
                     "resolution": "512x256",

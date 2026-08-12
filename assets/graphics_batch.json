@@ -71,6 +71,13 @@
             "Height": 512
         },
         {
+            "id": "property_facades",
+            "title": "Property Facade Atlas",
+            "description": "A 2x2 atlas of crop-safe downtown, industrial, historic, and suburban apartment facades on a charcoal dusk background, with warm lit windows and no text.",
+            "Width": 1254,
+            "Height": 1254
+        },
+        {
             "id": "hallway",
             "title": "Hallway",
             "description": "2D pixel art apartment hallway interior view, doors to units on both sides, overhead lighting, worn carpet, mailbox area, slightly dated decor, warm muted colors suggesting age and character, apartment management game style, cozy illustration style",
