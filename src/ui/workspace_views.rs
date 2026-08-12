@@ -3,12 +3,13 @@
 use macroquad::prelude::*;
 use macroquad_toolkit::ui::{draw_ui_text, format_money, truncate_text_to_width};
 
+use crate::assets::AssetManager;
 use crate::building::MarketingType;
 use crate::economy::{OperatingCosts, TransactionType};
 use crate::state::GameplayState;
 
 use super::theme::{color, scale, space, Tone};
-use super::widgets::{button_at, draw_card, draw_panel, kv_row, line_height, wrap};
+use super::widgets::{button_at, draw_card, draw_panel, kv_row, line_height};
 use super::UiAction;
 
 fn content_rect() -> Rect {
@@ -41,7 +42,7 @@ fn draw_title(rect: Rect, title: &str, subtitle: &str) -> f32 {
     rect.y + scale::TITLE + line_height(scale::BODY) + space::LG
 }
 
-pub fn draw_tenants_view(state: &GameplayState) -> Option<UiAction> {
+pub fn draw_tenants_view(state: &GameplayState, assets: &AssetManager) -> Option<UiAction> {
     let rect = content_rect();
     let active_id = state.active_building_id();
     let tenants: Vec<_> = state
@@ -94,27 +95,30 @@ pub fn draw_tenants_view(state: &GameplayState) -> Option<UiAction> {
             color::TEXT_DIM(),
         );
     }
-    let row_h = 56.0;
+    let row_h = 64.0;
     let visible = ((roster_inner.h / row_h).floor() as usize).max(1);
     for tenant in tenants.iter().take(visible) {
         let row = Rect::new(roster_inner.x, y, roster_inner.w, row_h - space::XS);
         draw_card(row, false);
+        let portrait = Rect::new(row.x + space::SM, row.y + space::SM, 44.0, 44.0);
+        super::resident_sprite::draw_face_portrait(tenant, portrait, assets);
+        let text_x = portrait.right() + space::SM;
         let unit = tenant
             .apartment_id
             .and_then(|id| state.building.get_apartment(id))
             .map(|apartment| apartment.unit_number.as_str())
             .unwrap_or("—");
-        let name = truncate_text_to_width(&tenant.name, row.w * 0.42, scale::BODY);
+        let name = truncate_text_to_width(&tenant.name, row.w * 0.34, scale::BODY);
         draw_ui_text(
             &name,
-            row.x + space::MD,
+            text_x,
             row.y + 21.0,
             scale::BODY,
             color::TEXT_BRIGHT(),
         );
         draw_ui_text(
             &format!("{} · Unit {}", tenant.archetype.name(), unit),
-            row.x + space::MD,
+            text_x,
             row.y + 42.0,
             scale::LABEL,
             color::TEXT_DIM(),
@@ -314,7 +318,16 @@ fn draw_ledger(state: &GameplayState, rect: Rect) {
         color::TEXT_DIM(),
     );
     y += line_height(scale::LABEL) + space::SM;
-    for transaction in state.funds.transactions.iter().rev().take(5) {
+    let transaction_rows = ((inner.bottom() - y) / line_height(scale::LABEL))
+        .floor()
+        .max(0.0) as usize;
+    for transaction in state
+        .funds
+        .transactions
+        .iter()
+        .rev()
+        .take(transaction_rows.min(5))
+    {
         let kind = transaction_type_name(&transaction.transaction_type);
         let text = format!(
             "M{} · {} · {} {:+}",
@@ -337,6 +350,7 @@ fn draw_ledger(state: &GameplayState, rect: Rect) {
 
 fn draw_policies(state: &GameplayState, rect: Rect) -> Option<UiAction> {
     let inner = draw_panel(rect, "Operations");
+    let show_explanations = inner.h >= 340.0;
     let mut y = inner.y;
     draw_ui_text(
         "MARKETING",
@@ -422,14 +436,18 @@ fn draw_policies(state: &GameplayState, rect: Rect) -> Option<UiAction> {
         return Some(UiAction::StartOpenHouse);
     }
     y += 45.0;
-    draw_ui_text(
-        "Doubles applicant volume for the displayed duration.",
-        inner.x,
-        y + scale::LABEL,
-        scale::LABEL,
-        color::TEXT_DIM(),
-    );
-    y += line_height(scale::LABEL) + space::MD;
+    if show_explanations {
+        draw_ui_text(
+            "Doubles applicant volume for the displayed duration.",
+            inner.x,
+            y + scale::LABEL,
+            scale::LABEL,
+            color::TEXT_DIM(),
+        );
+        y += line_height(scale::LABEL) + space::MD;
+    } else {
+        y += space::SM;
+    }
 
     draw_ui_text(
         "BUILDING POLICIES",
@@ -463,17 +481,21 @@ fn draw_policies(state: &GameplayState, rect: Rect) -> Option<UiAction> {
         });
     }
     y += 45.0;
-    draw_ui_text(
-        &format!(
-            "Included utilities add {} happiness for every resident.",
-            state.config.staff_effects.utilities_happiness_bonus
-        ),
-        inner.x,
-        y + scale::LABEL,
-        scale::LABEL,
-        color::TEXT_DIM(),
-    );
-    y += line_height(scale::LABEL) + space::SM;
+    if show_explanations {
+        draw_ui_text(
+            &format!(
+                "Included utilities add {} happiness for every resident.",
+                state.config.staff_effects.utilities_happiness_bonus
+            ),
+            inner.x,
+            y + scale::LABEL,
+            scale::LABEL,
+            color::TEXT_DIM(),
+        );
+        y += line_height(scale::LABEL) + space::SM;
+    } else {
+        y += space::SM;
+    }
     let insurance_cost = OperatingCosts::calculate_insurance(
         &policy_preview(&state.building, state.building.utilities_included, true),
         &state.config.operating_costs,
@@ -498,19 +520,21 @@ fn draw_policies(state: &GameplayState, rect: Rect) -> Option<UiAction> {
         });
     }
     y += 45.0;
-    draw_ui_text(
-        &format!(
-            "Insurance pays {}% of emergency repair bills.",
-            state
-                .config
-                .critical_failures
-                .insurance_cost_reduction_percent
-        ),
-        inner.x,
-        y + scale::LABEL,
-        scale::LABEL,
-        color::TEXT_DIM(),
-    );
+    if show_explanations {
+        draw_ui_text(
+            &format!(
+                "Insurance pays {}% of emergency repair bills.",
+                state
+                    .config
+                    .critical_failures
+                    .insurance_cost_reduction_percent
+            ),
+            inner.x,
+            y + scale::LABEL,
+            scale::LABEL,
+            color::TEXT_DIM(),
+        );
+    }
     None
 }
 
@@ -551,196 +575,4 @@ fn transaction_type_name(kind: &TransactionType) -> &'static str {
         TransactionType::InspectionFine => "Fine",
         TransactionType::Grant => "Grant",
     }
-}
-
-pub fn draw_inbox_view(state: &GameplayState) -> Option<UiAction> {
-    let rect = content_rect();
-    let pending_dialogues = state.dialogue_system.pending_dialogues();
-    let body_y = draw_title(
-        rect,
-        "Inbox",
-        &format!(
-            "{} unread letters · {} conversations waiting",
-            state.mailbox.unread_count(),
-            pending_dialogues.len()
-        ),
-    );
-    let gap = space::LG;
-    let list_w = (rect.w * 0.34).clamp(260.0, 400.0);
-    let list_rect = Rect::new(rect.x, body_y, list_w, rect.bottom() - body_y);
-    let detail_rect = Rect::new(
-        list_rect.right() + gap,
-        body_y,
-        rect.right() - list_rect.right() - gap,
-        list_rect.h,
-    );
-    let list = draw_panel(list_rect, "Letters");
-    let selected_id = state
-        .selected_mail_id
-        .or_else(|| state.mailbox.items.last().map(|item| item.id));
-    let mut y = list.y;
-    let page_size = (((list.h - 38.0) / 53.0).floor() as usize).max(1);
-    let page_count = state.mailbox.items.len().max(1).div_ceil(page_size);
-    let page = state.inbox_page.min(page_count - 1);
-    for item in state
-        .mailbox
-        .recent(state.mailbox.items.len())
-        .into_iter()
-        .skip(page * page_size)
-        .take(page_size)
-    {
-        let row = Rect::new(list.x, y, list.w, 48.0);
-        draw_card(row, selected_id == Some(item.id));
-        let marker = if item.read { "" } else { "• " };
-        let subject = truncate_text_to_width(
-            &format!("{}{} {}", marker, item.mail_type.icon(), item.subject),
-            row.w - space::MD * 2.0,
-            scale::LABEL,
-        );
-        draw_ui_text(
-            &subject,
-            row.x + space::MD,
-            row.y + 19.0,
-            scale::LABEL,
-            if item.read {
-                color::TEXT_DIM()
-            } else {
-                color::TEXT_BRIGHT()
-            },
-        );
-        draw_ui_text(
-            &truncate_text_to_width(
-                &format!("{} · Month {}", item.sender, item.month_received),
-                row.w - space::MD * 2.0,
-                scale::CAPTION,
-            ),
-            row.x + space::MD,
-            row.y + 38.0,
-            scale::CAPTION,
-            color::TEXT_DIM(),
-        );
-        if row.contains(Vec2::from(mouse_position())) && is_mouse_button_released(MouseButton::Left)
-        {
-            return Some(UiAction::OpenMailItem { mail_id: item.id });
-        }
-        y += 53.0;
-    }
-    let pager_y = list.bottom() - 42.0;
-    let pager_w = (list.w - 92.0 - space::SM * 2.0) / 2.0;
-    if button_at(
-        Rect::new(list.x, pager_y, pager_w, 40.0),
-        "Prev",
-        page > 0,
-        Tone::Secondary,
-    ) {
-        return Some(UiAction::SetInboxPage { page: page - 1 });
-    }
-    let page_label = format!("{}/{}", page + 1, page_count);
-    draw_ui_text(
-        &page_label,
-        list.x + pager_w + space::SM + 28.0,
-        pager_y + 20.0,
-        scale::LABEL,
-        color::TEXT_DIM(),
-    );
-    if button_at(
-        Rect::new(list.right() - pager_w, pager_y, pager_w, 40.0),
-        "Next",
-        page + 1 < page_count,
-        Tone::Secondary,
-    ) {
-        return Some(UiAction::SetInboxPage { page: page + 1 });
-    }
-    let detail = draw_panel(detail_rect, "Reading room");
-    let dialogue_h = if pending_dialogues.is_empty() {
-        0.0
-    } else {
-        (detail.h * 0.44).max(150.0)
-    };
-    let mail_h = detail.h - dialogue_h - if dialogue_h > 0.0 { space::LG } else { 0.0 };
-    if let Some(item) =
-        selected_id.and_then(|id| state.mailbox.items.iter().find(|item| item.id == id))
-    {
-        draw_ui_text(
-            &truncate_text_to_width(&item.subject, detail.w, scale::HEADING),
-            detail.x,
-            detail.y + scale::HEADING,
-            scale::HEADING,
-            color::TEXT_BRIGHT(),
-        );
-        draw_ui_text(
-            &format!("From {} · Month {}", item.sender, item.month_received),
-            detail.x,
-            detail.y + scale::HEADING + line_height(scale::LABEL),
-            scale::LABEL,
-            color::TEXT_DIM(),
-        );
-        let mut my = detail.y + line_height(scale::HEADING) + line_height(scale::LABEL) + space::SM;
-        for line in wrap(&item.body, detail.w, scale::BODY)
-            .iter()
-            .take(((mail_h - 58.0) / line_height(scale::BODY)).max(1.0) as usize)
-        {
-            draw_ui_text(line, detail.x, my + scale::BODY, scale::BODY, color::TEXT());
-            my += line_height(scale::BODY);
-        }
-    } else {
-        draw_ui_text(
-            "No mail yet.",
-            detail.x,
-            detail.y + scale::BODY,
-            scale::BODY,
-            color::TEXT_DIM(),
-        );
-    }
-    if let Some(dialogue) = pending_dialogues.first() {
-        let dy = detail.y + mail_h + space::LG;
-        draw_ui_text(
-            "CONVERSATION NEEDS A RESPONSE",
-            detail.x,
-            dy + scale::LABEL,
-            scale::LABEL,
-            color::WARNING(),
-        );
-        draw_ui_text(
-            &truncate_text_to_width(&dialogue.headline, detail.w, scale::BODY),
-            detail.x,
-            dy + line_height(scale::LABEL) + scale::BODY,
-            scale::BODY,
-            color::TEXT_BRIGHT(),
-        );
-        let desc_y = dy + line_height(scale::LABEL) + line_height(scale::BODY);
-        draw_ui_text(
-            &truncate_text_to_width(&dialogue.description, detail.w, scale::LABEL),
-            detail.x,
-            desc_y + scale::LABEL,
-            scale::LABEL,
-            color::TEXT_DIM(),
-        );
-        let button_y = desc_y + line_height(scale::LABEL) + space::SM;
-        let count = dialogue.choices.len().max(1);
-        let button_w = (detail.w - space::SM * (count.saturating_sub(1)) as f32) / count as f32;
-        for (index, choice) in dialogue.choices.iter().enumerate() {
-            if button_at(
-                Rect::new(
-                    detail.x + index as f32 * (button_w + space::SM),
-                    button_y,
-                    button_w,
-                    40.0,
-                ),
-                &truncate_text_to_width(&choice.text, button_w - space::MD, scale::LABEL),
-                true,
-                if index == 0 {
-                    Tone::Primary
-                } else {
-                    Tone::Secondary
-                },
-            ) {
-                return Some(UiAction::ResolveDialogue {
-                    dialogue_id: dialogue.id,
-                    choice_index: index,
-                });
-            }
-        }
-    }
-    None
 }

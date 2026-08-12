@@ -103,9 +103,8 @@ fn draw_neighborhood_cell(
     let texture_id = match neighborhood.neighborhood_type {
         NeighborhoodType::Downtown => "neighborhood_downtown",
         NeighborhoodType::Industrial => "neighborhood_industrial",
-        NeighborhoodType::Suburbs => "neighborhood_residential", // Suburbs maps to residential graphic
-        NeighborhoodType::Historic => "neighborhood_university", // Fallback or maybe we should have a historic one? Let's use university graphic for historic for now or residential
-                                                                 // _ => "neighborhood_residential",
+        NeighborhoodType::Suburbs => "neighborhood_suburbs",
+        NeighborhoodType::Historic => "neighborhood_historic",
     };
 
     if let Some(tex) = assets.get_texture(texture_id) {

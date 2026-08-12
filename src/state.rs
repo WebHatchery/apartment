@@ -23,6 +23,7 @@ pub mod mission_system;
 pub mod tutorial_system; // Tutorial logic // Mission logic
 
 pub use gameplay::GameplayState;
+pub(crate) use gameplay::ViewMode;
 pub use menu::MenuState;
 
 pub enum GameState {

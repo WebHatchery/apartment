@@ -35,7 +35,7 @@ fn default_floating_text_layer() -> FloatingTextLayer {
 
 /// View mode for the gameplay screen
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
-pub enum ViewMode {
+pub(crate) enum ViewMode {
     #[default]
     Building, // Current single-building view
     Tenants,

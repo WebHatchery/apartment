@@ -37,7 +37,7 @@ impl GameplayState {
                 self.draw_building_mode(assets);
             }
             ViewMode::Tenants => {
-                if let Some(action) = crate::ui::workspace_views::draw_tenants_view(self) {
+                if let Some(action) = crate::ui::workspace_views::draw_tenants_view(self, assets) {
                     self.pending_actions.push(action);
                 }
             }
@@ -74,12 +74,12 @@ impl GameplayState {
                 }
             }
             ViewMode::Mail => {
-                if let Some(action) = crate::ui::workspace_views::draw_inbox_view(self) {
+                if let Some(action) = crate::ui::workspace_inbox::draw_inbox_view(self) {
                     self.pending_actions.push(action);
                 }
             }
             ViewMode::Tasks => {
-                if let Some(action) = crate::ui::workspace_tasks::draw_tasks_view(self) {
+                if let Some(action) = crate::ui::workspace_tasks::draw_tasks_view(self, assets) {
                     self.pending_actions.push(action);
                 }
             }

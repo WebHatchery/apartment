@@ -21,18 +21,6 @@ pub enum MailType {
 }
 
 impl MailType {
-    pub fn icon(&self) -> &'static str {
-        match self {
-            MailType::TenantLetter { .. } => "📬",
-            MailType::CityNotice => "🏛️",
-            MailType::Financial => "💰",
-            MailType::Advertisement => "📰",
-            MailType::News => "📰",
-            MailType::Personal => "💌",
-            MailType::Official => "📋",
-        }
-    }
-
     #[cfg(test)]
     pub fn priority(&self) -> i32 {
         match self {

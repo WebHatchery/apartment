@@ -3,6 +3,7 @@
 use macroquad::prelude::*;
 use macroquad_toolkit::ui::{draw_ui_text, format_money, truncate_text_to_width};
 
+use crate::assets::AssetManager;
 use crate::narrative::{MissionGoal, MissionReward, MissionStatus, TenantRequest};
 use crate::state::GameplayState;
 
@@ -22,7 +23,7 @@ fn content_rect() -> Rect {
     )
 }
 
-pub fn draw_tasks_view(state: &GameplayState) -> Option<UiAction> {
+pub fn draw_tasks_view(state: &GameplayState, assets: &AssetManager) -> Option<UiAction> {
     let rect = content_rect();
     let requests: Vec<_> = state
         .tenant_stories
@@ -146,28 +147,40 @@ pub fn draw_tasks_view(state: &GameplayState) -> Option<UiAction> {
         );
     }
     for (tenant_id, request) in requests.iter().take(4) {
-        let tenant_name = state
-            .tenants
-            .iter()
-            .find(|tenant| tenant.id == *tenant_id)
-            .map(|tenant| tenant.name.as_str())
-            .unwrap_or("Former tenant");
+        let tenant = state.tenants.iter().find(|tenant| tenant.id == *tenant_id);
+        let tenant_name = tenant.map_or("Former tenant", |tenant| tenant.name.as_str());
+        let portrait_size = 44.0;
+        let text_x = if let Some(tenant) = tenant {
+            super::resident_sprite::draw_face_portrait(
+                tenant,
+                Rect::new(request_panel.x, ry, portrait_size, portrait_size),
+                assets,
+            );
+            request_panel.x + portrait_size + space::SM
+        } else {
+            request_panel.x
+        };
         draw_ui_text(
-            &truncate_text_to_width(tenant_name, request_panel.w, scale::BODY),
-            request_panel.x,
+            &truncate_text_to_width(tenant_name, request_panel.right() - text_x, scale::BODY),
+            text_x,
             ry + scale::BODY,
             scale::BODY,
             color::TEXT_BRIGHT(),
         );
         ry += line_height(scale::BODY);
         draw_ui_text(
-            &truncate_text_to_width(&request_text(request), request_panel.w, scale::LABEL),
-            request_panel.x,
+            &truncate_text_to_width(
+                &request_text(request),
+                request_panel.right() - text_x,
+                scale::LABEL,
+            ),
+            text_x,
             ry + scale::LABEL,
             scale::LABEL,
             color::TEXT_DIM(),
         );
-        ry += line_height(scale::LABEL) + space::SM;
+        ry = (ry + line_height(scale::LABEL) + space::SM)
+            .max(request_panel.y + portrait_size + space::SM);
         let bw = (request_panel.w - space::SM) / 2.0;
         if button_at(
             Rect::new(request_panel.x, ry, bw, 40.0),

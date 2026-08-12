@@ -16,9 +16,9 @@ pub mod notifications;
 mod stories;
 mod tutorial;
 
-pub use dialogue::DialogueSystem;
+pub use dialogue::{ActiveDialogue, DialogueSystem};
 pub use events::{NarrativeEvent, NarrativeEventSystem};
-pub use mail::Mailbox;
+pub use mail::{MailItem, MailType, Mailbox};
 pub use missions::{ActiveTaxBreak, MissionGoal, MissionManager, MissionReward, MissionStatus};
 pub use notifications::{NotificationCategory, NotificationManager, RelationshipChange};
 pub use stories::{LifeChangeType, StoryImpact, TenantRequest, TenantStory};

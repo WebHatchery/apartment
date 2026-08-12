@@ -21,7 +21,12 @@ param(
         "showcase",
         "unit_showcase",
         "hallway_showcase",
-        "applications_showcase"
+        "applications_showcase",
+        "tenants_showcase",
+        "finances_showcase",
+        "city_showcase",
+        "inbox_showcase",
+        "tasks_showcase"
     ),
     [int]$Frames = 150,
     [string]$OutputDir = "docs\verification",
