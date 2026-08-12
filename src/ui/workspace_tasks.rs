@@ -177,7 +177,7 @@ pub fn draw_tasks_view(state: &GameplayState, assets: &AssetManager) -> Option<U
             color::TEXT_DIM(),
         );
     }
-    let request_row_h = 108.0;
+    let request_row_h = 126.0;
     let request_needs_pager = requests.len() as f32 * request_row_h > request_panel.h;
     let request_pager_h = if request_needs_pager { 44.0 } else { 0.0 };
     let request_page_size =
@@ -221,7 +221,19 @@ pub fn draw_tasks_view(state: &GameplayState, assets: &AssetManager) -> Option<U
             scale::LABEL,
             color::TEXT_DIM(),
         );
-        ry = (ry + line_height(scale::LABEL) + space::SM)
+        ry += line_height(scale::LABEL);
+        draw_ui_text(
+            &truncate_text_to_width(
+                &request_outcomes(request),
+                request_panel.right() - text_x,
+                scale::CAPTION,
+            ),
+            text_x,
+            ry + scale::CAPTION,
+            scale::CAPTION,
+            color::WARNING(),
+        );
+        ry = (ry + line_height(scale::CAPTION) + space::SM)
             .max(request_panel.y + portrait_size + space::SM);
         let bw = (request_panel.w - space::SM) / 2.0;
         if button_at(
@@ -340,5 +352,23 @@ fn request_text(request: &TenantRequest) -> String {
         }
         TenantRequest::Modification { description } => format!("Modify the unit: {}", description),
         TenantRequest::Sublease => "Permission to sublease".to_string(),
+    }
+}
+
+fn request_outcomes(request: &TenantRequest) -> String {
+    match request {
+        TenantRequest::Pet { .. } => "Approve +15 happiness · Deny -10".to_string(),
+        TenantRequest::TemporaryGuest { .. } => "Approve +10 happiness · Deny -5".to_string(),
+        TenantRequest::HomeBusiness { business_type } => {
+            if business_type.to_lowercase().contains("music")
+                || business_type.to_lowercase().contains("drum")
+            {
+                "Approve +15 happiness, adds noise · Deny -8".to_string()
+            } else {
+                "Approve +15 happiness · Deny -8".to_string()
+            }
+        }
+        TenantRequest::Modification { .. } => "Approve +10 happiness · Deny -5".to_string(),
+        TenantRequest::Sublease => "Approve +5 happiness · Deny risks move-out".to_string(),
     }
 }
