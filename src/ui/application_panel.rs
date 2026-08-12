@@ -89,7 +89,7 @@ pub fn draw_application_panel(
         if page > 0
             && button_at(
                 Rect::new(content_x, controls_y, button_w, 40.0),
-                "Earlier",
+                "Previous applicant",
                 true,
                 Tone::Secondary,
             )
@@ -99,7 +99,7 @@ pub fn draw_application_panel(
         if page + 1 < page_count
             && button_at(
                 Rect::new(content_x + button_w + gap, controls_y, button_w, 40.0),
-                "More",
+                "Next applicant",
                 true,
                 Tone::Primary,
             )

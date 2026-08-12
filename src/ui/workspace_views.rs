@@ -157,7 +157,7 @@ pub fn draw_tenants_view(state: &GameplayState, assets: &AssetManager) -> Option
         if page > 0
             && button_at(
                 Rect::new(roster_inner.x, button_y, button_w, 40.0),
-                "Earlier",
+                "Previous resident",
                 true,
                 Tone::Secondary,
             )
@@ -167,7 +167,7 @@ pub fn draw_tenants_view(state: &GameplayState, assets: &AssetManager) -> Option
         if page + 1 < page_count
             && button_at(
                 Rect::new(roster_inner.x + button_w + gap, button_y, button_w, 40.0),
-                "More",
+                "Next resident",
                 true,
                 Tone::Primary,
             )

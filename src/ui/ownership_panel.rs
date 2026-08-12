@@ -121,7 +121,7 @@ pub fn draw_ownership_panel(
         let button_w = (pager_w - gap) / 2.0;
         if button_at(
             Rect::new(pager_x, footer_y, button_w, footer_h),
-            if dense { "Prev" } else { "Earlier" },
+            if dense { "Prev unit" } else { "Previous unit" },
             first > 0,
             Tone::Secondary,
         ) {
@@ -129,7 +129,7 @@ pub fn draw_ownership_panel(
         }
         if button_at(
             Rect::new(pager_x + button_w + gap, footer_y, button_w, footer_h),
-            if dense { "Next" } else { "More" },
+            "Next unit",
             first < max_first,
             Tone::Primary,
         ) {

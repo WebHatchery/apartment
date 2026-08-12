@@ -444,11 +444,17 @@ pub fn draw_portfolio_panel(
     } else if page_count > 1 {
         let gap = 8.0;
         let button_w = (content.w - gap) * 0.5;
-        if page > 0 && draw_button_mini("Back", content.x, pager_y, button_w, 40.0) {
+        if page > 0 && draw_button_mini("Previous properties", content.x, pager_y, button_w, 40.0) {
             action = Some(CityMapAction::SetPortfolioPage(page - 1));
         }
         if page + 1 < page_count
-            && draw_button_mini("Next", content.x + button_w + gap, pager_y, button_w, 40.0)
+            && draw_button_mini(
+                "Next properties",
+                content.x + button_w + gap,
+                pager_y,
+                button_w,
+                40.0,
+            )
         {
             action = Some(CityMapAction::SetPortfolioPage(page + 1));
         }
@@ -552,11 +558,17 @@ pub fn draw_market_panel(
         let pager_w = (content.w - 170.0).min(250.0);
         let button_w = (pager_w - 8.0) * 0.5;
         let pager_x = content.right() - pager_w;
-        if page > 0 && draw_button_mini("Back", pager_x, controls_y, button_w, 40.0) {
+        if page > 0 && draw_button_mini("Prev listings", pager_x, controls_y, button_w, 40.0) {
             action = Some(CityMapAction::SetMarketPage(page - 1));
         }
         if page + 1 < page_count
-            && draw_button_mini("Next", pager_x + button_w + 8.0, controls_y, button_w, 40.0)
+            && draw_button_mini(
+                "Next listings",
+                pager_x + button_w + 8.0,
+                controls_y,
+                button_w,
+                40.0,
+            )
         {
             action = Some(CityMapAction::SetMarketPage(page + 1));
         }

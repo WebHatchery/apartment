@@ -151,7 +151,7 @@ pub fn draw_tasks_view(state: &GameplayState, assets: &AssetManager) -> Option<U
         let button_w = (missions.w - gap) / 2.0;
         if button_at(
             Rect::new(missions.x, pager_y, button_w, 40.0),
-            "Earlier",
+            "Previous mission",
             page > 0,
             Tone::Secondary,
         ) {
@@ -159,7 +159,7 @@ pub fn draw_tasks_view(state: &GameplayState, assets: &AssetManager) -> Option<U
         }
         if button_at(
             Rect::new(missions.x + button_w + gap, pager_y, button_w, 40.0),
-            "More",
+            "Next mission",
             page + 1 < page_count,
             Tone::Primary,
         ) {
@@ -264,7 +264,7 @@ pub fn draw_tasks_view(state: &GameplayState, assets: &AssetManager) -> Option<U
         let button_w = (request_panel.w - gap) * 0.5;
         if button_at(
             Rect::new(request_panel.x, pager_y, button_w, 40.0),
-            "Earlier",
+            "Previous request",
             request_page > 0,
             Tone::Secondary,
         ) {
@@ -274,7 +274,7 @@ pub fn draw_tasks_view(state: &GameplayState, assets: &AssetManager) -> Option<U
         }
         if button_at(
             Rect::new(request_panel.x + button_w + gap, pager_y, button_w, 40.0),
-            "More",
+            "Next request",
             request_page + 1 < request_page_count,
             Tone::Primary,
         ) {
