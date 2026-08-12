@@ -9,19 +9,29 @@ use macroquad_toolkit::ui::{
 
 /// Draw a stat chip (optional icon + label) at `x`, vertically centered in the
 /// header. Returns the chip width so callers can flow chips without overlap.
+#[derive(Clone, Copy)]
+enum StatusIcon {
+    Cash,
+    Month,
+    Occupancy,
+    Net,
+}
+
 fn stat_chip(
     x: f32,
-    icon: Option<&Texture2D>,
+    icon: StatusIcon,
     label: &str,
     text_color: Color,
     header_h: f32,
+    assets: &AssetManager,
 ) -> f32 {
     let chip_h = 34.0;
     let chip_y = (header_h - chip_h) / 2.0;
     let compact = screen_width() < 1000.0;
     let icon_size = if compact { 0.0 } else { 20.0 };
     let text_w = measure_ui_text(label, None, scale::BODY as u16, 1.0).width;
-    let icon_w = if icon.is_some() && !compact {
+    let has_icon = assets.get_texture("status_icons").is_some();
+    let icon_w = if has_icon && !compact {
         icon_size + space::XS
     } else {
         0.0
@@ -33,17 +43,18 @@ fn stat_chip(
     draw_surface(Rect::new(x, chip_y, w, chip_h), &style);
 
     let mut cx = x + pad;
-    if let Some(tex) = icon.filter(|_| !compact) {
-        draw_texture_ex(
-            tex,
-            cx,
-            chip_y + (chip_h - icon_size) / 2.0,
-            WHITE,
-            DrawTextureParams {
-                dest_size: Some(Vec2::new(icon_size, icon_size)),
-                ..Default::default()
-            },
-        );
+    if !compact
+        && draw_status_icon(
+            icon,
+            Rect::new(
+                cx,
+                chip_y + (chip_h - icon_size) / 2.0,
+                icon_size,
+                icon_size,
+            ),
+            assets,
+        )
+    {
         cx += icon_size + space::XS;
     }
     draw_ui_text(
@@ -54,6 +65,39 @@ fn stat_chip(
         text_color,
     );
     w
+}
+
+fn draw_status_icon(icon: StatusIcon, rect: Rect, assets: &AssetManager) -> bool {
+    let Some(texture) = assets.get_texture("status_icons") else {
+        return false;
+    };
+    let (column, row) = match icon {
+        StatusIcon::Cash => (0.0, 0.0),
+        StatusIcon::Month => (1.0, 0.0),
+        StatusIcon::Occupancy => (0.0, 1.0),
+        StatusIcon::Net => (1.0, 1.0),
+    };
+    let tile_w = texture.width() * 0.5;
+    let tile_h = texture.height() * 0.5;
+    let inset_x = tile_w * 0.08;
+    let inset_y = tile_h * 0.08;
+    draw_texture_ex(
+        texture,
+        rect.x,
+        rect.y,
+        WHITE,
+        DrawTextureParams {
+            dest_size: Some(vec2(rect.w, rect.h)),
+            source: Some(Rect::new(
+                column * tile_w + inset_x,
+                row * tile_h + inset_y,
+                tile_w - inset_x * 2.0,
+                tile_h - inset_y * 2.0,
+            )),
+            ..Default::default()
+        },
+    );
+    true
 }
 
 pub fn draw_header(
@@ -118,21 +162,17 @@ pub fn draw_header(
 
     // Measure chip widths (mirror stat_chip's math) to place them.
     let chip_gap = space::SM;
-    let chips: [(Option<&Texture2D>, &str, Color); 4] = [
-        (assets.get_texture("icon_money"), &money_label, money_color),
-        (
-            assets.get_texture("icon_calendar"),
-            &month_label,
-            color::TEXT(),
-        ),
-        (assets.get_texture("icon_key"), &occ_label, color::TEXT()),
-        (None, &net_label, net_color),
+    let chips: [(StatusIcon, &str, Color); 4] = [
+        (StatusIcon::Cash, &money_label, money_color),
+        (StatusIcon::Month, &month_label, color::TEXT()),
+        (StatusIcon::Occupancy, &occ_label, color::TEXT()),
+        (StatusIcon::Net, &net_label, net_color),
     ];
     let widths: Vec<f32> = chips
         .iter()
-        .map(|(icon, label, _)| {
+        .map(|(_, label, _)| {
             let text_w = measure_ui_text(label, None, scale::BODY as u16, 1.0).width;
-            let icon_w = if icon.is_some() && !compact {
+            let icon_w = if assets.get_texture("status_icons").is_some() && !compact {
                 20.0 + space::XS
             } else {
                 0.0
@@ -146,7 +186,7 @@ pub fn draw_header(
     let mut cx = (cluster_right - cluster_w).max(0.0);
     let cluster_left = cx;
     for (i, (icon, label, text_color)) in chips.iter().enumerate() {
-        stat_chip(cx, *icon, label, *text_color, h);
+        stat_chip(cx, *icon, label, *text_color, h, assets);
         cx += widths[i] + chip_gap;
     }
 

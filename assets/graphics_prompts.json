@@ -173,6 +173,12 @@
                     "prompt": "Clean 3x2 pixel-art upgrade atlas with bold crop-safe icons for crossed wrench and hammer repair, padded soundproof door shield, stove and kitchen counter, glowing ceiling lamp, washer and folded towel, and armchair with plant and swatches; deep charcoal-brown cells, warm cream terracotta teal amber moss and plum palette, readable at 26x26, no text"
                 },
                 {
+                    "id": "status_icons",
+                    "filename": "status_icons.png",
+                    "resolution": "1254x1254",
+                    "prompt": "Clean 2x2 pixel-art status atlas with crop-safe icons for coins and wallet cash, calendar with sun-moon cycle, apartment doorway with key and lit window occupancy, and ledger with balanced green up and terracotta down arrows for monthly net; deep charcoal-brown cells, readable at 20x20, no text or numerals"
+                },
+                {
                     "id": "achievement_emblems",
                     "filename": "achievement_emblems.png",
                     "resolution": "1254x1254",

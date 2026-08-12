@@ -68,6 +68,7 @@ impl AssetManager {
             // UI Icons
             "workspace_icons",
             "upgrade_icons",
+            "status_icons",
             "icon_money",
             "icon_repair",
             "icon_upgrade",
@@ -134,6 +135,7 @@ impl AssetManager {
                             | "event_atlas"
                             | "workspace_icons"
                             | "upgrade_icons"
+                            | "status_icons"
                     ) {
                     FilterMode::Linear
                 } else {
