@@ -115,6 +115,12 @@ impl Game {
             "tenants_showcase" | "tenants_compact" | "tenants_tiny" => {
                 self.seed_workspace_capture(ViewMode::Tenants);
             }
+            "tenants_more_showcase" | "tenants_more_tiny" => {
+                self.seed_workspace_capture(ViewMode::Tenants);
+                if let GameState::Gameplay(state) = &mut self.state {
+                    state.tenants_page = 1;
+                }
+            }
             "finances_showcase" | "finances_compact" | "finances_wide" | "finances_tiny" => {
                 self.seed_workspace_capture(ViewMode::Finances);
             }

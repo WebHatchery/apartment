@@ -25,6 +25,7 @@ param(
         "applications_more_showcase",
         "ownership_showcase",
         "tenants_showcase",
+        "tenants_more_showcase",
         "finances_showcase",
         "city_showcase",
         "city_filtered_showcase",

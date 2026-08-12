@@ -327,6 +327,9 @@ impl GameplayState {
             UiAction::SetApplicationPage { page } => {
                 self.application_page = page;
             }
+            UiAction::SetTenantsPage { page } => {
+                self.tenants_page = page;
+            }
             UiAction::AcceptMission { mission_id } => {
                 if !self.missions.accept_mission(mission_id, self.current_tick) {
                     self.report_action_failure("That task is no longer available");

@@ -96,8 +96,11 @@ pub fn draw_tenants_view(state: &GameplayState, assets: &AssetManager) -> Option
         );
     }
     let row_h = 64.0;
-    let visible = ((roster_inner.h / row_h).floor() as usize).max(1);
-    for tenant in tenants.iter().take(visible) {
+    let controls_h = 48.0;
+    let page_size = (((roster_inner.h - controls_h) / row_h).floor() as usize).max(1);
+    let page_count = tenants.len().div_ceil(page_size).max(1);
+    let page = state.tenants_page.min(page_count - 1);
+    for tenant in tenants.iter().skip(page * page_size).take(page_size) {
         let row = Rect::new(roster_inner.x, y, roster_inner.w, row_h - space::XS);
         draw_card(row, false);
         let portrait = Rect::new(row.x + space::SM, row.y + space::SM, 44.0, 44.0);
@@ -147,14 +150,30 @@ pub fn draw_tenants_view(state: &GameplayState, assets: &AssetManager) -> Option
         );
         y += row_h;
     }
-    if tenants.len() > visible {
-        draw_ui_text(
-            &format!("+ {} more residents", tenants.len() - visible),
-            roster_inner.x,
-            roster_inner.bottom() - space::SM,
-            scale::LABEL,
-            color::TEXT_DIM(),
-        );
+    if page_count > 1 {
+        let button_y = roster_inner.bottom() - 40.0;
+        let gap = space::XS;
+        let button_w = (roster_inner.w - gap) * 0.5;
+        if page > 0
+            && button_at(
+                Rect::new(roster_inner.x, button_y, button_w, 40.0),
+                "Earlier",
+                true,
+                Tone::Secondary,
+            )
+        {
+            return Some(UiAction::SetTenantsPage { page: page - 1 });
+        }
+        if page + 1 < page_count
+            && button_at(
+                Rect::new(roster_inner.x + button_w + gap, button_y, button_w, 40.0),
+                "More",
+                true,
+                Tone::Primary,
+            )
+        {
+            return Some(UiAction::SetTenantsPage { page: page + 1 });
+        }
     }
 
     let side_inner = draw_panel(side, "Leasing desk");
