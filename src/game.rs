@@ -244,8 +244,13 @@ impl Game {
             self.state = GameState::Menu(MenuState::new());
             return;
         };
-        let mut state =
-            crate::state::GameplayState::new_with_template(self.config.clone(), template);
+        // Capture scenes are regression evidence, so their residents, events,
+        // applications, and decorative activity must not drift between runs.
+        let mut state = crate::state::GameplayState::new_with_template_seed(
+            self.config.clone(),
+            template,
+            0x5EC0_0D57,
+        );
         if showcase {
             seed_showcase_residents(&mut state);
         }
