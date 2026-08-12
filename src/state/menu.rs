@@ -284,10 +284,17 @@ impl MenuState {
                 );
             }
 
-            // Units count
-            let units = template.apartments.len();
+            // Locked cards use the final line for the concrete progression
+            // requirement; unlocked cards retain the unit-count summary.
+            let footer_text = if is_unlocked {
+                format!("{} units", template.apartments.len())
+            } else if template.unlock_order == 0 {
+                "Complete the previous property".to_string()
+            } else {
+                format!("Complete property {}", template.unlock_order)
+            };
             draw_ui_text(
-                &format!("{} units", units),
+                &truncate_text_to_width(&footer_text, card_w - 30.0, 14.0),
                 x + 15.0,
                 y + card_h - 12.0,
                 14.0,
