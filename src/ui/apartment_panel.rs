@@ -118,6 +118,8 @@ pub fn draw_apartment_panel(
         Rect::new(content_x, panel_y + panel_h - 48.0, panel_w - 30.0, 40.0),
         new_scroll,
         max_scroll,
+        "Unit overview",
+        "Tenant & actions",
     );
     super::widgets::draw_panel_header(
         Rect::new(panel_x, panel_y, panel_w, panel_h),

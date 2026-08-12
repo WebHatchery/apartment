@@ -60,33 +60,33 @@ impl Game {
             "showcase" | "showcase_compact" | "showcase_wide" | "showcase_tiny" => {
                 self.seed_gameplay_capture(true)
             }
-            "unit_showcase" | "unit_compact" => {
+            "unit_showcase" | "unit_compact" | "unit_tiny" => {
                 self.seed_gameplay_capture(true);
                 if let GameState::Gameplay(state) = &mut self.state {
                     state.selection = crate::ui::Selection::Apartment(3);
                 }
             }
-            "unit_scrolled" => {
+            "unit_scrolled" | "unit_scrolled_tiny" => {
                 self.seed_gameplay_capture(true);
                 if let GameState::Gameplay(state) = &mut self.state {
                     state.selection = crate::ui::Selection::Apartment(3);
                     state.panel_scroll_offset = 240.0;
                 }
             }
-            "hallway_showcase" | "hallway_compact" => {
+            "hallway_showcase" | "hallway_compact" | "hallway_tiny" => {
                 self.seed_gameplay_capture(true);
                 if let GameState::Gameplay(state) = &mut self.state {
                     state.selection = crate::ui::Selection::Hallway;
                 }
             }
-            "hallway_scrolled" => {
+            "hallway_scrolled" | "hallway_scrolled_tiny" => {
                 self.seed_gameplay_capture(true);
                 if let GameState::Gameplay(state) = &mut self.state {
                     state.selection = crate::ui::Selection::Hallway;
                     state.panel_scroll_offset = 240.0;
                 }
             }
-            "applications_showcase" | "applications_compact" => {
+            "applications_showcase" | "applications_compact" | "applications_tiny" => {
                 self.seed_gameplay_capture(true);
                 if let GameState::Gameplay(state) = &mut self.state {
                     state.selection = crate::ui::Selection::Applications(None);

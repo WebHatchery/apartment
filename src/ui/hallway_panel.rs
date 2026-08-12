@@ -284,6 +284,8 @@ pub fn draw_hallway_panel(
             Rect::new(content_x, panel_y + panel_h - 48.0, content_w, 40.0),
             new_scroll,
             max_scroll,
+            "Hallway summary",
+            "Staff & upgrades",
         );
     }
     super::widgets::draw_panel_header(Rect::new(panel_x, panel_y, panel_w, panel_h), "Hallway");

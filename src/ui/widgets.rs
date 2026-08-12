@@ -131,7 +131,13 @@ pub fn button_at(rect: Rect, text: &str, enabled: bool, tone: Tone) -> bool {
 
 /// Fixed, touch-friendly controls for content that extends below a panel.
 /// Returns the updated offset in logical pixels.
-pub fn scroll_controls(rect: Rect, current: f32, max: f32) -> f32 {
+pub fn scroll_controls(
+    rect: Rect,
+    current: f32,
+    max: f32,
+    earlier_label: &str,
+    later_label: &str,
+) -> f32 {
     if max <= 1.0 {
         return current;
     }
@@ -155,7 +161,7 @@ pub fn scroll_controls(rect: Rect, current: f32, max: f32) -> f32 {
     );
     if button_at(
         Rect::new(rect.x, rect.y, button_w, rect.h),
-        "Earlier",
+        earlier_label,
         current > 1.0,
         Tone::Secondary,
     ) {
@@ -163,7 +169,7 @@ pub fn scroll_controls(rect: Rect, current: f32, max: f32) -> f32 {
     }
     if button_at(
         Rect::new(rect.x + button_w + gap, rect.y, button_w, rect.h),
-        "More",
+        later_label,
         current + 1.0 < max,
         Tone::Primary,
     ) {
