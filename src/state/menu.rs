@@ -235,6 +235,16 @@ impl MenuState {
                 );
             }
 
+            let art_w = if card_h < 90.0 { 64.0 } else { 78.0 };
+            let art_rect = Rect::new(x + card_w - art_w - 8.0, y + 8.0, art_w, card_h - 16.0);
+            let has_facade =
+                draw_campaign_facade(template.neighborhood_id, art_rect, is_unlocked, assets);
+            let text_w = if has_facade {
+                card_w - art_w - 38.0
+            } else {
+                card_w - 30.0
+            };
+
             // Border color based on difficulty
             let border_color = match template.difficulty.as_str() {
                 "Easy" => Color::from_rgba(80, 180, 80, 255),
@@ -252,7 +262,11 @@ impl MenuState {
             };
             let compact_card = card_h < 105.0;
             draw_ui_text(
-                &template.name,
+                &truncate_text_to_width(
+                    &template.name,
+                    text_w,
+                    if compact_card { 19.0 } else { 22.0 },
+                ),
                 x + 15.0,
                 y + if compact_card { 24.0 } else { 30.0 },
                 if compact_card { 19.0 } else { 22.0 },
@@ -276,7 +290,7 @@ impl MenuState {
             };
             if !compact_card {
                 draw_ui_text(
-                    &truncate_text_to_width(&template.description, card_w - 30.0, 13.0),
+                    &truncate_text_to_width(&template.description, text_w, 13.0),
                     x + 15.0,
                     y + 75.0,
                     13.0,
@@ -294,7 +308,7 @@ impl MenuState {
                 format!("Complete property {}", template.unlock_order)
             };
             draw_ui_text(
-                &truncate_text_to_width(&footer_text, card_w - 30.0, 14.0),
+                &truncate_text_to_width(&footer_text, text_w, 14.0),
                 x + 15.0,
                 y + card_h - 12.0,
                 14.0,
@@ -305,9 +319,9 @@ impl MenuState {
             if !is_unlocked {
                 draw_ui_text(
                     "LOCKED",
-                    x + card_w - 90.0,
-                    y + if compact_card { 24.0 } else { 30.0 },
-                    16.0,
+                    art_rect.x + 6.0,
+                    art_rect.bottom() - 6.0,
+                    13.0,
                     Color::from_rgba(150, 100, 100, 255),
                 );
             }
@@ -358,6 +372,53 @@ impl MenuState {
     }
 }
 
+fn campaign_facade_tile(neighborhood_id: u32) -> (f32, f32) {
+    match neighborhood_id {
+        0 => (0.0, 0.0), // Downtown
+        2 => (1.0, 0.0), // Industrial
+        3 => (0.0, 1.0), // Historic
+        _ => (1.0, 1.0), // Suburbs and safe fallback
+    }
+}
+
+fn draw_campaign_facade(
+    neighborhood_id: u32,
+    rect: Rect,
+    unlocked: bool,
+    assets: &AssetManager,
+) -> bool {
+    let Some(texture) = assets.get_texture("property_facades") else {
+        return false;
+    };
+    let (column, row) = campaign_facade_tile(neighborhood_id);
+    let tile_w = texture.width() * 0.5;
+    let tile_h = texture.height() * 0.5;
+    draw_texture_ex(
+        texture,
+        rect.x,
+        rect.y,
+        if unlocked {
+            WHITE
+        } else {
+            Color::new(0.42, 0.4, 0.38, 0.72)
+        },
+        DrawTextureParams {
+            dest_size: Some(vec2(rect.w, rect.h)),
+            source: Some(Rect::new(column * tile_w, row * tile_h, tile_w, tile_h)),
+            ..Default::default()
+        },
+    );
+    draw_rectangle_lines(
+        rect.x,
+        rect.y,
+        rect.w,
+        rect.h,
+        1.0,
+        Color::new(0.8, 0.7, 0.55, 0.45),
+    );
+    true
+}
+
 fn draw_title_logo(assets: &AssetManager) {
     if let Some(logo) = assets.get_texture("title_logo") {
         let (logo_w, logo_h, logo_y) = if screen_height() < 520.0 {
@@ -390,3 +451,6 @@ fn draw_title_logo(assets: &AssetManager) {
         );
     }
 }
+
+#[cfg(test)]
+mod tests;
