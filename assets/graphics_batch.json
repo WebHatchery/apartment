@@ -155,6 +155,13 @@
             "Height": 64
         },
         {
+            "id": "workspace_icons",
+            "title": "Workspace Navigation Atlas",
+            "description": "A 3x2 crop-safe atlas of building, people, money, city, inbox, and tasks icons designed for persistent navigation at small display sizes.",
+            "Width": 1254,
+            "Height": 1254
+        },
+        {
             "id": "icon_repair",
             "title": "Icon Repair",
             "description": "2D pixel art wrench and hammer crossed icon, repair and maintenance symbol, simple clean design, warm muted colors, apartment management game style, transparent background",

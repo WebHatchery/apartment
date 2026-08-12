@@ -161,6 +161,12 @@
             "description": "Small icons for UI elements and status indicators.",
             "images": [
                 {
+                    "id": "workspace_icons",
+                    "filename": "workspace_icons.png",
+                    "resolution": "1254x1254",
+                    "prompt": "Clean 3x2 pixel-art navigation atlas with bold crop-safe icons for apartment building, two residents, coins and ledger, city skyline with map pin, sealed envelope with amber dot, and checklist; deep charcoal-brown cells, cream shapes with restrained terracotta teal amber moss and plum accents, readable at 18x18, no text"
+                },
+                {
                     "id": "achievement_emblems",
                     "filename": "achievement_emblems.png",
                     "resolution": "1254x1254",
