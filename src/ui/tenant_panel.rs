@@ -36,6 +36,7 @@ pub(super) fn draw_tenant_info(
 
     if let Some(tenant_id) = apt.tenant_id {
         return draw_occupied_tenant_info(
+            apt,
             tenant_id,
             tenants,
             assets,
@@ -53,6 +54,7 @@ pub(super) fn draw_tenant_info(
 }
 
 fn draw_occupied_tenant_info(
+    apt: &Apartment,
     tenant_id: u32,
     tenants: &[Tenant],
     assets: &AssetManager,
@@ -122,6 +124,22 @@ fn draw_occupied_tenant_info(
         content_top,
         content_bottom,
     );
+
+    if *y >= content_top && *y + 20.0 <= content_bottom {
+        crate::ui::widgets::kv_row(
+            content_x,
+            *y,
+            w,
+            "Rent fit",
+            &format!("${} / ${} limit", apt.rent_price, tenant.rent_tolerance),
+            if apt.rent_price <= tenant.rent_tolerance {
+                colors::POSITIVE()
+            } else {
+                colors::WARNING()
+            },
+        );
+    }
+    *y += 26.0;
 
     if *y >= content_top && *y + 20.0 <= content_bottom {
         crate::ui::widgets::kv_row(
@@ -231,11 +249,11 @@ fn draw_pending_request(
     }
     *y += 4.0;
 
-    let effect_text = approval_effect_text(request);
+    let effect_text = request_effect_text(request);
     if !effect_text.is_empty() {
         if *y >= content_top && *y + 16.0 <= content_bottom {
             draw_ui_text(
-                &format!("Effect: {}", effect_text),
+                &effect_text,
                 content_x,
                 *y + scale::LABEL,
                 scale::LABEL,
@@ -287,7 +305,7 @@ fn request_text(request: &TenantRequest) -> String {
     }
 }
 
-fn approval_effect_text(request: &TenantRequest) -> String {
+fn request_effect_text(request: &TenantRequest) -> String {
     let effect = request.approval_effect();
     let mut effect_text = String::new();
     let mut stack = vec![effect];
@@ -313,7 +331,14 @@ fn approval_effect_text(request: &TenantRequest) -> String {
         }
     }
 
-    effect_text
+    let denial = match request {
+        TenantRequest::Pet { .. } => "Deny: Happiness -10",
+        TenantRequest::TemporaryGuest { .. } => "Deny: Happiness -5",
+        TenantRequest::HomeBusiness { .. } => "Deny: Happiness -8",
+        TenantRequest::Modification { .. } => "Deny: Happiness -5",
+        TenantRequest::Sublease => "Deny: 30% move-out risk",
+    };
+    format!("Approve: {} · {}", effect_text, denial)
 }
 
 fn append_effect_text(effect_text: &mut String, value: &str) {
