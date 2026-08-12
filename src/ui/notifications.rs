@@ -3,14 +3,14 @@ use super::theme::{color, scale, space, Tone};
 use super::widgets::button_at;
 use super::UiAction;
 use crate::assets::AssetManager;
-use crate::simulation::{EventLog, EventSeverity};
+use crate::simulation::{EventLog, EventSeverity, GameEvent};
 use macroquad::prelude::*;
 use macroquad_toolkit::ui::{draw_ui_text, truncate_text_to_width};
 
 pub fn draw_notifications(
     event_log: &EventLog,
     _current_tick: u32,
-    _assets: &AssetManager,
+    assets: &AssetManager,
     expanded: bool,
 ) -> Option<UiAction> {
     let y = screen_height() - layout::FOOTER_HEIGHT();
@@ -18,7 +18,7 @@ pub fn draw_notifications(
     let h = layout::FOOTER_HEIGHT();
 
     if expanded {
-        draw_activity_drawer(event_log, y);
+        draw_activity_drawer(event_log, y, assets);
     }
 
     // Background
@@ -47,9 +47,17 @@ pub fn draw_notifications(
             EventSeverity::Negative => colors::NEGATIVE(),
         };
 
-        let display_msg =
-            truncate_text_to_width(&event.message(), (w - 300.0).max(120.0), scale::BODY);
-        draw_ui_text(&display_msg, 132.0, y + 26.0, scale::BODY, color);
+        let text_x = if draw_event_icon(event, Rect::new(112.0, y + 11.0, 24.0, 24.0), assets) {
+            144.0
+        } else {
+            132.0
+        };
+        let display_msg = truncate_text_to_width(
+            &event.message(),
+            (w - text_x - 148.0).max(120.0),
+            scale::BODY,
+        );
+        draw_ui_text(&display_msg, text_x, y + 26.0, scale::BODY, color);
     }
 
     if button_at(
@@ -68,7 +76,7 @@ pub fn draw_notifications(
     }
 }
 
-fn draw_activity_drawer(event_log: &EventLog, footer_y: f32) {
+fn draw_activity_drawer(event_log: &EventLog, footer_y: f32, assets: &AssetManager) {
     let drawer_h = 168.0_f32.min(footer_y - layout::HEADER_HEIGHT() - space::SM);
     let y = footer_y - drawer_h;
     draw_rectangle(0.0, y, screen_width(), drawer_h, color::SURFACE());
@@ -90,11 +98,54 @@ fn draw_activity_drawer(event_log: &EventLog, footer_y: f32) {
             EventSeverity::Warning => color::WARNING(),
             EventSeverity::Negative => color::NEGATIVE(),
         };
-        let display_msg = truncate_text_to_width(&event.message(), max_w, scale::BODY);
-        draw_ui_text(&display_msg, space::LG, event_y, scale::BODY, event_color);
+        let icon_rect = Rect::new(space::LG, event_y - 16.0, 20.0, 20.0);
+        let text_x = if draw_event_icon(event, icon_rect, assets) {
+            icon_rect.right() + space::SM
+        } else {
+            space::LG
+        };
+        let display_msg = truncate_text_to_width(&event.message(), max_w - text_x, scale::BODY);
+        draw_ui_text(&display_msg, text_x, event_y, scale::BODY, event_color);
         event_y += scale::BODY + space::SM;
         if event_y > footer_y - space::SM {
             break;
         }
     }
+}
+
+fn draw_event_icon(event: &GameEvent, rect: Rect, assets: &AssetManager) -> bool {
+    let id = match event {
+        GameEvent::RentPaid { .. } | GameEvent::RentMissed { .. } => "event_rent_collected",
+        GameEvent::TenantMovedIn { .. } => "event_tenant_moved_in",
+        GameEvent::TenantMovedOut { .. } => "event_tenant_moved_out",
+        GameEvent::NoiseComplaint { .. } => "event_noise_complaint",
+        GameEvent::PipeBurst { .. }
+        | GameEvent::BoilerFailure { .. }
+        | GameEvent::StructuralIssue { .. } => "event_pipe_burst",
+        GameEvent::Inspection { .. } => "event_inspection",
+        GameEvent::Heatwave { .. } => "event_heatwave",
+        GameEvent::NewApplication { .. } => "icon_application",
+        GameEvent::UpgradeCompleted { .. } => "icon_upgrade",
+        GameEvent::ConditionComplaint { .. }
+        | GameEvent::PoorCondition { .. }
+        | GameEvent::CriticalCondition { .. }
+        | GameEvent::HallwayDeteriorating { .. }
+        | GameEvent::TenantDamage { .. } => "icon_repair",
+        GameEvent::MonthEnd { .. } => "icon_calendar",
+        _ => return false,
+    };
+    let Some(texture) = assets.get_texture(id) else {
+        return false;
+    };
+    draw_texture_ex(
+        texture,
+        rect.x,
+        rect.y,
+        WHITE,
+        DrawTextureParams {
+            dest_size: Some(vec2(rect.w, rect.h)),
+            ..Default::default()
+        },
+    );
+    true
 }
