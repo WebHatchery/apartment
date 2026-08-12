@@ -88,24 +88,6 @@ pub fn draw_header(
     ) {
         action = Some(UiAction::EndTurn);
     }
-    // Space hint just left of the button.
-    let hint = "Space";
-    let hint_w = if compact {
-        0.0
-    } else {
-        measure_ui_text(hint, None, scale::CAPTION as u16, 1.0).width
-    };
-    let hint_x = btn_x - hint_w - if compact { space::SM } else { space::MD };
-    if !compact {
-        draw_ui_text(
-            hint,
-            hint_x,
-            h / 2.0 + scale::CAPTION / 2.0,
-            scale::CAPTION,
-            color::TEXT_DIM(),
-        );
-    }
-
     // Stat cluster: money / month / occupancy chips, flowed right-to-left so
     // they hug the button and never collide with the building name.
     let money_color = if money < 0 {
@@ -160,7 +142,7 @@ pub fn draw_header(
         })
         .collect();
     let cluster_w: f32 = widths.iter().sum::<f32>() + chip_gap * (chips.len() as f32 - 1.0);
-    let cluster_right = hint_x - space::MD;
+    let cluster_right = btn_x - space::MD;
     let mut cx = (cluster_right - cluster_w).max(0.0);
     let cluster_left = cx;
     for (i, (icon, label, text_color)) in chips.iter().enumerate() {

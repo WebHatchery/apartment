@@ -103,7 +103,7 @@ pub(super) fn draw_apartment_stats(
 ) {
     use crate::ui::widgets::{kv_row, section_label, stat_meter};
     let w = panel_w - 30.0;
-    let vis = |yy: f32| yy + 22.0 > content_top && yy < content_bottom;
+    let vis = |yy: f32| yy >= content_top && yy + 22.0 <= content_bottom;
 
     if vis(*y) {
         section_label(content_x, *y, "CONDITION");
@@ -228,7 +228,7 @@ pub(super) fn draw_upgrades(
     content_bottom: f32,
     current_scroll: f32,
     config: &crate::data::config::GameConfig,
-) -> (Option<UiAction>, f32) {
+) -> (Option<UiAction>, f32, f32) {
     let w = panel_w - 30.0;
     if *y > content_top && *y < content_bottom {
         draw_line(content_x, *y, content_x + w, *y, 1.0, colors::BORDER());
@@ -269,8 +269,8 @@ pub(super) fn draw_upgrades(
                 cost
             );
 
-            if *y + btn_h > content_top
-                && *y < content_bottom
+            if *y >= content_top
+                && *y + btn_h <= content_bottom
                 && button(content_x, *y, btn_w, btn_h, &label, can_afford)
             {
                 action = Some(UiAction::UpgradeAction(upgrade));
@@ -280,10 +280,10 @@ pub(super) fn draw_upgrades(
     }
 
     // UPGRADES header + right-aligned scroll hint (no longer overlaps buttons).
-    if header_y + 20.0 > content_top && header_y < content_bottom {
+    if header_y >= content_top && header_y + 20.0 <= content_bottom {
         crate::ui::widgets::section_label(content_x, header_y, "UPGRADES");
         if max_scroll > final_scroll + 5.0 {
-            let hint = "scroll for more \u{25be}";
+            let hint = "MORE BELOW";
             let hw = measure_ui_text(hint, None, 13, 1.0).width;
             draw_ui_text(
                 hint,
@@ -295,5 +295,5 @@ pub(super) fn draw_upgrades(
         }
     }
 
-    (action, final_scroll)
+    (action, final_scroll, max_scroll)
 }

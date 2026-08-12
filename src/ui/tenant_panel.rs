@@ -22,7 +22,7 @@ pub(super) fn draw_tenant_info(
     network: &TenantNetwork,
     stories: &HashMap<u32, TenantStory>,
 ) -> Option<UiAction> {
-    if *y > content_top && *y < content_bottom {
+    if *y >= content_top && *y <= content_bottom {
         draw_line(
             content_x,
             *y,
@@ -67,29 +67,21 @@ fn draw_occupied_tenant_info(
     let tenant = tenants.iter().find(|t| t.id == tenant_id)?;
     let w = panel_w - 30.0;
 
-    if *y + 22.0 > content_top && *y < content_bottom {
+    if *y >= content_top && *y + 22.0 <= content_bottom {
         crate::ui::widgets::section_label(content_x, *y, "TENANT");
     }
     *y += 22.0;
 
     // Portrait + name/archetype/relationship block — a fixed 84px-tall row so
     // nothing that follows can draw on top of it.
-    let portrait_id = format!("tenant_{}", tenant.archetype.name().to_lowercase());
     let row_top = *y;
-    if row_top + 84.0 > content_top && row_top < content_bottom {
-        let has_portrait = if let Some(tex) = assets.get_texture(&portrait_id) {
-            draw_texture_ex(
-                tex,
-                content_x,
-                row_top,
-                WHITE,
-                DrawTextureParams {
-                    dest_size: Some(Vec2::new(80.0, 80.0)),
-                    ..Default::default()
-                },
-            );
-            true
-        } else {
+    if row_top >= content_top && row_top + 84.0 <= content_bottom {
+        let has_portrait = super::resident_sprite::draw_face_portrait(
+            tenant,
+            Rect::new(content_x, row_top, 80.0, 80.0),
+            assets,
+        );
+        if !has_portrait {
             draw_rectangle(
                 content_x,
                 row_top,
@@ -97,8 +89,7 @@ fn draw_occupied_tenant_info(
                 60.0,
                 archetype_color(&tenant.archetype),
             );
-            false
-        };
+        }
         let text_x = if has_portrait {
             content_x + 92.0
         } else {
@@ -132,7 +123,7 @@ fn draw_occupied_tenant_info(
         content_bottom,
     );
 
-    if *y + 20.0 > content_top && *y < content_bottom {
+    if *y >= content_top && *y + 20.0 <= content_bottom {
         crate::ui::widgets::kv_row(
             content_x,
             *y,
@@ -215,11 +206,11 @@ fn draw_pending_request(
     let w = panel_w - 30.0;
 
     // Divider + section header.
-    if *y > content_top && *y < content_bottom {
+    if *y >= content_top && *y <= content_bottom {
         draw_line(content_x, *y, content_x + w, *y, 1.0, colors::BORDER());
     }
     *y += 14.0;
-    if *y + 18.0 > content_top && *y < content_bottom {
+    if *y >= content_top && *y + 18.0 <= content_bottom {
         crate::ui::widgets::section_label(content_x, *y, "PENDING REQUEST");
     }
     *y += 22.0;
@@ -227,7 +218,7 @@ fn draw_pending_request(
     // Wrapped request text.
     let req_text = request_text(request);
     for line in wrap_text_ex(&req_text, w, None, scale::BODY) {
-        if *y + scale::BODY > content_top && *y < content_bottom {
+        if *y >= content_top && *y + scale::BODY <= content_bottom {
             draw_ui_text(
                 &line,
                 content_x,
@@ -242,7 +233,7 @@ fn draw_pending_request(
 
     let effect_text = approval_effect_text(request);
     if !effect_text.is_empty() {
-        if *y + 16.0 > content_top && *y < content_bottom {
+        if *y >= content_top && *y + 16.0 <= content_bottom {
             draw_ui_text(
                 &format!("Effect: {}", effect_text),
                 content_x,
@@ -342,11 +333,11 @@ fn draw_tenant_happiness(
     content_bottom: f32,
 ) {
     let w = panel_w - 30.0;
-    if *y + 22.0 > content_top && *y < content_bottom {
+    if *y >= content_top && *y + 22.0 <= content_bottom {
         crate::ui::widgets::section_label(content_x, *y, "HAPPINESS");
     }
     *y += 22.0;
-    if *y + 20.0 > content_top && *y < content_bottom {
+    if *y >= content_top && *y + 20.0 <= content_bottom {
         crate::ui::widgets::stat_meter(
             content_x,
             *y,
@@ -367,7 +358,7 @@ fn draw_vacant_unit_actions(
     content_top: f32,
     content_bottom: f32,
 ) -> Option<UiAction> {
-    if *y > content_top && *y < content_bottom {
+    if *y >= content_top && *y + 18.0 <= content_bottom {
         draw_ui_text("VACANT", content_x, *y, 18.0, colors::WARNING());
     }
     *y += 25.0;
@@ -389,12 +380,12 @@ fn draw_listed_vacancy_actions(
     content_top: f32,
     content_bottom: f32,
 ) -> Option<UiAction> {
-    if *y > content_top && *y < content_bottom {
+    if *y >= content_top && *y + 16.0 <= content_bottom {
         draw_ui_text("Status: LISTED", content_x, *y, 16.0, colors::POSITIVE());
     }
     *y += 20.0;
 
-    if *y > content_top && *y < content_bottom {
+    if *y >= content_top && *y + 14.0 <= content_bottom {
         let target_text = if let Some(pref) = &apt.preferred_archetype {
             format!("Target: {}", pref.name())
         } else {
@@ -404,23 +395,23 @@ fn draw_listed_vacancy_actions(
     }
     *y += 30.0;
 
-    if *y + 30.0 > content_top
-        && *y < content_bottom
-        && button(content_x, *y, btn_w, 30.0, "View Applications", true)
+    if *y >= content_top
+        && *y + 40.0 <= content_bottom
+        && button(content_x, *y, btn_w, 40.0, "View Applications", true)
     {
         return Some(UiAction::SelectApplications(Some(apt.id)));
     }
-    *y += 35.0;
+    *y += 46.0;
 
-    if *y + 30.0 > content_top
-        && *y < content_bottom
-        && button(content_x, *y, btn_w, 30.0, "Unlist Property", true)
+    if *y >= content_top
+        && *y + 40.0 <= content_bottom
+        && button(content_x, *y, btn_w, 40.0, "Unlist Property", true)
     {
         return Some(UiAction::UnlistApartment {
             apartment_id: apt.id,
         });
     }
-    *y += 40.0;
+    *y += 46.0;
 
     None
 }
@@ -433,7 +424,7 @@ fn draw_unlisted_vacancy_actions(
     content_top: f32,
     content_bottom: f32,
 ) -> Option<UiAction> {
-    if *y > content_top && *y < content_bottom {
+    if *y >= content_top && *y + 14.0 <= content_bottom {
         draw_ui_text(
             "Status: OFF MARKET",
             content_x,
@@ -444,7 +435,7 @@ fn draw_unlisted_vacancy_actions(
     }
     *y += 30.0;
 
-    if *y > content_top && *y < content_bottom {
+    if *y >= content_top && *y + 20.0 <= content_bottom {
         draw_ui_text(
             &format!("Rent: ${}", apt.rent_price),
             content_x,
@@ -453,37 +444,45 @@ fn draw_unlisted_vacancy_actions(
             colors::TEXT(),
         );
 
-        let btn_size = 25.0;
-        if button(content_x + 120.0, *y - 18.0, btn_size, btn_size, "-", true) {
+        let btn_size = 40.0;
+        let controls_x = content_x + btn_w - btn_size * 2.0 - 8.0;
+        if button(controls_x, *y - 25.0, btn_size, btn_size, "-", true) {
             return Some(UiAction::SetRent {
                 apartment_id: apt.id,
                 new_rent: apt.rent_price - 50,
             });
         }
-        if button(content_x + 150.0, *y - 18.0, btn_size, btn_size, "+", true) {
+        if button(
+            controls_x + btn_size + 8.0,
+            *y - 25.0,
+            btn_size,
+            btn_size,
+            "+",
+            true,
+        ) {
             return Some(UiAction::SetRent {
                 apartment_id: apt.id,
                 new_rent: apt.rent_price + 50,
             });
         }
     }
-    *y += 40.0;
+    *y += 48.0;
 
-    if *y > content_top && *y < content_bottom {
+    if *y >= content_top && *y + 14.0 <= content_bottom {
         draw_ui_text("List for Lease:", content_x, *y, 14.0, colors::ACCENT());
     }
     *y += 20.0;
 
-    if *y + 30.0 > content_top
-        && *y < content_bottom
-        && button(content_x, *y, btn_w, 30.0, "Any Tenant", true)
+    if *y >= content_top
+        && *y + 40.0 <= content_bottom
+        && button(content_x, *y, btn_w, 40.0, "Any Tenant", true)
     {
         return Some(UiAction::ListApartment {
             apartment_id: apt.id,
             preference: None,
         });
     }
-    *y += 35.0;
+    *y += 46.0;
 
     let tenant_types = [
         (crate::tenant::TenantArchetype::Student, "Student"),
@@ -498,9 +497,9 @@ fn draw_unlisted_vacancy_actions(
         let col = index % 2;
         let x = content_x + col as f32 * (small_btn_w + 10.0);
 
-        if *y + 25.0 > content_top
-            && *y < content_bottom
-            && button(x, *y, small_btn_w, 25.0, label, true)
+        if *y >= content_top
+            && *y + 40.0 <= content_bottom
+            && button(x, *y, small_btn_w, 40.0, label, true)
         {
             return Some(UiAction::ListApartment {
                 apartment_id: apt.id,
@@ -509,7 +508,7 @@ fn draw_unlisted_vacancy_actions(
         }
 
         if col == 1 || index == tenant_types.len() - 1 {
-            *y += 30.0;
+            *y += 46.0;
         }
     }
     *y += 10.0;

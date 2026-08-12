@@ -74,7 +74,29 @@ pub fn draw_card(rect: Rect, selected: bool) {
 /// title. Returns the inner content rect (inside padding, below the header).
 pub fn draw_panel(rect: Rect, title: &str) -> Rect {
     draw_surface(rect, &theme::panel_style());
+    draw_panel_header(rect, title);
     let header_h = 38.0;
+    Rect::new(
+        rect.x + space::PAD,
+        rect.y + header_h + space::SM,
+        rect.w - space::PAD * 2.0,
+        rect.h - header_h - space::SM - space::PAD,
+    )
+}
+
+/// Redraw a panel's fixed header after scrollable content, masking any row
+/// that straddled the upper content boundary.
+pub fn draw_panel_header(rect: Rect, title: &str) {
+    let header_h = 38.0;
+    draw_rectangle(rect.x, rect.y, rect.w, header_h, color::SURFACE_HEADER());
+    draw_line(
+        rect.x,
+        rect.y + header_h,
+        rect.right(),
+        rect.y + header_h,
+        1.0,
+        color::BORDER_STRONG(),
+    );
     // Left-aligned title, vertically centered in the header strip.
     let baseline = rect.y + header_h / 2.0 + scale::HEADING / 2.0 - 2.0;
     let title = truncate_text_to_width(title, rect.w - space::PAD * 2.0, scale::HEADING);
@@ -85,12 +107,6 @@ pub fn draw_panel(rect: Rect, title: &str) -> Rect {
         scale::HEADING,
         color::TEXT_BRIGHT(),
     );
-    Rect::new(
-        rect.x + space::PAD,
-        rect.y + header_h + space::SM,
-        rect.w - space::PAD * 2.0,
-        rect.h - header_h - space::SM - space::PAD,
-    )
 }
 
 /// Natural button width for a label at the given height.
@@ -111,6 +127,49 @@ pub fn button_at(rect: Rect, text: &str, enabled: bool, tone: Tone) -> bool {
         text_style,
         ButtonTrigger::Release,
     )
+}
+
+/// Fixed, touch-friendly controls for content that extends below a panel.
+/// Returns the updated offset in logical pixels.
+pub fn scroll_controls(rect: Rect, current: f32, max: f32) -> f32 {
+    if max <= 1.0 {
+        return current;
+    }
+    let gap = space::SM;
+    let button_w = (rect.w - gap) / 2.0;
+    let mut next = current;
+    draw_rectangle(
+        rect.x - space::XS,
+        rect.y - space::XS,
+        rect.w + space::XS * 2.0,
+        rect.h + space::XS * 2.0,
+        color::SURFACE(),
+    );
+    draw_line(
+        rect.x,
+        rect.y - space::XS,
+        rect.right(),
+        rect.y - space::XS,
+        1.0,
+        color::BORDER(),
+    );
+    if button_at(
+        Rect::new(rect.x, rect.y, button_w, rect.h),
+        "Earlier",
+        current > 1.0,
+        Tone::Secondary,
+    ) {
+        next = (current - 120.0).max(0.0);
+    }
+    if button_at(
+        Rect::new(rect.x + button_w + gap, rect.y, button_w, rect.h),
+        "More",
+        current + 1.0 < max,
+        Tone::Primary,
+    ) {
+        next = (current + 120.0).min(max);
+    }
+    next
 }
 
 /// Draw a compact badge/chip with a leading label. Returns its width so

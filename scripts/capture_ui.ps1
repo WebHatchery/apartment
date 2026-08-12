@@ -15,7 +15,14 @@
     ./scripts/capture_ui.ps1 -Frames 60 -SkipBuild
 #>
 param(
-    [string[]]$Scenes = @("menu", "gameplay", "showcase"),
+    [string[]]$Scenes = @(
+        "menu",
+        "gameplay",
+        "showcase",
+        "unit_showcase",
+        "hallway_showcase",
+        "applications_showcase"
+    ),
     [int]$Frames = 150,
     [string]$OutputDir = "docs\verification",
     [switch]$SkipBuild

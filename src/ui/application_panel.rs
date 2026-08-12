@@ -138,44 +138,42 @@ fn draw_application_card(
     use crate::ui::theme::Tone;
     use crate::ui::widgets::button_at;
 
-    // Does a portrait exist? (Cheap check so we can lay out before drawing.)
-    let portrait_id = format!(
-        "tenant_{}",
-        format!("{:?}", application.tenant.archetype).to_lowercase()
-    );
-    let has_portrait = assets.get_texture(&portrait_id).is_some();
-    let text_x = if has_portrait { x + 95.0 } else { x + 12.0 };
+    let portrait_size = 68.0;
+    let text_x = x + portrait_size + 20.0;
 
     let btn_y = y + 88.0;
     let bh = 40.0;
     let gap = 6.0;
+    let button_left = x + 8.0;
     let right = x + width - 8.0;
 
-    // Adaptive grid: 4 across when there's room, otherwise 2x2.
-    let cols = if right - text_x >= 4.0 * 74.0 + 3.0 * gap {
+    // Actions use the full card width rather than starting after the portrait.
+    // That keeps two applicant cards fully reachable at the 800x600 target.
+    let cols = if right - button_left >= 4.0 * 54.0 + 3.0 * gap {
         4
     } else {
         2
     };
     let rows = 4_usize.div_ceil(cols);
-    let bw = ((right - text_x) - (cols - 1) as f32 * gap) / cols as f32;
+    let bw = ((right - button_left) - (cols - 1) as f32 * gap) / cols as f32;
     let card_h = 88.0 + rows as f32 * (bh + gap) + 4.0;
 
     // Card frame (sized to fit the buttons), then portrait + content on top.
     crate::ui::widgets::draw_card(Rect::new(x, y, width, card_h), false);
-    if let Some(texture) = assets.get_texture(&portrait_id) {
-        draw_texture_ex(
-            texture,
+    if !super::resident_sprite::draw_face_portrait(
+        &application.tenant,
+        Rect::new(x + 8.0, y + 8.0, portrait_size, portrait_size),
+        assets,
+    ) {
+        draw_rectangle(
             x + 8.0,
             y + 8.0,
-            WHITE,
-            DrawTextureParams {
-                dest_size: Some(Vec2::new(78.0, 78.0)),
-                ..Default::default()
-            },
+            4.0,
+            portrait_size,
+            archetype_color(&application.tenant.archetype),
         );
     }
-    draw_application_text(application, building, text_x, y);
+    draw_application_text(application, building, text_x, y, x + width - 8.0 - text_x);
 
     let specs: [(&str, bool, Tone, UiAction); 4] = [
         (
@@ -203,7 +201,7 @@ fn draw_application_card(
             },
         ),
         (
-            "BG Check",
+            "Check",
             !application.revealed_behavior,
             Tone::Secondary,
             UiAction::BackgroundCheck {
@@ -216,7 +214,7 @@ fn draw_application_card(
     for (i, (label, enabled, tone, act)) in specs.into_iter().enumerate() {
         let col = i % cols;
         let row = i / cols;
-        let bx = text_x + col as f32 * (bw + gap);
+        let bx = button_left + col as f32 * (bw + gap);
         let by = btn_y + row as f32 * (bh + gap);
         if button_at(Rect::new(bx, by, bw, bh), label, enabled, tone) {
             action = Some(act);
@@ -231,31 +229,33 @@ fn draw_application_text(
     building: &Building,
     text_x: f32,
     y: f32,
+    text_width: f32,
 ) {
+    use macroquad_toolkit::ui::{measure_ui_text, truncate_text_to_width};
+
+    let unit = building
+        .get_apartment(application.apartment_id)
+        .map(|apartment| format!("Unit {}", apartment.unit_number))
+        .unwrap_or_else(|| "Unknown unit".to_string());
+    let unit_w = measure_ui_text(&unit, None, 14, 1.0).width;
     draw_ui_text(
-        &application.tenant.name,
+        &truncate_text_to_width(
+            &application.tenant.name,
+            (text_width - unit_w - 8.0).max(48.0),
+            18.0,
+        ),
         text_x,
         y + 22.0,
         18.0,
         colors::TEXT(),
     );
     draw_ui_text(
-        &format!("{:?}", application.tenant.archetype),
-        text_x,
-        y + 42.0,
+        &unit,
+        text_x + text_width - unit_w,
+        y + 21.0,
         14.0,
-        colors::TEXT_DIM(),
+        colors::ACCENT(),
     );
-
-    if let Some(apartment) = building.get_apartment(application.apartment_id) {
-        draw_ui_text(
-            &format!("-> Unit {}", apartment.unit_number),
-            text_x + 140.0,
-            y + 22.0,
-            16.0,
-            colors::ACCENT(),
-        );
-    }
 
     let score_color = if application.match_result.score >= 70 {
         colors::POSITIVE()
@@ -264,20 +264,26 @@ fn draw_application_text(
     } else {
         colors::WARNING()
     };
+    let fit_text = if application.match_result.meets_minimum {
+        format!("Qualified · {}%", application.match_result.score)
+    } else {
+        format!("Stretch · {}%", application.match_result.score)
+    };
+    let fit_w = measure_ui_text(&fit_text, None, 14, 1.0).width;
     draw_ui_text(
-        &format!("Match: {}%", application.match_result.score),
-        text_x + 140.0,
-        y + 42.0,
+        application.tenant.archetype.name(),
+        text_x,
+        y + 43.0,
+        14.0,
+        colors::TEXT_DIM(),
+    );
+    draw_ui_text(
+        &fit_text,
+        text_x + text_width - fit_w,
+        y + 43.0,
         14.0,
         score_color,
     );
-
-    let fit_text = if application.match_result.meets_minimum {
-        "Fit: Qualified"
-    } else {
-        "Fit: Stretch"
-    };
-    draw_ui_text(fit_text, text_x + 240.0, y + 42.0, 14.0, colors::TEXT_DIM());
 
     let credit_text = if application.revealed_reliability {
         format!("Credit: {}", application.tenant.rent_reliability)
@@ -293,7 +299,7 @@ fn draw_application_text(
     };
     draw_ui_text(
         &background_text,
-        text_x + 140.0,
+        text_x + text_width - measure_ui_text(&background_text, None, 14, 1.0).width,
         y + 67.0,
         14.0,
         colors::TEXT_DIM(),

@@ -2,7 +2,7 @@ use crate::assets::AssetManager;
 use crate::building::DesignType;
 use crate::data::config::{load_config, GameConfig};
 use crate::state::{GameState, MenuState, StateTransition};
-use crate::tenant::{Tenant, TenantArchetype};
+use crate::tenant::{Tenant, TenantApplication, TenantArchetype};
 
 pub struct Game {
     pub state: GameState,
@@ -53,7 +53,39 @@ impl Game {
     pub fn begin_capture_scene(&mut self, scene: &str) {
         match scene {
             "menu" => self.state = GameState::Menu(MenuState::new()),
-            "showcase" => self.seed_gameplay_capture(true),
+            "showcase" | "showcase_compact" => self.seed_gameplay_capture(true),
+            "unit_showcase" | "unit_compact" => {
+                self.seed_gameplay_capture(true);
+                if let GameState::Gameplay(state) = &mut self.state {
+                    state.selection = crate::ui::Selection::Apartment(3);
+                }
+            }
+            "unit_scrolled" => {
+                self.seed_gameplay_capture(true);
+                if let GameState::Gameplay(state) = &mut self.state {
+                    state.selection = crate::ui::Selection::Apartment(3);
+                    state.panel_scroll_offset = 240.0;
+                }
+            }
+            "hallway_showcase" | "hallway_compact" => {
+                self.seed_gameplay_capture(true);
+                if let GameState::Gameplay(state) = &mut self.state {
+                    state.selection = crate::ui::Selection::Hallway;
+                }
+            }
+            "hallway_scrolled" => {
+                self.seed_gameplay_capture(true);
+                if let GameState::Gameplay(state) = &mut self.state {
+                    state.selection = crate::ui::Selection::Hallway;
+                    state.panel_scroll_offset = 240.0;
+                }
+            }
+            "applications_showcase" | "applications_compact" => {
+                self.seed_gameplay_capture(true);
+                if let GameState::Gameplay(state) = &mut self.state {
+                    state.selection = crate::ui::Selection::Applications(None);
+                }
+            }
             "gameplay" => self.seed_gameplay_capture(false),
             _ => {
                 self.seed_gameplay_capture(false);
@@ -132,4 +164,34 @@ fn seed_showcase_residents(state: &mut crate::state::GameplayState) {
     if let Some(city_building) = state.city.active_building_mut() {
         *city_building = state.building.clone();
     }
+    state.applications = [
+        (20, "Nina Brooks", TenantArchetype::Artist, 0, true, false),
+        (
+            21,
+            "David Okafor",
+            TenantArchetype::Professional,
+            1,
+            false,
+            false,
+        ),
+    ]
+    .into_iter()
+    .filter_map(
+        |(id, name, archetype, apartment_index, credit, background)| {
+            let apartment = state.building.apartments.get(apartment_index)?;
+            let mut tenant = Tenant::new(id, name, archetype);
+            tenant.happiness = if id % 2 == 0 { 82 } else { 34 };
+            let result = crate::tenant::matching::calculate_match_score(
+                &tenant,
+                apartment,
+                &state.config.matching,
+            );
+            let mut application =
+                TenantApplication::new_for_building(tenant, building_id, apartment.id, result, 10);
+            application.revealed_reliability = credit;
+            application.revealed_behavior = background;
+            Some(application)
+        },
+    )
+    .collect();
 }

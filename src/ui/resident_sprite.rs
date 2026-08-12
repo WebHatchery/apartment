@@ -1,5 +1,6 @@
-//! Composes an in-room resident from independent pose and emotion atlases.
+//! Shared modular resident rendering for rooms, profiles, and applicant cards.
 
+use super::common::archetype_color;
 use crate::assets::AssetManager;
 use crate::building::{Apartment, DesignType};
 use crate::tenant::Tenant;
@@ -48,6 +49,57 @@ fn emotion_column(happiness: i32) -> f32 {
     }
 }
 
+fn face_texture<'a>(tenant: &Tenant, assets: &'a AssetManager) -> Option<&'a Texture2D> {
+    let face_id = if tenant.id % 2 == 0 {
+        "tenant_face_emotions"
+    } else {
+        "tenant_face_emotions_alt"
+    };
+    assets
+        .get_texture(face_id)
+        .or_else(|| assets.get_texture("tenant_face_emotions"))
+}
+
+pub(super) fn draw_face_portrait(tenant: &Tenant, rect: Rect, assets: &AssetManager) -> bool {
+    let Some(faces) = face_texture(tenant, assets) else {
+        return false;
+    };
+    let accent = archetype_color(&tenant.archetype);
+    draw_rectangle(
+        rect.x,
+        rect.y,
+        rect.w,
+        rect.h,
+        Color::new(accent.r * 0.28, accent.g * 0.25, accent.b * 0.22, 1.0),
+    );
+    draw_rectangle_lines(
+        rect.x,
+        rect.y,
+        rect.w,
+        rect.h,
+        1.0,
+        Color::new(accent.r, accent.g, accent.b, 0.70),
+    );
+    let face_column_w = faces.width() / FACE_COLUMNS;
+    draw_texture_ex(
+        faces,
+        rect.x + rect.w * 0.06,
+        rect.y + rect.h * 0.02,
+        WHITE,
+        DrawTextureParams {
+            dest_size: Some(vec2(rect.w * 0.88, rect.h * 0.96)),
+            source: Some(Rect::new(
+                emotion_column(tenant.happiness) * face_column_w,
+                faces.height() * 0.20,
+                face_column_w,
+                faces.height() * 0.55,
+            )),
+            ..Default::default()
+        },
+    );
+    true
+}
+
 pub(super) fn draw_resident(
     apartment: &Apartment,
     tenant: &Tenant,
@@ -57,15 +109,7 @@ pub(super) fn draw_resident(
     let Some(bodies) = assets.get_texture("tenant_body_poses") else {
         return;
     };
-    let face_id = if tenant.id % 2 == 0 {
-        "tenant_face_emotions"
-    } else {
-        "tenant_face_emotions_alt"
-    };
-    let Some(faces) = assets
-        .get_texture(face_id)
-        .or_else(|| assets.get_texture("tenant_face_emotions"))
-    else {
+    let Some(faces) = face_texture(tenant, assets) else {
         return;
     };
 

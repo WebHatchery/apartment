@@ -70,7 +70,7 @@ pub fn draw_apartment_panel(
     let content_x = panel_x + 15.0;
     let mut y = panel_y + 50.0 - new_scroll;
     let content_top = panel_y + 35.0;
-    let content_bottom = panel_y + panel_h - 10.0;
+    let content_bottom = panel_y + panel_h - 58.0;
 
     draw_apartment_stats(
         apt,
@@ -98,7 +98,7 @@ pub fn draw_apartment_panel(
         action = Some(act);
     }
 
-    let (upgrade_action, scroll_result) = draw_upgrades(
+    let (upgrade_action, scroll_result, max_scroll) = draw_upgrades(
         apt,
         building,
         money,
@@ -114,6 +114,15 @@ pub fn draw_apartment_panel(
         action = Some(act);
     }
     new_scroll = scroll_result;
+    new_scroll = super::widgets::scroll_controls(
+        Rect::new(content_x, panel_y + panel_h - 48.0, panel_w - 30.0, 40.0),
+        new_scroll,
+        max_scroll,
+    );
+    super::widgets::draw_panel_header(
+        Rect::new(panel_x, panel_y, panel_w, panel_h),
+        &format!("Unit {}", apt.unit_number),
+    );
 
     (action, new_scroll)
 }

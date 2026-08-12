@@ -1,5 +1,4 @@
 mod room_story;
-mod tenant_sprite;
 
 use super::theme::{color, scale, space, Tone};
 use super::widgets::button_at;
@@ -239,7 +238,7 @@ fn draw_apartment(
 
     if let Some(tenant_id) = apartment.tenant_id {
         if let Some(tenant) = tenants.iter().find(|tenant| tenant.id == tenant_id) {
-            tenant_sprite::draw_resident(apartment, tenant, room, assets);
+            super::resident_sprite::draw_resident(apartment, tenant, room, assets);
             let name = truncate_text_to_width(&tenant.name, room.w * 0.42, scale::CAPTION);
             draw_ui_text(
                 &name,
@@ -494,7 +493,7 @@ fn draw_building_controls(view: Rect) -> Option<UiAction> {
     let x = view.x + (view.w - width) / 2.0;
     let applications_w = width * 0.56;
     if button_at(
-        Rect::new(x, y, applications_w, 38.0),
+        Rect::new(x, y, applications_w, 42.0),
         "Applications",
         true,
         Tone::Primary,
@@ -506,7 +505,7 @@ fn draw_building_controls(view: Rect) -> Option<UiAction> {
             x + applications_w + space::SM,
             y,
             width - applications_w - space::SM,
-            38.0,
+            42.0,
         ),
         "Ownership",
         true,

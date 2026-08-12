@@ -46,15 +46,15 @@ pub fn draw_hallway_panel(
     let content_x = panel_x + 15.0;
     let content_w = panel_w - 30.0;
     let content_top = panel_y + 40.0;
-    let content_bottom = panel_y + panel_h - 10.0;
+    let content_bottom = panel_y + panel_h - 58.0;
     let mut y = panel_y + 50.0 - new_scroll;
 
-    if y + 20.0 > content_top && y < content_bottom {
+    if y >= content_top && y + 20.0 <= content_bottom {
         crate::ui::widgets::section_label(content_x, y, "CONDITION");
     }
     y += 22.0;
 
-    if y + 20.0 > content_top && y < content_bottom {
+    if y >= content_top && y + 20.0 <= content_bottom {
         crate::ui::widgets::stat_meter(
             content_x,
             y,
@@ -66,7 +66,7 @@ pub fn draw_hallway_panel(
     }
     y += 30.0;
 
-    if y + 14.0 > content_top && y < content_bottom {
+    if y >= content_top && y + 14.0 <= content_bottom {
         draw_ui_text(
             "Affects overall building appeal",
             content_x,
@@ -77,7 +77,7 @@ pub fn draw_hallway_panel(
     }
     y += 20.0;
 
-    if y + 18.0 > content_top && y < content_bottom {
+    if y >= content_top && y + 18.0 <= content_bottom {
         let appeal = building.building_appeal();
         draw_ui_text(
             &format!("Building Appeal: {}", appeal),
@@ -89,7 +89,7 @@ pub fn draw_hallway_panel(
     }
     y += 50.0;
 
-    if y + 14.0 > content_top && y < content_bottom {
+    if y >= content_top && y + 14.0 <= content_bottom {
         draw_ui_text("STAFF", content_x, y, 14.0, colors::TEXT_DIM());
     }
     y += 25.0;
@@ -111,7 +111,7 @@ pub fn draw_hallway_panel(
                 Some(f) => f.to_uppercase().collect::<String>() + chars.as_str(),
             };
 
-            if y + 16.0 > content_top && y < content_bottom {
+            if y >= content_top && y + 16.0 <= content_bottom {
                 draw_ui_text(
                     &format!("{} (${}/mo)", label, cost),
                     content_x,
@@ -142,7 +142,7 @@ pub fn draw_hallway_panel(
                 _ => String::new(),
             };
             if !benefit.is_empty() {
-                if y + 13.0 > content_top && y < content_bottom {
+                if y >= content_top && y + 13.0 <= content_bottom {
                     draw_ui_text(&benefit, content_x, y, 13.0, colors::TEXT_DIM());
                 }
                 y += 20.0;
@@ -152,7 +152,7 @@ pub fn draw_hallway_panel(
     }
 
     if staff_count == 0 {
-        if y + 16.0 > content_top && y < content_bottom {
+        if y >= content_top && y + 16.0 <= content_bottom {
             draw_ui_text("None hired", content_x, y, 16.0, colors::TEXT_DIM());
         }
         y += 25.0;
@@ -231,8 +231,8 @@ pub fn draw_hallway_panel(
                 |monthly| format!("{} (${} / month)", action_label, monthly),
             );
 
-            if y + 36.0 > content_top
-                && y < content_bottom
+            if y >= content_top
+                && y + 40.0 <= content_bottom
                 && button(content_x, y, btn_w, 40.0, &label, can_afford)
             {
                 action = Some(UiAction::UpgradeAction(upgrade));
@@ -241,7 +241,7 @@ pub fn draw_hallway_panel(
         }
     }
 
-    if y + 14.0 > content_top && y < content_bottom {
+    if y >= content_top && y + 14.0 <= content_bottom {
         draw_ui_text("UPGRADES", content_x, y, 14.0, colors::TEXT_DIM());
     }
     y += 25.0;
@@ -255,8 +255,8 @@ pub fn draw_hallway_panel(
                 cost
             );
 
-            if y + 36.0 > content_top
-                && y < content_bottom
+            if y >= content_top
+                && y + 40.0 <= content_bottom
                 && button(content_x, y, btn_w, 40.0, &label, can_afford)
             {
                 action = Some(UiAction::UpgradeAction(upgrade));
@@ -270,20 +270,13 @@ pub fn draw_hallway_panel(
     let max_scroll = (content_height - visible_height).max(0.0);
     new_scroll = new_scroll.min(max_scroll);
     if max_scroll > 0.0 {
-        let hint = if new_scroll + 5.0 < max_scroll {
-            "Scroll for more"
-        } else {
-            "End of list"
-        };
-        let hint_w = macroquad_toolkit::ui::measure_ui_text(hint, None, 13, 1.0).width;
-        draw_ui_text(
-            hint,
-            panel_x + panel_w - hint_w - 14.0,
-            panel_y + 25.0,
-            13.0,
-            colors::TEXT_DIM(),
+        new_scroll = super::widgets::scroll_controls(
+            Rect::new(content_x, panel_y + panel_h - 48.0, content_w, 40.0),
+            new_scroll,
+            max_scroll,
         );
     }
+    super::widgets::draw_panel_header(Rect::new(panel_x, panel_y, panel_w, panel_h), "Hallway");
 
     (action, new_scroll)
 }

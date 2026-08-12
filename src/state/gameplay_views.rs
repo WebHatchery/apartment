@@ -107,9 +107,12 @@ impl GameplayState {
                     .values()
                     .filter(|story| story.pending_request.is_some())
                     .count();
-            if let Some(action) =
-                draw_workspace_nav(active_tab, self.mailbox.unread_count(), pending_tasks)
-            {
+            if let Some(action) = draw_workspace_nav(
+                active_tab,
+                self.mailbox.unread_count(),
+                pending_tasks,
+                assets,
+            ) {
                 self.pending_actions.push(action);
             }
         }
