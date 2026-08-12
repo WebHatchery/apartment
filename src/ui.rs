@@ -105,6 +105,9 @@ pub enum UiAction {
     SetTasksPage {
         page: usize,
     },
+    SetApplicationPage {
+        page: usize,
+    },
     AcceptMission {
         mission_id: u32,
     },

@@ -22,6 +22,7 @@ param(
         "unit_showcase",
         "hallway_showcase",
         "applications_showcase",
+        "applications_more_showcase",
         "ownership_showcase",
         "tenants_showcase",
         "finances_showcase",

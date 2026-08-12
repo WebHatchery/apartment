@@ -242,6 +242,7 @@ impl GameplayState {
                     self.active_building_id(),
                     &self.building,
                     filter,
+                    self.application_page,
                     0.0,
                     assets,
                 ) {

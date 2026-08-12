@@ -10,6 +10,7 @@ pub fn draw_application_panel(
     building_id: u32,
     building: &Building,
     filter_apartment_id: Option<u32>,
+    requested_page: usize,
     offset_x: f32,
     assets: &AssetManager,
 ) -> Option<UiAction> {
@@ -47,19 +48,24 @@ pub fn draw_application_panel(
     );
     y += 25.0;
 
+    let available_h = panel_rect.bottom() - y - 50.0;
+    let action_width = panel_rect.w - 46.0;
+    let columns = if action_width >= 4.0 * 54.0 + 3.0 * 6.0 {
+        4
+    } else {
+        2
+    };
+    let card_h = 88.0 + 4_usize.div_ceil(columns) as f32 * 46.0 + 4.0;
+    let page_size = ((available_h / (card_h + 12.0)).floor() as usize).max(1);
+    let page_count = filtered_apps.len().div_ceil(page_size).max(1);
+    let page = requested_page.min(page_count - 1);
     let mut action = None;
-    for (index, application) in filtered_apps {
-        if y > panel_rect.y + panel_rect.h - 60.0 {
-            draw_ui_text(
-                "... more applications",
-                content_x,
-                y,
-                14.0,
-                colors::TEXT_DIM(),
-            );
-            break;
-        }
-
+    for (index, application) in filtered_apps
+        .iter()
+        .skip(page * page_size)
+        .take(page_size)
+        .copied()
+    {
         let (card_action, card_h) = draw_application_card(
             index,
             application,
@@ -73,6 +79,33 @@ pub fn draw_application_panel(
             action = card_action;
         }
         y += card_h + 12.0;
+    }
+    if page_count > 1 {
+        use crate::ui::theme::Tone;
+        use crate::ui::widgets::button_at;
+        let controls_y = panel_rect.bottom() - 48.0;
+        let gap = 8.0;
+        let button_w = (panel_rect.w - 30.0 - gap) * 0.5;
+        if page > 0
+            && button_at(
+                Rect::new(content_x, controls_y, button_w, 40.0),
+                "Earlier",
+                true,
+                Tone::Secondary,
+            )
+        {
+            action = Some(UiAction::SetApplicationPage { page: page - 1 });
+        }
+        if page + 1 < page_count
+            && button_at(
+                Rect::new(content_x + button_w + gap, controls_y, button_w, 40.0),
+                "More",
+                true,
+                Tone::Primary,
+            )
+        {
+            action = Some(UiAction::SetApplicationPage { page: page + 1 });
+        }
     }
 
     action
@@ -138,8 +171,9 @@ fn draw_application_card(
     use crate::ui::theme::Tone;
     use crate::ui::widgets::button_at;
 
-    let portrait_size = 68.0;
-    let text_x = x + portrait_size + 20.0;
+    let compact = width < 260.0;
+    let portrait_size = if compact { 60.0 } else { 68.0 };
+    let text_x = x + portrait_size + if compact { 16.0 } else { 20.0 };
 
     let btn_y = y + 88.0;
     let bh = 40.0;
@@ -173,7 +207,14 @@ fn draw_application_card(
             archetype_color(&application.tenant.archetype),
         );
     }
-    draw_application_text(application, building, text_x, y, x + width - 8.0 - text_x);
+    draw_application_text(
+        application,
+        building,
+        text_x,
+        y,
+        x + width - 8.0 - text_x,
+        compact,
+    );
 
     let specs: [(&str, bool, Tone, UiAction); 4] = [
         (
@@ -193,7 +234,11 @@ fn draw_application_card(
             },
         ),
         (
-            "Credit",
+            if application.revealed_reliability {
+                "Credit done"
+            } else {
+                "Check credit"
+            },
             !application.revealed_reliability,
             Tone::Secondary,
             UiAction::CreditCheck {
@@ -201,7 +246,11 @@ fn draw_application_card(
             },
         ),
         (
-            "Check",
+            if application.revealed_behavior {
+                "History done"
+            } else {
+                "Check history"
+            },
             !application.revealed_behavior,
             Tone::Secondary,
             UiAction::BackgroundCheck {
@@ -230,6 +279,7 @@ fn draw_application_text(
     text_x: f32,
     y: f32,
     text_width: f32,
+    compact: bool,
 ) {
     use macroquad_toolkit::ui::{measure_ui_text, truncate_text_to_width};
 
@@ -238,6 +288,36 @@ fn draw_application_text(
         .map(|apartment| format!("Unit {}", apartment.unit_number))
         .unwrap_or_else(|| "Unknown unit".to_string());
     let unit_w = measure_ui_text(&unit, None, 14, 1.0).width;
+    if compact {
+        draw_ui_text(
+            &truncate_text_to_width(&application.tenant.name, text_width, 18.0),
+            text_x,
+            y + 22.0,
+            18.0,
+            colors::TEXT(),
+        );
+        draw_ui_text(&unit, text_x, y + 43.0, 14.0, colors::ACCENT());
+        let fit_text = if application.match_result.meets_minimum {
+            format!("Qualified · {}%", application.match_result.score)
+        } else {
+            format!("Stretch · {}%", application.match_result.score)
+        };
+        let score_color = if application.match_result.score >= 70 {
+            colors::POSITIVE()
+        } else if application.match_result.score >= 50 {
+            colors::ACCENT()
+        } else {
+            colors::WARNING()
+        };
+        draw_ui_text(
+            &truncate_text_to_width(&fit_text, text_width, 14.0),
+            text_x,
+            y + 65.0,
+            14.0,
+            score_color,
+        );
+        return;
+    }
     draw_ui_text(
         &truncate_text_to_width(
             &application.tenant.name,

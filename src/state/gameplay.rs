@@ -131,6 +131,8 @@ pub struct GameplayState {
     #[serde(skip)]
     pub pending_property_purchase: Option<u32>,
     #[serde(skip)]
+    pub application_page: usize,
+    #[serde(skip)]
     pub show_pause_menu: bool,
     #[serde(skip)]
     pub activity_drawer_open: bool,
@@ -291,6 +293,7 @@ impl GameplayState {
             market_page: 0,
             selected_neighborhood_id: None,
             pending_property_purchase: None,
+            application_page: 0,
             show_pause_menu: false,
             activity_drawer_open: false,
             is_fullscreen: false,
@@ -389,6 +392,7 @@ impl GameplayState {
         self.market_page = 0;
         self.selected_neighborhood_id = None;
         self.pending_property_purchase = None;
+        self.application_page = 0;
         self.show_pause_menu = false;
         self.activity_drawer_open = false;
         self.pending_quit_to_menu = false;

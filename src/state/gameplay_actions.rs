@@ -24,6 +24,7 @@ impl GameplayState {
                 self.view_mode = ViewMode::Building;
                 self.selection = Selection::Applications(filter);
                 self.panel_scroll_offset = 0.0;
+                self.application_page = 0;
             }
             UiAction::SelectHallway => {
                 self.selection = Selection::Hallway;
@@ -322,6 +323,9 @@ impl GameplayState {
             }
             UiAction::SetTasksPage { page } => {
                 self.tasks_page = page;
+            }
+            UiAction::SetApplicationPage { page } => {
+                self.application_page = page;
             }
             UiAction::AcceptMission { mission_id } => {
                 if !self.missions.accept_mission(mission_id, self.current_tick) {

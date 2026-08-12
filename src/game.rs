@@ -92,6 +92,13 @@ impl Game {
                     state.selection = crate::ui::Selection::Applications(None);
                 }
             }
+            "applications_more_showcase" | "applications_more_tiny" => {
+                self.seed_gameplay_capture(true);
+                if let GameState::Gameplay(state) = &mut self.state {
+                    state.selection = crate::ui::Selection::Applications(None);
+                    state.application_page = 1;
+                }
+            }
             "ownership_showcase" | "ownership_compact" | "ownership_wide" | "ownership_tiny" => {
                 self.seed_gameplay_capture(true);
                 if let GameState::Gameplay(state) = &mut self.state {
@@ -462,6 +469,17 @@ fn seed_showcase_residents(state: &mut crate::state::GameplayState) {
             "David Okafor",
             TenantArchetype::Professional,
             1,
+            false,
+            false,
+        ),
+        (22, "Priya Shah", TenantArchetype::Student, 2, true, true),
+        (23, "Elena Ruiz", TenantArchetype::Family, 3, false, true),
+        (24, "George Wu", TenantArchetype::Elderly, 4, true, false),
+        (
+            25,
+            "Amara Mensah",
+            TenantArchetype::Professional,
+            5,
             false,
             false,
         ),
