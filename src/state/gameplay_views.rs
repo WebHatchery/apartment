@@ -78,7 +78,7 @@ impl GameplayState {
                 }
             }
             ViewMode::CareerSummary => {
-                if let Some(action) = crate::ui::career_summary::draw_career_summary(self) {
+                if let Some(action) = crate::ui::career_summary::draw_career_summary(self, assets) {
                     self.pending_actions.push(action);
                 }
             }

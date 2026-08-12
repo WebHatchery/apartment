@@ -3,14 +3,15 @@
 use macroquad::prelude::*;
 use macroquad_toolkit::ui::{draw_ui_text, format_money, progress_bar, truncate_text_to_width};
 
-use crate::narrative::achievements::Achievement;
+use crate::assets::AssetManager;
+use crate::narrative::achievements::{Achievement, AchievementCondition};
 use crate::state::GameplayState;
 
 use super::theme::{color, scale, space, Tone};
 use super::widgets::{button_at, draw_card, line_height};
 use super::UiAction;
 
-pub fn draw_career_summary(state: &GameplayState) -> Option<UiAction> {
+pub fn draw_career_summary(state: &GameplayState, assets: &AssetManager) -> Option<UiAction> {
     draw_rectangle(
         0.0,
         0.0,
@@ -61,7 +62,9 @@ pub fn draw_career_summary(state: &GameplayState) -> Option<UiAction> {
     let achievement_y = stat_y + 72.0 + space::LG;
     let button_h = 48.0;
     let button_y = page.bottom() - button_h;
-    if let Some(action) = draw_achievements(state, page, achievement_y, button_y - space::LG) {
+    if let Some(action) =
+        draw_achievements(state, page, achievement_y, button_y - space::LG, assets)
+    {
         return Some(action);
     }
 
@@ -205,7 +208,13 @@ fn draw_stat_cards(page: Rect, y: f32, stats: &[(String, String, Color); 5]) {
     }
 }
 
-fn draw_achievements(state: &GameplayState, page: Rect, y: f32, bottom: f32) -> Option<UiAction> {
+fn draw_achievements(
+    state: &GameplayState,
+    page: Rect,
+    y: f32,
+    bottom: f32,
+    assets: &AssetManager,
+) -> Option<UiAction> {
     let unlocked = state.achievements.unlocked.len();
     let total = state.achievements.list.len().max(1);
     draw_ui_text(
@@ -267,6 +276,7 @@ fn draw_achievements(state: &GameplayState, page: Rect, y: f32, bottom: f32) -> 
                 card_w,
                 card_h,
             ),
+            assets,
         );
     }
     if page_count > 1 {
@@ -298,22 +308,21 @@ fn draw_achievements(state: &GameplayState, page: Rect, y: f32, bottom: f32) -> 
     None
 }
 
-fn draw_achievement_card(state: &GameplayState, achievement: &Achievement, rect: Rect) {
+fn draw_achievement_card(
+    state: &GameplayState,
+    achievement: &Achievement,
+    rect: Rect,
+    assets: &AssetManager,
+) {
     let unlocked = state.achievements.is_unlocked(&achievement.id);
     draw_card(rect, unlocked);
-    let title = if unlocked {
-        &achievement.name
-    } else {
-        "Badge not yet earned"
-    };
-    let description = if unlocked {
-        &achievement.description
-    } else {
-        "Keep building your legacy to reveal this badge."
-    };
+    let emblem_rect = Rect::new(rect.x + space::SM, rect.y + 8.0, 52.0, 52.0);
+    draw_achievement_emblem(achievement, emblem_rect, unlocked, assets);
+    let text_x = emblem_rect.right() + space::SM;
+    let text_w = (rect.right() - space::SM - text_x).max(24.0);
     draw_ui_text(
-        &truncate_text_to_width(title, rect.w - space::MD * 2.0, scale::BODY),
-        rect.x + space::MD,
+        &truncate_text_to_width(&achievement.name, text_w, scale::BODY),
+        text_x,
         rect.y + 24.0,
         scale::BODY,
         if unlocked {
@@ -323,11 +332,65 @@ fn draw_achievement_card(state: &GameplayState, achievement: &Achievement, rect:
         },
     );
     draw_ui_text(
-        &truncate_text_to_width(description, rect.w - space::MD * 2.0, scale::CAPTION),
-        rect.x + space::MD,
+        &truncate_text_to_width(&achievement.description, text_w, scale::CAPTION),
+        text_x,
         rect.y + 49.0,
         scale::CAPTION,
         color::TEXT_DIM(),
+    );
+}
+
+fn achievement_emblem_tile(condition: &AchievementCondition) -> (f32, f32) {
+    match condition {
+        AchievementCondition::TotalTenants { .. } | AchievementCondition::FullOccupancy => {
+            (0.0, 0.0)
+        }
+        AchievementCondition::AvgHappiness { .. }
+        | AchievementCondition::HappinessAtLeast { .. }
+        | AchievementCondition::MaxReputation { .. } => (1.0, 0.0),
+        AchievementCondition::Funds { .. } => (0.0, 1.0),
+        AchievementCondition::GameComplete => (1.0, 1.0),
+    }
+}
+
+fn draw_achievement_emblem(
+    achievement: &Achievement,
+    rect: Rect,
+    unlocked: bool,
+    assets: &AssetManager,
+) {
+    let Some(texture) = assets.get_texture("achievement_emblems") else {
+        draw_rectangle(rect.x, rect.y, rect.w, rect.h, color::SURFACE_ALT());
+        draw_ui_text(
+            if unlocked { "◆" } else { "◇" },
+            rect.x + 15.0,
+            rect.y + 36.0,
+            scale::HEADING,
+            if unlocked {
+                color::PRIMARY()
+            } else {
+                color::TEXT_DIM()
+            },
+        );
+        return;
+    };
+    let (column, row) = achievement_emblem_tile(&achievement.condition);
+    let tile_w = texture.width() * 0.5;
+    let tile_h = texture.height() * 0.5;
+    draw_texture_ex(
+        texture,
+        rect.x,
+        rect.y,
+        if unlocked {
+            WHITE
+        } else {
+            Color::new(0.4, 0.38, 0.36, 0.62)
+        },
+        DrawTextureParams {
+            dest_size: Some(vec2(rect.w, rect.h)),
+            source: Some(Rect::new(column * tile_w, row * tile_h, tile_w, tile_h)),
+            ..Default::default()
+        },
     );
 }
 

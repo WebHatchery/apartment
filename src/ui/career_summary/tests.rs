@@ -16,3 +16,23 @@ fn rank_threshold_values_stay_in_the_lower_band() {
     assert_eq!(career_rank(25_000).0, "Property manager");
     assert_eq!(career_rank(50_000).0, "Successful landlord");
 }
+
+#[test]
+fn achievement_conditions_select_their_visual_family() {
+    assert_eq!(
+        achievement_emblem_tile(&AchievementCondition::TotalTenants { min: 1 }),
+        (0.0, 0.0)
+    );
+    assert_eq!(
+        achievement_emblem_tile(&AchievementCondition::HappinessAtLeast { min: 70 }),
+        (1.0, 0.0)
+    );
+    assert_eq!(
+        achievement_emblem_tile(&AchievementCondition::Funds { min: 10_000 }),
+        (0.0, 1.0)
+    );
+    assert_eq!(
+        achievement_emblem_tile(&AchievementCondition::GameComplete),
+        (1.0, 1.0)
+    );
+}

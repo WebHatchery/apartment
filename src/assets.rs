@@ -48,6 +48,7 @@ impl AssetManager {
             "tenant_face_emotions_alt",
             "npc_uncle_artie",
             "staff_portraits",
+            "achievement_emblems",
             // Designs
             "design_bare",
             "design_practical",
@@ -126,6 +127,7 @@ impl AssetManager {
                             | "npc_uncle_artie"
                             | "property_facades"
                             | "staff_portraits"
+                            | "achievement_emblems"
                     ) {
                     FilterMode::Linear
                 } else {

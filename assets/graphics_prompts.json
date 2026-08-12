@@ -161,6 +161,12 @@
             "description": "Small icons for UI elements and status indicators.",
             "images": [
                 {
+                    "id": "achievement_emblems",
+                    "filename": "achievement_emblems.png",
+                    "resolution": "1254x1254",
+                    "prompt": "Clean 2x2 pixel-art career award atlas: brass key and apartment doorway with teal ribbon for leasing, glowing windows and heart with terracotta ribbon for community, stacked coins and open ledger with green ribbon for finance, and rowhouses with laurel and plum ribbon for portfolio legacy; crop-safe centered emblems, deep charcoal-brown background, warm cream highlights, no text"
+                },
+                {
                     "id": "icon_money",
                     "filename": "icon_money.png",
                     "resolution": "64x64",
