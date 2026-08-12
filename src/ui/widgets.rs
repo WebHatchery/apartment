@@ -215,9 +215,37 @@ pub fn draw_toast(
     kind: ToastKind,
     action_label: &str,
 ) -> bool {
+    draw_toast_content(None, icon, title, body, kind, action_label)
+}
+
+/// Portrait variant used for named narrative speakers.
+pub fn draw_portrait_toast(
+    portrait: &Texture2D,
+    title: &str,
+    body: &str,
+    kind: ToastKind,
+    action_label: &str,
+) -> bool {
+    draw_toast_content(Some(portrait), "", title, body, kind, action_label)
+}
+
+fn draw_toast_content(
+    portrait: Option<&Texture2D>,
+    icon: &str,
+    title: &str,
+    body: &str,
+    kind: ToastKind,
+    action_label: &str,
+) -> bool {
     let accent = kind.accent();
     let panel_w = (screen_width() * 0.6).clamp(420.0, 680.0);
-    let text_x_pad = if icon.is_empty() { space::LG } else { 74.0 };
+    let text_x_pad = if portrait.is_some() {
+        116.0
+    } else if icon.is_empty() {
+        space::LG
+    } else {
+        74.0
+    };
     let content_w = panel_w - text_x_pad - space::LG;
 
     // Measure required height from wrapped content.
@@ -241,7 +269,28 @@ pub fn draw_toast(
         .with_left_accent(5.0, accent);
     draw_surface(Rect::new(panel_x, panel_y, panel_w, panel_h), &style);
 
-    if !icon.is_empty() {
+    if let Some(texture) = portrait {
+        let portrait_size = (panel_h - space::LG * 2.0).min(88.0);
+        let portrait_y = panel_y + (panel_h - portrait_size) / 2.0;
+        draw_texture_ex(
+            texture,
+            panel_x + space::MD,
+            portrait_y,
+            WHITE,
+            DrawTextureParams {
+                dest_size: Some(vec2(portrait_size, portrait_size)),
+                ..Default::default()
+            },
+        );
+        draw_rectangle_lines(
+            panel_x + space::MD,
+            portrait_y,
+            portrait_size,
+            portrait_size,
+            1.0,
+            accent,
+        );
+    } else if !icon.is_empty() {
         draw_ui_text(icon, panel_x + space::LG, panel_y + 46.0, 34.0, accent);
     }
 

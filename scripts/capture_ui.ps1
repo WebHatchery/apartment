@@ -33,7 +33,9 @@ param(
         "history_showcase",
         "career_showcase",
         "tutorial_showcase",
+        "tutorial_coach_showcase",
         "event_showcase",
+        "event_notice_showcase",
         "notification_showcase"
     ),
     [int]$Frames = 150,

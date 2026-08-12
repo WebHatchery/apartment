@@ -46,6 +46,7 @@ impl AssetManager {
             "tenant_body_poses",
             "tenant_face_emotions",
             "tenant_face_emotions_alt",
+            "npc_uncle_artie",
             // Designs
             "design_bare",
             "design_practical",
@@ -117,7 +118,10 @@ impl AssetManager {
                 let filter = if JPEG_TEXTURE_IDS.contains(&id)
                     || matches!(
                         id,
-                        "tenant_body_poses" | "tenant_face_emotions" | "tenant_face_emotions_alt"
+                        "tenant_body_poses"
+                            | "tenant_face_emotions"
+                            | "tenant_face_emotions_alt"
+                            | "npc_uncle_artie"
                     ) {
                     FilterMode::Linear
                 } else {

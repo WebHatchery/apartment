@@ -124,7 +124,7 @@ impl GameplayState {
             .find(|e| !e.read && e.requires_response);
 
         if let Some(event) = blocking_event {
-            if let Some(action) = crate::ui::event_modal::draw_event_modal(event) {
+            if let Some(action) = crate::ui::event_modal::draw_event_modal(event, assets) {
                 self.pending_actions.push(action);
             }
             self.pending_actions
@@ -151,7 +151,7 @@ impl GameplayState {
             && self.tutorial.pending_messages.is_empty()
             && !self.activity_drawer_open
         {
-            self.draw_tutorial_coach();
+            self.draw_tutorial_coach(assets);
         }
 
         // Tutorial overlay (takes precedence)
@@ -324,13 +324,16 @@ impl GameplayState {
 
         // Save button
         if self.menu_button(btn_x, btn_y, btn_w, btn_h, "Save Game") {
-            if crate::save::save_game(self).is_ok() {
-                self.floating_texts.spawn(
-                    "Game Saved!",
-                    vec2(screen_width() / 2.0, screen_height() / 2.0),
-                    colors::POSITIVE(),
-                );
-            }
+            let (message, message_color) = if crate::save::save_game(self).is_ok() {
+                ("Game saved", colors::POSITIVE())
+            } else {
+                ("Save failed — please try again", colors::NEGATIVE())
+            };
+            self.floating_texts.spawn(
+                message,
+                vec2(screen_width() / 2.0, screen_height() / 2.0),
+                message_color,
+            );
             self.show_pause_menu = false;
         }
         btn_y += 50.0;
@@ -399,18 +402,29 @@ impl GameplayState {
     }
 
     /// Draw the tutorial overlay as a bottom toast. Dismisses on "Next".
-    pub(super) fn draw_tutorial_overlay(&mut self, _assets: &AssetManager) {
+    pub(super) fn draw_tutorial_overlay(&mut self, assets: &AssetManager) {
         if self.tutorial.pending_messages.is_empty() {
             return;
         }
         let message = format!("{} Tap CONTINUE.", self.tutorial.pending_messages[0]);
-        if crate::ui::widgets::draw_toast(
-            "",
-            "Uncle Artie",
-            &message,
-            crate::ui::widgets::ToastKind::Info,
-            "Continue",
-        ) {
+        let clicked = if let Some(portrait) = assets.get_texture("npc_uncle_artie") {
+            crate::ui::widgets::draw_portrait_toast(
+                portrait,
+                "Uncle Artie",
+                &message,
+                crate::ui::widgets::ToastKind::Info,
+                "Continue",
+            )
+        } else {
+            crate::ui::widgets::draw_toast(
+                "",
+                "Uncle Artie",
+                &message,
+                crate::ui::widgets::ToastKind::Info,
+                "Continue",
+            )
+        };
+        if clicked {
             self.tutorial.pending_messages.remove(0);
         }
     }
@@ -418,7 +432,7 @@ impl GameplayState {
     /// Non-blocking, target-anchored coaching for the current tutorial step.
     /// The introductory dialogue still uses a modal toast; once dismissed,
     /// this marker stays beside the control the player actually needs.
-    fn draw_tutorial_coach(&self) {
+    fn draw_tutorial_coach(&self, assets: &AssetManager) {
         use crate::ui::theme::{color, scale, space};
         use crate::ui::widgets::{draw_card, line_height, wrap};
 
@@ -430,7 +444,7 @@ impl GameplayState {
         let (anchor, message, place_above) = match milestone {
             TutorialMilestone::InheritedMess => (
                 vec2(view_w / 2.0, footer_y - 30.0),
-                "Start here: select the hallway, then choose a repair until it reaches 80% condition.",
+                "Tap the LOBBY, then tap a repair until its condition reaches 80%.",
                 true,
             ),
             TutorialMilestone::FirstResident => {
@@ -445,27 +459,30 @@ impl GameplayState {
                     .any(|application| application.building_id == self.active_building_id());
                 if active_apps {
                     (
-                        vec2(view_w / 2.0 - 72.0, crate::ui::layout::HEADER_HEIGHT() + 28.0),
-                        "Applicants are ready. Open Applications and choose a resident.",
+                        vec2(
+                            view_w / 2.0 - 72.0,
+                            crate::ui::layout::HEADER_HEIGHT() + 28.0,
+                        ),
+                        "Applicants are ready. Tap APPLICATIONS and choose a resident.",
                         false,
                     )
                 } else if listed {
                     (
                         vec2(screen_width() - 68.0, 32.0),
-                        "The unit is listed. End the month to bring in applicants.",
+                        "The unit is listed. Tap END MONTH to bring in applicants.",
                         false,
                     )
                 } else {
                     (
                         vec2(view_w / 2.0, crate::ui::layout::HEADER_HEIGHT() + 150.0),
-                        "Select a vacant unit, set a fair rent, and list it for lease.",
+                        "Tap a VACANT unit, set a fair rent, then tap LIST FOR LEASE.",
                         false,
                     )
                 }
             }
             TutorialMilestone::TheLeak => (
                 vec2(view_w / 2.0, crate::ui::layout::HEADER_HEIGHT() + 190.0),
-                "The damaged unit is marked in red. Select it and make a repair.",
+                "The damaged unit is marked in red. Tap it, then tap a repair.",
                 false,
             ),
             TutorialMilestone::Complete => return,
@@ -473,7 +490,9 @@ impl GameplayState {
 
         let card_w = view_w.min(360.0) - space::LG * 2.0;
         let lines = wrap(message, card_w - space::LG * 2.0, scale::BODY);
-        let card_h = 42.0 + lines.len() as f32 * line_height(scale::BODY);
+        let has_portrait = assets.get_texture("npc_uncle_artie").is_some();
+        let header_h = if has_portrait { 50.0 } else { 36.0 };
+        let card_h = header_h + space::SM + lines.len() as f32 * line_height(scale::BODY);
         let card_x = (anchor.x - card_w / 2.0).clamp(space::SM, view_w - card_w - space::SM);
         let preferred_y = if place_above {
             anchor.y - card_h - 18.0
@@ -495,14 +514,38 @@ impl GameplayState {
         );
         draw_circle(anchor.x, anchor.y, 7.0, color::PRIMARY());
         draw_card(Rect::new(card_x, card_y, card_w, card_h), true);
+        let title_x = if let Some(portrait) = assets.get_texture("npc_uncle_artie") {
+            let portrait_size = 38.0;
+            draw_texture_ex(
+                portrait,
+                card_x + space::SM,
+                card_y + space::SM,
+                WHITE,
+                DrawTextureParams {
+                    dest_size: Some(vec2(portrait_size, portrait_size)),
+                    ..Default::default()
+                },
+            );
+            draw_rectangle_lines(
+                card_x + space::SM,
+                card_y + space::SM,
+                portrait_size,
+                portrait_size,
+                1.0,
+                color::PRIMARY(),
+            );
+            card_x + space::SM + portrait_size + space::SM
+        } else {
+            card_x + space::LG
+        };
         draw_ui_text(
             "UNCLE ARTIE'S NEXT STEP",
-            card_x + space::LG,
+            title_x,
             card_y + 21.0,
             scale::LABEL,
             color::PRIMARY(),
         );
-        let mut y = card_y + 36.0;
+        let mut y = card_y + header_h;
         for line in lines {
             draw_ui_text(
                 &line,

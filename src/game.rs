@@ -144,10 +144,22 @@ impl Game {
             "tutorial_showcase" | "tutorial_compact" | "tutorial_wide" => {
                 self.seed_gameplay_capture(false)
             }
+            "tutorial_coach_showcase" | "tutorial_coach_compact" => {
+                self.seed_gameplay_capture(false);
+                if let GameState::Gameplay(state) = &mut self.state {
+                    state.tutorial.pending_messages.clear();
+                }
+            }
             "event_showcase" | "event_compact" => {
                 self.seed_gameplay_capture(true);
                 if let GameState::Gameplay(state) = &mut self.state {
                     seed_showcase_event(state);
+                }
+            }
+            "event_notice_showcase" | "event_notice_compact" => {
+                self.seed_gameplay_capture(true);
+                if let GameState::Gameplay(state) = &mut self.state {
+                    seed_showcase_notice(state);
                 }
             }
             "notification_showcase" | "notification_compact" => {
@@ -249,21 +261,28 @@ fn seed_showcase_event(state: &mut crate::state::GameplayState) {
         0,
         NarrativeEventType::NeighborhoodNews,
         state.current_tick,
-        "A garden for the courtyard",
-        "Residents have drawn up plans to turn the unused courtyard into a shared garden. They need help with supplies, but the project could bring the whole building together.",
+        "A cafe for the empty storefront",
+        "A local baker wants to turn the unused ground-floor storefront into a neighborhood cafe. A little help with the first fit-out could bring new life to the whole block.",
         vec![
             NarrativeChoice {
-                label: "Fund the garden · $750".to_string(),
-                description: "Pay for planters, tools, and the first season of seedlings."
-                    .to_string(),
+                label: "Offer a starter grant · $750".to_string(),
+                description: "Help pay for counters, seating, and the first oven.".to_string(),
                 effect: NarrativeEffect::Money { amount: -750 },
                 reputation_change: 8,
             },
             NarrativeChoice {
                 label: "Offer the space only".to_string(),
-                description: "Let residents organise the project themselves.".to_string(),
+                description: "Lease the storefront without contributing to the fit-out."
+                    .to_string(),
                 effect: NarrativeEffect::None,
                 reputation_change: 2,
+            },
+            NarrativeChoice {
+                label: "Keep the storefront vacant".to_string(),
+                description: "Decline the proposal and hold out for a different tenant."
+                    .to_string(),
+                effect: NarrativeEffect::None,
+                reputation_change: -2,
             },
         ],
     );
@@ -332,6 +351,20 @@ fn seed_showcase_market(state: &mut crate::state::GameplayState) {
             },
         )
         .collect();
+}
+
+fn seed_showcase_notice(state: &mut crate::state::GameplayState) {
+    use crate::narrative::events::{NarrativeEvent, NarrativeEventType};
+
+    let event = NarrativeEvent::with_choices(
+        0,
+        NarrativeEventType::SeasonalEvent,
+        state.current_tick,
+        "Heatwave watch issued",
+        "The city expects several unusually hot days. Check vulnerable residents, keep shared water available, and plan for higher utility use this month.",
+        Vec::new(),
+    );
+    state.narrative_events.add_event(event);
 }
 
 fn seed_showcase_residents(state: &mut crate::state::GameplayState) {

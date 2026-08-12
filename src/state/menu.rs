@@ -97,6 +97,7 @@ pub struct MenuState {
     has_save: bool,
     progress: PlayerProgress,
     templates: Vec<BuildingTemplate>,
+    load_error: Option<String>,
 }
 
 impl MenuState {
@@ -107,6 +108,7 @@ impl MenuState {
             has_save: has_save_game(),
             progress: load_player_progress(),
             templates,
+            load_error: None,
         }
     }
 
@@ -139,7 +141,10 @@ impl MenuState {
                 if let Ok(state) = load_game() {
                     return Some(StateTransition::ToGameplay(state));
                 } else {
-                    eprintln!("Failed to load save");
+                    self.load_error = Some(
+                        "That saved game could not be opened. Tap a building to start again."
+                            .to_string(),
+                    );
                 }
             }
         }
@@ -186,6 +191,22 @@ impl MenuState {
         );
 
         let (mx, my) = mouse_position();
+
+        if let Some(error) = &self.load_error {
+            let error_w = (screen_width() - 32.0).min(620.0);
+            let error_x = (screen_width() - error_w) / 2.0;
+            crate::ui::widgets::draw_card(
+                Rect::new(error_x, grid_top() - 44.0, error_w, 34.0),
+                true,
+            );
+            draw_ui_text(
+                &truncate_text_to_width(error, error_w - 24.0, 14.0),
+                error_x + 12.0,
+                grid_top() - 21.0,
+                14.0,
+                crate::ui::theme::color::NEGATIVE(),
+            );
+        }
 
         // Draw building cards
         let count = self.templates.len();

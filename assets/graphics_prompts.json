@@ -49,6 +49,12 @@
                     "filename": "tenant_elderly.png",
                     "resolution": "512x512",
                     "prompt": "2D pixel art portrait of an elderly retired tenant, kind wise expression, comfortable cardigan or sweater, reading glasses, perhaps holding knitting or book, warm muted colors, apartment management game style, upper body shot, cozy illustration style, transparent or simple flat background"
+                },
+                {
+                    "id": "npc_uncle_artie",
+                    "filename": "npc_uncle_artie.png",
+                    "resolution": "512x512",
+                    "prompt": "2D pixel art portrait of Uncle Artie, a kind retired apartment landlord in his late sixties, swept-back silver hair, gray mustache, brown cardigan and muted teal shirt, gentle encouraging smile, upper-body portrait against a deep charcoal-brown interior vignette, warm amber and terracotta palette, no text"
                 }
             ]
         },

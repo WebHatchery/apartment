@@ -36,6 +36,13 @@
             "Height": 512
         },
         {
+            "id": "npc_uncle_artie",
+            "title": "NPC Uncle Artie",
+            "description": "2D pixel art portrait of Uncle Artie, a kind retired apartment landlord in his late sixties, swept-back silver hair, gray mustache, brown cardigan and muted teal shirt, gentle encouraging smile, upper-body portrait against a deep charcoal-brown interior vignette, warm amber and terracotta palette, no text",
+            "Width": 512,
+            "Height": 512
+        },
+        {
             "id": "design_bare",
             "title": "Design Bare",
             "description": "2D pixel art side-view cross-section of a bare unfurnished apartment interior, empty room with plain walls, minimal furniture, exposed pipes or wires showing wear, dusty feel, dull muted colors suggesting neglect, apartment management game style, cozy illustration style",
