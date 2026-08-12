@@ -1,3 +1,4 @@
+mod room_story;
 mod tenant_sprite;
 
 use super::theme::{color, scale, space, Tone};
@@ -234,7 +235,7 @@ fn draw_apartment(
             },
         );
     }
-    draw_condition_story(apartment, room, assets);
+    room_story::draw_room_story(apartment, room, assets);
 
     if let Some(tenant_id) = apartment.tenant_id {
         if let Some(tenant) = tenants.iter().find(|tenant| tenant.id == tenant_id) {
@@ -332,58 +333,6 @@ fn draw_unit_plaque(apartment: &Apartment, room: Rect) {
     );
 }
 
-fn draw_condition_story(apartment: &Apartment, room: Rect, assets: &AssetManager) {
-    if apartment.condition < 45 {
-        draw_rectangle(
-            room.x,
-            room.y,
-            room.w,
-            room.h,
-            Color::new(0.20, 0.16, 0.11, 0.18),
-        );
-        let base_x = room.x + room.w * (0.22 + (apartment.id % 4) as f32 * 0.11);
-        let base_y = room.y + room.h * 0.34;
-        draw_line(
-            base_x,
-            base_y,
-            base_x + 8.0,
-            base_y + 12.0,
-            1.5,
-            Color::new(0.18, 0.12, 0.09, 0.8),
-        );
-        draw_line(
-            base_x + 8.0,
-            base_y + 12.0,
-            base_x + 2.0,
-            base_y + 23.0,
-            1.5,
-            Color::new(0.18, 0.12, 0.09, 0.8),
-        );
-        draw_line(
-            base_x + 7.0,
-            base_y + 12.0,
-            base_x + 15.0,
-            base_y + 17.0,
-            1.0,
-            Color::new(0.18, 0.12, 0.09, 0.8),
-        );
-    } else if apartment.condition >= 75 {
-        if let Some(plant) = assets.get_texture("decoration_plant") {
-            let size = room.h.min(room.w) * 0.24;
-            draw_texture_ex(
-                plant,
-                room.right() - size - 5.0,
-                room.bottom() - size,
-                WHITE,
-                DrawTextureParams {
-                    dest_size: Some(vec2(size, size)),
-                    ..Default::default()
-                },
-            );
-        }
-    }
-}
-
 fn draw_vacancy(apartment: &Apartment, room: Rect, assets: &AssetManager) {
     let window_id = if matches!(apartment.effective_noise(), NoiseLevel::High) {
         "window_street"
@@ -448,6 +397,7 @@ fn draw_lobby(
     } else {
         draw_rectangle(room.x, room.y, room.w, room.h, color::SURFACE_ALT());
     }
+    draw_lobby_amenities(building, room);
     let selected = matches!(selection, Selection::Hallway);
     draw_rectangle_lines(
         room.x,
@@ -487,6 +437,55 @@ fn draw_lobby(
         condition_color(building.hallway_condition),
     );
     was_clicked(room.x, room.y, room.w, room.h).then_some(UiAction::SelectHallway)
+}
+
+fn draw_lobby_amenities(building: &Building, room: Rect) {
+    if building.has_laundry || building.flags.contains("has_laundry") {
+        let size = (room.h * 0.52).clamp(20.0, 31.0);
+        for index in 0..2 {
+            let x = room.x + room.w * 0.43 + index as f32 * (size + 3.0);
+            let y = room.bottom() - size - 3.0;
+            draw_rectangle(x, y, size, size, Color::new(0.72, 0.69, 0.61, 0.96));
+            draw_circle(
+                x + size / 2.0,
+                y + size * 0.60,
+                size * 0.28,
+                Color::new(0.14, 0.22, 0.24, 1.0),
+            );
+            draw_circle(x + size * 0.20, y + size * 0.16, 1.5, color::POSITIVE());
+        }
+    }
+    if building.flags.contains("staff_receptionist") {
+        let desk_w = (room.w * 0.18).clamp(55.0, 96.0);
+        draw_rectangle(
+            room.x + room.w * 0.68,
+            room.bottom() - 19.0,
+            desk_w,
+            16.0,
+            Color::new(0.34, 0.20, 0.12, 1.0),
+        );
+        draw_rectangle(
+            room.x + room.w * 0.68 - 2.0,
+            room.bottom() - 22.0,
+            desk_w + 4.0,
+            4.0,
+            Color::new(0.68, 0.47, 0.25, 1.0),
+        );
+    }
+    if building.flags.contains("staff_security") {
+        let x = room.right() - 25.0;
+        let y = room.y + 7.0;
+        draw_rectangle(x, y, 12.0, 7.0, Color::new(0.12, 0.13, 0.13, 1.0));
+        draw_circle(x + 3.0, y + 3.5, 2.0, color::NEGATIVE());
+        draw_line(
+            x + 12.0,
+            y + 3.0,
+            x + 18.0,
+            y - 1.0,
+            2.0,
+            Color::new(0.14, 0.14, 0.13, 1.0),
+        );
+    }
 }
 
 fn draw_building_controls(view: Rect) -> Option<UiAction> {

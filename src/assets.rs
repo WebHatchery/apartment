@@ -45,6 +45,7 @@ impl AssetManager {
             // Modular in-room tenant layers
             "tenant_body_poses",
             "tenant_face_emotions",
+            "tenant_face_emotions_alt",
             // Designs
             "design_bare",
             "design_practical",
@@ -114,8 +115,10 @@ impl AssetManager {
             for extension in extensions {
                 let path = format!("assets/textures/{}.{}", id, extension);
                 let filter = if JPEG_TEXTURE_IDS.contains(&id)
-                    || matches!(id, "tenant_body_poses" | "tenant_face_emotions")
-                {
+                    || matches!(
+                        id,
+                        "tenant_body_poses" | "tenant_face_emotions" | "tenant_face_emotions_alt"
+                    ) {
                     FilterMode::Linear
                 } else {
                     FilterMode::Nearest

@@ -54,10 +54,18 @@ pub(super) fn draw_resident(
     room: Rect,
     assets: &AssetManager,
 ) {
-    let (Some(bodies), Some(faces)) = (
-        assets.get_texture("tenant_body_poses"),
-        assets.get_texture("tenant_face_emotions"),
-    ) else {
+    let Some(bodies) = assets.get_texture("tenant_body_poses") else {
+        return;
+    };
+    let face_id = if tenant.id % 2 == 0 {
+        "tenant_face_emotions"
+    } else {
+        "tenant_face_emotions_alt"
+    };
+    let Some(faces) = assets
+        .get_texture(face_id)
+        .or_else(|| assets.get_texture("tenant_face_emotions"))
+    else {
         return;
     };
 
