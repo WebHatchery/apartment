@@ -207,7 +207,7 @@ impl TutorialManager {
     pub fn get_hint(&self) -> Option<&'static str> {
         match &self.current_milestone {
             Some(TutorialMilestone::InheritedMess) => {
-                Some("Hint: Click the Hallway and repair it to 80+ condition.")
+                Some("Hint: Tap HALLWAY and repair it to 80+ condition.")
             }
             Some(TutorialMilestone::FirstResident) => {
                 Some("Hint: List an apartment for lease, End Month, then check Applications.")
