@@ -12,6 +12,6 @@ mod money;
 mod rent;
 
 pub use costs::{process_upgrade, OperatingCosts};
-pub use ledger::FinancialLedger;
+pub use ledger::{FinancialLedger, MonthlyReport};
 pub use money::{PlayerFunds, Transaction, TransactionType};
 pub use rent::collect_rent;

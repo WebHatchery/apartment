@@ -291,6 +291,14 @@ fn draw_ledger(state: &GameplayState, rect: Rect) {
         color::TEXT_DIM(),
     );
     y += line_height(scale::LABEL) + space::SM;
+    if inner.h >= 360.0 && state.ledger.reports.len() >= 2 {
+        let chart_h = 70.0;
+        draw_finance_trend(
+            &state.ledger.reports,
+            Rect::new(inner.x, y, inner.w, chart_h),
+        );
+        y += chart_h + space::SM;
+    }
     for report in state.ledger.reports.iter().rev().take(4) {
         let text = format!(
             "Month {}   income {}   costs {}   net {:+}",
@@ -349,6 +357,74 @@ fn draw_ledger(state: &GameplayState, rect: Rect) {
         );
         y += line_height(scale::LABEL);
     }
+}
+
+fn draw_finance_trend(reports: &[crate::economy::MonthlyReport], rect: Rect) {
+    let recent: Vec<_> = reports.iter().rev().take(6).collect();
+    let max_value = recent
+        .iter()
+        .map(|report| {
+            report
+                .rent_income
+                .max(report.repair_costs + report.upgrade_costs)
+                .max(report.net.abs())
+        })
+        .max()
+        .unwrap_or(1)
+        .max(1) as f32;
+    draw_rectangle(rect.x, rect.y, rect.w, rect.h, color::SURFACE_ALT());
+    draw_line(
+        rect.x,
+        rect.bottom() - 16.0,
+        rect.right(),
+        rect.bottom() - 16.0,
+        1.0,
+        color::BORDER(),
+    );
+    let group_w = rect.w / recent.len() as f32;
+    for (index, report) in recent.iter().rev().enumerate() {
+        let x = rect.x + index as f32 * group_w + group_w * 0.18;
+        let bar_w = (group_w * 0.24).max(3.0);
+        let chart_h = rect.h - 25.0;
+        let income_h = chart_h * report.rent_income as f32 / max_value;
+        let costs = report.repair_costs + report.upgrade_costs;
+        let cost_h = chart_h * costs as f32 / max_value;
+        draw_rectangle(
+            x,
+            rect.bottom() - 16.0 - income_h,
+            bar_w,
+            income_h,
+            color::POSITIVE(),
+        );
+        draw_rectangle(
+            x + bar_w + 2.0,
+            rect.bottom() - 16.0 - cost_h,
+            bar_w,
+            cost_h,
+            color::NEGATIVE(),
+        );
+        draw_ui_text(
+            &report.tick.to_string(),
+            x,
+            rect.bottom() - 3.0,
+            scale::CAPTION,
+            color::TEXT_DIM(),
+        );
+    }
+    draw_ui_text(
+        "IN",
+        rect.right() - 62.0,
+        rect.y + 12.0,
+        scale::CAPTION,
+        color::POSITIVE(),
+    );
+    draw_ui_text(
+        "OUT",
+        rect.right() - 34.0,
+        rect.y + 12.0,
+        scale::CAPTION,
+        color::NEGATIVE(),
+    );
 }
 
 fn draw_policies(state: &GameplayState, rect: Rect) -> Option<UiAction> {
