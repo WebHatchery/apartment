@@ -29,6 +29,7 @@ param(
         "city_filtered_showcase",
         "market_showcase",
         "market_filtered_showcase",
+        "purchase_review_showcase",
         "inbox_showcase",
         "tasks_showcase",
         "pause_showcase",

@@ -464,6 +464,7 @@ pub fn draw_market_panel(
     player_funds: i32,
     requested_page: usize,
     selected_neighborhood_id: Option<u32>,
+    pending_purchase_id: Option<u32>,
     assets: &AssetManager,
 ) -> Option<CityMapAction> {
     let panel_x = 20.0;
@@ -561,7 +562,109 @@ pub fn draw_market_panel(
         }
     }
 
+    if let Some(listing) =
+        pending_purchase_id.and_then(|id| listings.iter().copied().find(|listing| listing.id == id))
+    {
+        if let Some(modal_action) =
+            draw_purchase_confirmation(listing, neighborhoods, player_funds, assets)
+        {
+            action = Some(modal_action);
+        }
+    }
+
     action
+}
+
+fn draw_purchase_confirmation(
+    listing: &PropertyListing,
+    neighborhoods: &[Neighborhood],
+    player_funds: i32,
+    assets: &AssetManager,
+) -> Option<CityMapAction> {
+    draw_rectangle(
+        0.0,
+        layout::HEADER_HEIGHT(),
+        screen_width(),
+        screen_height() - layout::HEADER_HEIGHT(),
+        Color::new(0.0, 0.0, 0.0, 0.72),
+    );
+    let modal_w = (screen_width() - 32.0).min(520.0);
+    let modal_h = 242.0;
+    let modal = Rect::new(
+        (screen_width() - modal_w) * 0.5,
+        (screen_height() - modal_h) * 0.5,
+        modal_w,
+        modal_h,
+    );
+    let inner = draw_panel(modal, "Review property purchase");
+    let neighborhood = neighborhoods
+        .iter()
+        .find(|neighborhood| neighborhood.id == listing.neighborhood_id);
+    if let Some(neighborhood) = neighborhood {
+        draw_property_facade(
+            &neighborhood.neighborhood_type,
+            Rect::new(inner.x, inner.y, 104.0, 92.0),
+            assets,
+        );
+    }
+    let text_x = inner.x + 120.0;
+    draw_ui_text_ex(
+        &truncate_text_to_width(&listing.name, inner.w - 120.0, scale::HEADING),
+        text_x,
+        inner.y + 24.0,
+        text_params(scale::HEADING, colors::TEXT_BRIGHT()),
+    );
+    let location = neighborhood
+        .map(|n| n.name.as_str())
+        .unwrap_or("Unknown district");
+    draw_ui_text_ex(
+        location,
+        text_x,
+        inner.y + 46.0,
+        text_params(scale::LABEL, colors::TEXT_DIM()),
+    );
+    draw_ui_text_ex(
+        &format!(
+            "{} units · {} condition · {} existing tenants",
+            listing.total_units(),
+            listing.condition.name(),
+            listing.existing_tenants
+        ),
+        text_x,
+        inner.y + 68.0,
+        text_params(scale::CAPTION, colors::TEXT_DIM()),
+    );
+    draw_ui_text_ex(
+        &format!("Purchase price: ${}", listing.asking_price),
+        inner.x,
+        inner.y + 101.0,
+        text_params(scale::BODY, colors::WARNING()),
+    );
+    draw_ui_text_ex(
+        &format!(
+            "Balance after purchase: ${}",
+            player_funds - listing.asking_price
+        ),
+        inner.x,
+        inner.y + 125.0,
+        text_params(scale::LABEL, colors::TEXT()),
+    );
+    let button_y = inner.bottom() - 40.0;
+    let gap = 8.0;
+    let button_w = (inner.w - gap) * 0.5;
+    if draw_button_icon("Cancel", inner.x, button_y, button_w, 40.0) {
+        return Some(CityMapAction::CancelPurchase);
+    }
+    if draw_button_mini(
+        "Confirm purchase",
+        inner.x + button_w + gap,
+        button_y,
+        button_w,
+        40.0,
+    ) {
+        return Some(CityMapAction::ConfirmPurchase(listing.id));
+    }
+    None
 }
 
 /// Actions from the city map UI
@@ -572,7 +675,9 @@ pub enum CityMapAction {
     SelectBuilding(usize),
     OpenMarket,
     CloseMarket,
-    PurchaseBuilding(u32),
+    ReviewPurchase(u32),
+    CancelPurchase,
+    ConfirmPurchase(u32),
     EnterBuilding(usize),
     SetPortfolioPage(usize),
     SetMarketPage(usize),

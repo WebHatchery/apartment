@@ -648,9 +648,17 @@ impl GameplayState {
                 self.view_mode = ViewMode::Market;
             }
             CityMapAction::CloseMarket => {
+                self.pending_property_purchase = None;
                 self.view_mode = ViewMode::CityMap;
             }
-            CityMapAction::PurchaseBuilding(listing_id) => {
+            CityMapAction::ReviewPurchase(listing_id) => {
+                self.pending_property_purchase = Some(listing_id);
+            }
+            CityMapAction::CancelPurchase => {
+                self.pending_property_purchase = None;
+            }
+            CityMapAction::ConfirmPurchase(listing_id) => {
+                self.pending_property_purchase = None;
                 self.pending_actions
                     .push(UiAction::PurchaseBuilding { listing_id });
             }

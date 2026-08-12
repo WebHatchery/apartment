@@ -133,6 +133,13 @@ impl Game {
                     state.selected_neighborhood_id = Some(1);
                 }
             }
+            "purchase_review_showcase" | "purchase_review_tiny" => {
+                self.seed_workspace_capture(ViewMode::Market);
+                if let GameState::Gameplay(state) = &mut self.state {
+                    seed_showcase_market(state);
+                    state.pending_property_purchase = Some(0);
+                }
+            }
             "inbox_showcase" | "inbox_compact" | "inbox_tiny" => {
                 self.seed_workspace_capture(ViewMode::Mail);
             }

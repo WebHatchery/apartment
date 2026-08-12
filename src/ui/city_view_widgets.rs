@@ -225,7 +225,7 @@ fn draw_listing_purchase(
     );
 
     if can_afford && draw_button_mini("Buy", btn_x, btn_y, btn_width, 40.0) {
-        return Some(CityMapAction::PurchaseBuilding(listing.id));
+        return Some(CityMapAction::ReviewPurchase(listing.id));
     }
 
     if !can_afford {

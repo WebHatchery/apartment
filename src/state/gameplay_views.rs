@@ -61,6 +61,7 @@ impl GameplayState {
                     self.funds.balance,
                     self.market_page,
                     self.selected_neighborhood_id,
+                    self.pending_property_purchase,
                     assets,
                 ) {
                     self.handle_city_action(action);
