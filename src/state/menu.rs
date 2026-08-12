@@ -82,6 +82,17 @@ fn continue_rect(count: usize) -> Rect {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
+fn quit_rect() -> Rect {
+    let w = 150.0;
+    let h = 40.0;
+    if screen_height() < 660.0 {
+        Rect::new(12.0, 12.0, w, h)
+    } else {
+        Rect::new(screen_width() / 2.0 - w / 2.0, screen_height() - 80.0, w, h)
+    }
+}
+
 pub struct MenuState {
     has_save: bool,
     progress: PlayerProgress,
@@ -137,17 +148,7 @@ impl MenuState {
         // std::process::exit is a no-op/unsupported on wasm).
         #[cfg(not(target_arch = "wasm32"))]
         {
-            let quit_btn_w = 150.0;
-            let quit_btn_h = 40.0;
-            let quit_btn_x = screen_width() / 2.0 - quit_btn_w / 2.0;
-            let quit_btn_y = screen_height() - 80.0;
-
-            if clicked
-                && mx >= quit_btn_x
-                && mx <= quit_btn_x + quit_btn_w
-                && my >= quit_btn_y
-                && my <= quit_btn_y + quit_btn_h
-            {
+            if clicked && quit_rect().contains(vec2(mx, my)) {
                 std::process::exit(0);
             }
         }
@@ -177,7 +178,7 @@ impl MenuState {
             let (logo_w, logo_h, logo_y) = if screen_height() < 520.0 {
                 (280.0, 126.0, 4.0)
             } else if screen_height() < 660.0 {
-                (320.0, 144.0, 14.0)
+                (300.0, 135.0, 8.0)
             } else {
                 (400.0, 180.0, 40.0)
             };
@@ -315,10 +316,10 @@ impl MenuState {
             // Completed checkmark
             if is_completed {
                 draw_ui_text(
-                    "✓",
+                    "DONE",
                     x + card_w - 30.0,
                     y + 30.0,
-                    24.0,
+                    14.0,
                     Color::from_rgba(80, 200, 80, 255),
                 );
             }
@@ -363,10 +364,11 @@ impl MenuState {
         // Quit button — native only (see update()).
         #[cfg(not(target_arch = "wasm32"))]
         {
-            let quit_btn_w = 150.0;
-            let quit_btn_h = 40.0;
-            let quit_btn_x = screen_width() / 2.0 - quit_btn_w / 2.0;
-            let quit_btn_y = screen_height() - 80.0;
+            let rect = quit_rect();
+            let quit_btn_w = rect.w;
+            let quit_btn_h = rect.h;
+            let quit_btn_x = rect.x;
+            let quit_btn_y = rect.y;
 
             let quit_hovered = mx >= quit_btn_x
                 && mx <= quit_btn_x + quit_btn_w

@@ -190,19 +190,16 @@ impl PropertyListing {
         // Notes based on condition and features
         let mut notes = Vec::new();
         if matches!(condition, BuildingCondition::Condemned) {
-            notes.push("⚠️ Major renovation required".to_string());
+            notes.push("Major renovation required".to_string());
         }
         if existing_tenants > 0 {
-            notes.push(format!(
-                "📋 {} existing tenants with leases",
-                existing_tenants
-            ));
+            notes.push(format!("{} existing tenants with leases", existing_tenants));
         }
         if matches!(neighborhood.neighborhood_type, NeighborhoodType::Historic) {
-            notes.push("🏛️ Historic preservation restrictions apply".to_string());
+            notes.push("Historic preservation restrictions apply".to_string());
         }
         if neighborhood.stats.gentrification > 70 {
-            notes.push("📈 Area rapidly gentrifying".to_string());
+            notes.push("Area rapidly gentrifying".to_string());
         }
 
         Self {

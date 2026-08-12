@@ -101,8 +101,8 @@ fn draw_neighborhood_preview(
     let texture_id = match neighborhood.neighborhood_type {
         NeighborhoodType::Downtown => "neighborhood_downtown",
         NeighborhoodType::Industrial => "neighborhood_industrial",
-        NeighborhoodType::Suburbs => "neighborhood_residential",
-        NeighborhoodType::Historic => "neighborhood_university",
+        NeighborhoodType::Suburbs => "neighborhood_suburbs",
+        NeighborhoodType::Historic => "neighborhood_historic",
     };
 
     if let Some(texture) = assets.get_texture(texture_id) {

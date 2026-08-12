@@ -1,206 +1,294 @@
-use crate::state::GameplayState;
-use crate::ui::theme::{color, scale, space, Tone};
-use crate::ui::widgets::{button_at, draw_card};
-use crate::ui::{colors, UiAction};
+//! Responsive end-of-career report.
+
 use macroquad::prelude::*;
-use macroquad_toolkit::ui::draw_ui_text;
+use macroquad_toolkit::ui::{draw_ui_text, format_money, progress_bar, truncate_text_to_width};
+
+use crate::narrative::achievements::Achievement;
+use crate::state::GameplayState;
+
+use super::theme::{color, scale, space, Tone};
+use super::widgets::{button_at, draw_card, line_height};
+use super::UiAction;
 
 pub fn draw_career_summary(state: &GameplayState) -> Option<UiAction> {
-    let screen_w = screen_width();
-    let screen_h = screen_height();
-
-    // Background
-    draw_rectangle(0., 0., screen_w, screen_h, colors::BACKGROUND());
-
-    // Calculate Score
-    let funds = state.funds.balance;
-    let avg_happiness = if state.tenants.is_empty() {
-        0
-    } else {
-        state.tenants.iter().map(|t| t.happiness).sum::<i32>() / state.tenants.len() as i32
-    };
-    let reputation = state
-        .city
-        .neighborhoods
-        .iter()
-        .map(|n| n.reputation)
-        .sum::<i32>()
-        / state.city.neighborhoods.len().max(1) as i32;
-    let achievements_unlocked = state.achievements.unlocked.len();
-
-    let score =
-        funds + (avg_happiness * 100) + (reputation * 50) + (achievements_unlocked as i32 * 1000);
-
-    // Determine Rank
-    let rank = if score > 50000 {
-        "Real Estate Tycoon"
-    } else if score > 25000 {
-        "Successful Landlord"
-    } else if score > 10000 {
-        "Property Manager"
-    } else if score > 0 {
-        "Struggling Owner"
-    } else {
-        "Slumlord"
-    };
-
-    let color = if score > 25000 {
-        colors::POSITIVE()
-    } else if score > 0 {
-        colors::WARNING()
-    } else {
-        colors::NEGATIVE()
-    };
-
-    // Header
-    let cx = screen_w / 2.0;
-    let mut y = 60.0;
-
-    draw_text_centered("CAREER SUMMARY", cx, y, 50.0, colors::TEXT_BRIGHT());
-    y += 60.0;
-
-    draw_text_centered(&format!("Rank: {}", rank), cx, y, 40.0, color);
-    y += 50.0;
-
-    draw_text_centered(
-        &format!("Final Score: {}", score),
-        cx,
-        y,
-        30.0,
-        colors::TEXT(),
-    );
-    y += 60.0;
-
-    // Stats Grid
-    let stats_y = y;
-    let col_w = 200.0;
-    let start_x = cx - (col_w * 2.5); // 5 columns
-                                      // Funds, Happiness, Reputation, Months, Missions
-
-    draw_stat(
-        "Funds",
-        &format!("${}", funds),
-        start_x,
-        stats_y,
-        colors::POSITIVE(),
-    );
-    draw_stat(
-        "Happiness",
-        &format!("{}%", avg_happiness),
-        start_x + col_w,
-        stats_y,
-        colors::TEXT(),
-    );
-    draw_stat(
-        "Avg Rep",
-        &format!("{}", reputation),
-        start_x + col_w * 2.0,
-        stats_y,
-        colors::ACCENT(),
-    );
-    draw_stat(
-        "Months",
-        &format!("{}", state.current_tick),
-        start_x + col_w * 3.0,
-        stats_y,
-        colors::TEXT_DIM(),
-    );
-    draw_stat(
-        "Missions",
-        &format!("{}", state.missions.completed_missions().len()),
-        start_x + col_w * 4.0,
-        stats_y,
-        colors::TEXT_BRIGHT(),
+    draw_rectangle(
+        0.0,
+        0.0,
+        screen_width(),
+        screen_height(),
+        color::BACKGROUND(),
     );
 
-    y += 100.0;
+    let page = Rect::new(
+        space::LG,
+        space::LG,
+        screen_width() - space::LG * 2.0,
+        screen_height() - space::LG * 2.0,
+    );
+    let score = career_score(state);
+    let (rank, rank_color) = career_rank(score);
 
-    // Achievements
-    draw_text_centered("Achievements Unlocked", cx, y, 30.0, colors::TEXT_BRIGHT());
-    y += 40.0;
+    draw_ui_text(
+        "Career summary",
+        page.x,
+        page.y + scale::TITLE,
+        scale::TITLE,
+        color::TEXT_BRIGHT(),
+    );
+    draw_ui_text(
+        "The final ledger for everything you built together.",
+        page.x,
+        page.y + scale::TITLE + line_height(scale::LABEL),
+        scale::LABEL,
+        color::TEXT_DIM(),
+    );
 
-    let ach_w = 250.0;
-    let ach_h = 80.0;
-    let gap = 20.0;
-    let cols = ((screen_w - 100.0) / (ach_w + gap)).floor() as usize;
-    let start_ach_x = (screen_w - (cols as f32 * (ach_w + gap))) / 2.0;
+    let summary_y = page.y + 52.0;
+    draw_summary_banner(page.x, summary_y, page.w, rank, score, rank_color);
 
-    let mut col = 0;
-    let mut ach_y = y;
+    let stats_y = summary_y + 88.0;
+    draw_ui_text(
+        "FINAL PORTFOLIO",
+        page.x,
+        stats_y + scale::LABEL,
+        scale::LABEL,
+        color::TEXT_DIM(),
+    );
+    let stats = career_stats(state);
+    let stat_y = stats_y + line_height(scale::LABEL) + space::XS;
+    draw_stat_cards(page, stat_y, &stats);
 
-    for achievement in &state.achievements.list {
-        let unlocked = state.achievements.is_unlocked(&achievement.id);
-        let rect_x = start_ach_x + (col as f32 * (ach_w + gap));
-        let rect = Rect::new(rect_x, ach_y, ach_w, ach_h);
-        draw_card(rect, unlocked);
+    let achievement_y = stat_y + 72.0 + space::LG;
+    let button_h = 48.0;
+    let button_y = page.bottom() - button_h;
+    draw_achievements(state, page, achievement_y, button_y - space::LG);
 
-        if unlocked {
-            draw_ui_text(
-                &achievement.name,
-                rect_x + space::SM,
-                ach_y + 25.0,
-                scale::HEADING,
-                color::TEXT_BRIGHT(),
-            );
-            // Wrap description roughly
-            draw_ui_text(
-                &achievement.description,
-                rect_x + space::SM,
-                ach_y + 50.0,
-                scale::CAPTION,
-                color::TEXT_DIM(),
-            );
-        } else {
-            draw_ui_text(
-                "???",
-                rect_x + space::SM,
-                ach_y + 25.0,
-                scale::HEADING,
-                color::TEXT_DIM(),
-            );
-            draw_ui_text(
-                "Locked",
-                rect_x + space::SM,
-                ach_y + 50.0,
-                scale::CAPTION,
-                color::TEXT_DIM(),
-            );
-        }
-
-        col += 1;
-        if col >= cols {
-            col = 0;
-            ach_y += ach_h + gap;
-        }
-    }
-
-    // Back to Menu Button - positioned below all achievements
-    // Add one more row height if there was a partial last row
-    let final_ach_y = if col > 0 { ach_y + ach_h + gap } else { ach_y };
-
-    let btn_w = 250.0;
-    let btn_h = 55.0;
-    let btn_x = cx - btn_w / 2.0;
-    let btn_y = final_ach_y + 30.0; // After all achievements
-
-    let rect = Rect::new(btn_x, btn_y, btn_w, btn_h);
-    if button_at(rect, "RETURN TO MENU", true, Tone::Positive) {
+    let button_w = page.w.min(280.0);
+    if button_at(
+        Rect::new(page.right() - button_w, button_y, button_w, button_h),
+        "Return to menu",
+        true,
+        Tone::Primary,
+    ) {
         return Some(UiAction::ReturnToMenu);
     }
-
     None
 }
 
-fn draw_text_centered(text: &str, cx: f32, y: f32, size: f32, color: Color) {
-    macroquad_toolkit::ui::draw_text_centered(
-        text,
-        cx,
-        y,
-        macroquad_toolkit::ui::TextStyle::new(size, color),
+fn career_score(state: &GameplayState) -> i32 {
+    let happiness = average_happiness(state);
+    let reputation = average_reputation(state);
+    state.funds.balance
+        + happiness * 100
+        + reputation * 50
+        + state.achievements.unlocked.len() as i32 * 1000
+}
+
+fn career_rank(score: i32) -> (&'static str, Color) {
+    if score > 50_000 {
+        ("Real estate tycoon", color::POSITIVE())
+    } else if score > 25_000 {
+        ("Successful landlord", color::POSITIVE())
+    } else if score > 10_000 {
+        ("Property manager", color::ACCENT())
+    } else if score > 0 {
+        ("Struggling owner", color::WARNING())
+    } else {
+        ("Building in distress", color::NEGATIVE())
+    }
+}
+
+fn average_happiness(state: &GameplayState) -> i32 {
+    if state.tenants.is_empty() {
+        0
+    } else {
+        state
+            .tenants
+            .iter()
+            .map(|tenant| tenant.happiness)
+            .sum::<i32>()
+            / state.tenants.len() as i32
+    }
+}
+
+fn average_reputation(state: &GameplayState) -> i32 {
+    state
+        .city
+        .neighborhoods
+        .iter()
+        .map(|neighborhood| neighborhood.reputation)
+        .sum::<i32>()
+        / state.city.neighborhoods.len().max(1) as i32
+}
+
+fn draw_summary_banner(x: f32, y: f32, width: f32, rank: &str, score: i32, rank_color: Color) {
+    let rect = Rect::new(x, y, width, 72.0);
+    draw_card(rect, true);
+    draw_ui_text(
+        "YOUR LEGACY",
+        rect.x + space::PAD,
+        rect.y + 22.0,
+        scale::LABEL,
+        color::TEXT_DIM(),
+    );
+    draw_ui_text(
+        rank,
+        rect.x + space::PAD,
+        rect.y + 51.0,
+        scale::TITLE,
+        rank_color,
+    );
+    let score_text = format!("{score} points");
+    let score_w =
+        macroquad_toolkit::ui::measure_ui_text(&score_text, None, scale::HEADING as u16, 1.0).width;
+    draw_ui_text(
+        &score_text,
+        rect.right() - space::PAD - score_w,
+        rect.y + 45.0,
+        scale::HEADING,
+        color::TEXT_BRIGHT(),
     );
 }
 
-fn draw_stat(label: &str, value: &str, x: f32, y: f32, color: Color) {
-    draw_ui_text(label, x, y, 16.0, colors::TEXT_DIM());
-    draw_ui_text(value, x, y + 25.0, 24.0, color);
+fn career_stats(state: &GameplayState) -> [(String, String, Color); 5] {
+    [
+        (
+            "Cash".to_string(),
+            format_money(state.funds.balance as i64),
+            color::POSITIVE(),
+        ),
+        (
+            "Happiness".to_string(),
+            format!("{}%", average_happiness(state)),
+            color::TEXT(),
+        ),
+        (
+            "Reputation".to_string(),
+            average_reputation(state).to_string(),
+            color::ACCENT(),
+        ),
+        (
+            "Months".to_string(),
+            state.current_tick.to_string(),
+            color::TEXT(),
+        ),
+        (
+            "Missions".to_string(),
+            state.missions.completed_missions().len().to_string(),
+            color::PRIMARY(),
+        ),
+    ]
+}
+
+fn draw_stat_cards(page: Rect, y: f32, stats: &[(String, String, Color); 5]) {
+    let gap = space::SM;
+    let width = (page.w - gap * 4.0) / 5.0;
+    for (index, (label, value, value_color)) in stats.iter().enumerate() {
+        let rect = Rect::new(page.x + index as f32 * (width + gap), y, width, 64.0);
+        draw_card(rect, false);
+        draw_ui_text(
+            label,
+            rect.x + space::MD,
+            rect.y + 21.0,
+            scale::CAPTION,
+            color::TEXT_DIM(),
+        );
+        draw_ui_text(
+            &truncate_text_to_width(value, rect.w - space::MD * 2.0, scale::HEADING),
+            rect.x + space::MD,
+            rect.y + 49.0,
+            scale::HEADING,
+            *value_color,
+        );
+    }
+}
+
+fn draw_achievements(state: &GameplayState, page: Rect, y: f32, bottom: f32) {
+    let unlocked = state.achievements.unlocked.len();
+    let total = state.achievements.list.len().max(1);
+    draw_ui_text(
+        &format!("CAREER BADGES · {unlocked}/{total} UNLOCKED"),
+        page.x,
+        y + scale::LABEL,
+        scale::LABEL,
+        color::TEXT_DIM(),
+    );
+    let meter_w = page.w.min(260.0);
+    progress_bar(
+        page.right() - meter_w,
+        y + 2.0,
+        meter_w,
+        14.0,
+        unlocked as f32,
+        total as f32,
+        color::PRIMARY(),
+    );
+
+    let grid_y = y + line_height(scale::LABEL) + space::SM;
+    let columns = if page.w >= 1000.0 { 4 } else { 3 };
+    let gap = space::SM;
+    let card_h = 68.0;
+    let rows = ((bottom - grid_y + gap) / (card_h + gap)).floor().max(1.0) as usize;
+    let visible = rows * columns;
+    let card_w = (page.w - gap * (columns - 1) as f32) / columns as f32;
+
+    let ordered = state
+        .achievements
+        .list
+        .iter()
+        .filter(|achievement| state.achievements.is_unlocked(&achievement.id))
+        .chain(
+            state
+                .achievements
+                .list
+                .iter()
+                .filter(|achievement| !state.achievements.is_unlocked(&achievement.id)),
+        );
+    for (index, achievement) in ordered.take(visible).enumerate() {
+        let row = index / columns;
+        let column = index % columns;
+        draw_achievement_card(
+            state,
+            achievement,
+            Rect::new(
+                page.x + column as f32 * (card_w + gap),
+                grid_y + row as f32 * (card_h + gap),
+                card_w,
+                card_h,
+            ),
+        );
+    }
+}
+
+fn draw_achievement_card(state: &GameplayState, achievement: &Achievement, rect: Rect) {
+    let unlocked = state.achievements.is_unlocked(&achievement.id);
+    draw_card(rect, unlocked);
+    let title = if unlocked {
+        &achievement.name
+    } else {
+        "Badge not yet earned"
+    };
+    let description = if unlocked {
+        &achievement.description
+    } else {
+        "Keep building your legacy to reveal this badge."
+    };
+    draw_ui_text(
+        &truncate_text_to_width(title, rect.w - space::MD * 2.0, scale::BODY),
+        rect.x + space::MD,
+        rect.y + 24.0,
+        scale::BODY,
+        if unlocked {
+            color::TEXT_BRIGHT()
+        } else {
+            color::TEXT_DIM()
+        },
+    );
+    draw_ui_text(
+        &truncate_text_to_width(description, rect.w - space::MD * 2.0, scale::CAPTION),
+        rect.x + space::MD,
+        rect.y + 49.0,
+        scale::CAPTION,
+        color::TEXT_DIM(),
+    );
 }

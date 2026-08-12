@@ -48,32 +48,32 @@
     },
     "relationship_notifications": {
         "new_friendly": {
-            "icon": "💚",
+            "icon": "+",
             "template": "{tenant_a} and {tenant_b} have become friends!",
             "description": "Friendly neighbors boost each other's happiness."
         },
         "new_hostile": {
-            "icon": "⚡",
+            "icon": "!",
             "template": "Conflict brewing between {tenant_a} and {tenant_b}!",
             "description": "Hostile relationships reduce happiness. Consider mediating."
         },
         "conflict_resolved": {
-            "icon": "🕊️",
+            "icon": "+",
             "template": "The conflict between {tenant_a} and {tenant_b} has cooled down.",
             "description": "Time heals some wounds."
         },
         "friendship_deepened": {
-            "icon": "💛",
+            "icon": "+",
             "template": "{tenant_a} and {tenant_b} are becoming close friends!",
             "description": "Strong friendships provide bigger happiness bonuses."
         }
     },
     "relationship_icons": {
-        "friendly": "💚",
-        "neutral": "⚪",
-        "hostile": "⚡",
-        "romantic": "💕",
-        "family": "👨‍👩‍👧"
+        "friendly": "+",
+        "neutral": "=",
+        "hostile": "!",
+        "romantic": "+",
+        "family": "+"
     },
     "thresholds": {
         "low_condition": 50,

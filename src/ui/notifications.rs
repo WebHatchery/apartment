@@ -29,9 +29,9 @@ pub fn draw_notifications(
     // permanently reserving the old 100 px footer.
     draw_ui_text(
         if expanded {
-            "ACTIVITY  ▲"
+            "ACTIVITY · OPEN"
         } else {
-            "ACTIVITY  ▼"
+            "ACTIVITY"
         },
         space::LG,
         y + 25.0,

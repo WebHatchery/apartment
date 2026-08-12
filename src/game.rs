@@ -54,7 +54,7 @@ impl Game {
     /// Seed a specific scene for the screenshot harness.
     pub fn begin_capture_scene(&mut self, scene: &str) {
         match scene {
-            "menu" => self.state = GameState::Menu(MenuState::new()),
+            "menu" | "menu_compact" => self.state = GameState::Menu(MenuState::new()),
             "showcase" | "showcase_compact" => self.seed_gameplay_capture(true),
             "unit_showcase" | "unit_compact" => {
                 self.seed_gameplay_capture(true);
@@ -88,6 +88,19 @@ impl Game {
                     state.selection = crate::ui::Selection::Applications(None);
                 }
             }
+            "ownership_showcase" | "ownership_compact" => {
+                self.seed_gameplay_capture(true);
+                if let GameState::Gameplay(state) = &mut self.state {
+                    state.selection = crate::ui::Selection::Ownership;
+                }
+            }
+            "ownership_scrolled" => {
+                self.seed_gameplay_capture(true);
+                if let GameState::Gameplay(state) = &mut self.state {
+                    state.selection = crate::ui::Selection::Ownership;
+                    state.panel_scroll_offset = 174.0;
+                }
+            }
             "tenants_showcase" | "tenants_compact" => {
                 self.seed_workspace_capture(ViewMode::Tenants);
             }
@@ -97,11 +110,56 @@ impl Game {
             "city_showcase" | "city_compact" => {
                 self.seed_workspace_capture(ViewMode::CityMap);
             }
+            "market_showcase" | "market_compact" => {
+                self.seed_workspace_capture(ViewMode::Market);
+                if let GameState::Gameplay(state) = &mut self.state {
+                    seed_showcase_market(state);
+                }
+            }
             "inbox_showcase" | "inbox_compact" => {
                 self.seed_workspace_capture(ViewMode::Mail);
             }
             "tasks_showcase" | "tasks_compact" => {
                 self.seed_workspace_capture(ViewMode::Tasks);
+            }
+            "pause_showcase" | "pause_compact" => {
+                self.seed_gameplay_capture(true);
+                if let GameState::Gameplay(state) = &mut self.state {
+                    state.show_pause_menu = true;
+                }
+            }
+            "history_showcase" | "history_compact" => {
+                self.seed_gameplay_capture(true);
+                if let GameState::Gameplay(state) = &mut self.state {
+                    seed_showcase_activity(state);
+                    state.activity_drawer_open = true;
+                }
+            }
+            "career_showcase" | "career_compact" => {
+                self.seed_workspace_capture(ViewMode::CareerSummary);
+                if let GameState::Gameplay(state) = &mut self.state {
+                    seed_showcase_career(state);
+                }
+            }
+            "tutorial_showcase" | "tutorial_compact" => self.seed_gameplay_capture(false),
+            "event_showcase" | "event_compact" => {
+                self.seed_gameplay_capture(true);
+                if let GameState::Gameplay(state) = &mut self.state {
+                    seed_showcase_event(state);
+                }
+            }
+            "notification_showcase" | "notification_compact" => {
+                self.seed_gameplay_capture(true);
+                if let GameState::Gameplay(state) = &mut self.state {
+                    state.notifications.pending.push(
+                        crate::narrative::notifications::GameNotification::positive(
+                            "+",
+                            "Maya R. and Jon Bell have become friends!",
+                        ),
+                    );
+                    state.notifications.pending[0].description =
+                        Some("Friendly neighbors boost each other's happiness.".to_string());
+                }
             }
             "gameplay" => self.seed_gameplay_capture(false),
             _ => {
@@ -131,6 +189,147 @@ impl Game {
             state.view_mode = view_mode;
         }
     }
+}
+
+fn seed_showcase_activity(state: &mut crate::state::GameplayState) {
+    use crate::simulation::{GameEvent, NotificationLevel};
+
+    state.event_log.log(
+        GameEvent::Notification {
+            message: "The Greenfield Heights block welcomed two new families.".to_string(),
+            level: NotificationLevel::Info,
+        },
+        10,
+    );
+    state.event_log.log(
+        GameEvent::UpgradeCompleted {
+            description: "Warm hallway lighting".to_string(),
+            cost: 1_000,
+        },
+        10,
+    );
+    state.event_log.log(
+        GameEvent::RentPaid {
+            tenant_name: "Maya R.".to_string(),
+            amount: 600,
+        },
+        10,
+    );
+    state.event_log.log(
+        GameEvent::NoiseComplaint {
+            tenant_name: "Jon Bell".to_string(),
+        },
+        10,
+    );
+}
+
+fn seed_showcase_career(state: &mut crate::state::GameplayState) {
+    state.current_tick = 36;
+    state.funds.balance = 32_750;
+    for id in [
+        "first_tenant",
+        "full_house",
+        "landlord",
+        "well_regarded",
+        "happy_home",
+        "survivor",
+    ] {
+        state.achievements.unlock(id);
+    }
+}
+
+fn seed_showcase_event(state: &mut crate::state::GameplayState) {
+    use crate::narrative::events::{
+        NarrativeChoice, NarrativeEffect, NarrativeEvent, NarrativeEventType,
+    };
+
+    let event = NarrativeEvent::with_choices(
+        0,
+        NarrativeEventType::NeighborhoodNews,
+        state.current_tick,
+        "A garden for the courtyard",
+        "Residents have drawn up plans to turn the unused courtyard into a shared garden. They need help with supplies, but the project could bring the whole building together.",
+        vec![
+            NarrativeChoice {
+                label: "Fund the garden · $750".to_string(),
+                description: "Pay for planters, tools, and the first season of seedlings."
+                    .to_string(),
+                effect: NarrativeEffect::Money { amount: -750 },
+                reputation_change: 8,
+            },
+            NarrativeChoice {
+                label: "Offer the space only".to_string(),
+                description: "Let residents organise the project themselves.".to_string(),
+                effect: NarrativeEffect::None,
+                reputation_change: 2,
+            },
+        ],
+    );
+    state.narrative_events.add_event(event);
+}
+
+fn seed_showcase_market(state: &mut crate::state::GameplayState) {
+    use crate::city::{BuildingCondition, FinancingOption, PropertyListing};
+
+    state.funds.balance = 420_000;
+    let specs = [
+        (
+            "Juniper Court",
+            0,
+            BuildingCondition::Fair,
+            3,
+            2,
+            285_000,
+            3,
+        ),
+        (
+            "Foundry House",
+            2,
+            BuildingCondition::Poor,
+            4,
+            2,
+            218_000,
+            2,
+        ),
+        ("Rose Terrace", 3, BuildingCondition::Good, 3, 3, 398_000, 5),
+        (
+            "Garden Mews",
+            1,
+            BuildingCondition::Excellent,
+            2,
+            3,
+            465_000,
+            4,
+        ),
+    ];
+    state.city.market.listings = specs
+        .into_iter()
+        .enumerate()
+        .map(
+            |(index, (name, neighborhood, condition, floors, units, price, tenants))| {
+                PropertyListing {
+                    id: index as u32,
+                    name: name.to_string(),
+                    neighborhood_id: state.city.neighborhoods[neighborhood].id,
+                    condition,
+                    num_floors: floors,
+                    units_per_floor: units,
+                    asking_price: price,
+                    existing_tenants: tenants,
+                    months_on_market: index as u32 + 1,
+                    available_financing: vec![
+                        FinancingOption::Cash,
+                        FinancingOption::Mortgage {
+                            down_payment_percent: 0.2,
+                            interest_rate: 0.06,
+                            term_months: 120,
+                        },
+                    ],
+                    notes: Vec::new(),
+                }
+            },
+        )
+        .collect();
 }
 
 fn seed_showcase_residents(state: &mut crate::state::GameplayState) {

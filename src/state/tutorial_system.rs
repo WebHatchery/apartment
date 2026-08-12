@@ -82,7 +82,7 @@ pub fn update_tutorial(state: &mut GameplayState) {
 
                     // Visual cue
                     state.floating_texts.spawn(
-                        "⚠ LEAK DETECTED!",
+                        "LEAK DETECTED!",
                         vec2(screen_width() / 2.0, screen_height() / 2.0 + 60.0),
                         colors::NEGATIVE(),
                     );

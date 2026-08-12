@@ -231,7 +231,9 @@ pub fn draw_toast(
     let panel_h = (text_h + space::LG * 2.0 + 44.0).max(120.0);
 
     let panel_x = (screen_width() - panel_w) / 2.0;
-    let panel_y = screen_height() - panel_h - space::XL;
+    let footer_y = screen_height() - crate::ui::layout::FOOTER_HEIGHT();
+    let panel_y =
+        (footer_y - panel_h - space::SM).max(crate::ui::layout::HEADER_HEIGHT() + space::SM);
 
     let style = macroquad_toolkit::ui::SurfaceStyle::new(color::SURFACE())
         .with_shadow(vec2(0.0, 4.0), color::SHADOW())

@@ -1,323 +1,218 @@
-use crate::building::ownership::OwnershipType;
-use crate::building::Building;
-use crate::ui::{colors, UiAction};
-use macroquad::prelude::*;
-use macroquad_toolkit::ui::draw_ui_text_ex;
+//! Responsive ownership and condo-conversion panel.
 
-pub fn draw_ownership_panel(building: &Building, market_multiplier: f32) -> Option<UiAction> {
+use std::collections::HashSet;
+
+use macroquad::prelude::*;
+use macroquad_toolkit::ui::{draw_ui_text, format_money, truncate_text_to_width};
+
+use crate::building::ownership::OwnershipType;
+use crate::building::{Apartment, Building};
+
+use super::theme::{color, scale, space, Tone};
+use super::widgets::{button_at, draw_card, draw_panel, line_height, wrap};
+use super::UiAction;
+
+pub fn draw_ownership_panel(
+    building: &Building,
+    market_multiplier: f32,
+    scroll_offset: f32,
+) -> (Option<UiAction>, f32) {
     let padding = crate::ui::layout::PADDING();
     let panel_x = screen_width() * crate::ui::layout::PANEL_SPLIT() + padding;
     let panel_y = crate::ui::layout::HEADER_HEIGHT() + padding;
-    let panel_width = screen_width() - panel_x - padding;
-    let panel_height = screen_height() - panel_y - crate::ui::layout::FOOTER_HEIGHT() - padding;
+    let panel_w = screen_width() - panel_x - padding;
+    let panel_h = screen_height() - panel_y - crate::ui::layout::FOOTER_HEIGHT() - padding;
+    let panel = Rect::new(panel_x, panel_y, panel_w, panel_h);
+    let inner = draw_panel(panel, "Building ownership");
 
-    // Themed panel frame + header.
-    crate::ui::common::panel(
-        panel_x,
-        panel_y,
-        panel_width,
-        panel_height,
-        "Building Ownership",
-    );
-
-    let mut action = None;
-    let mut y = panel_y + 50.0;
-
-    // Display current ownership model
-    let model_name = match building.ownership_model {
-        OwnershipType::FullRental => "Full Rental (Sole Proprietorship)",
-        OwnershipType::MixedOwnership(_) => "Mixed Ownership (Partial Condo)",
-        OwnershipType::FullCondo(_) => "Full Condo Association",
-        OwnershipType::CooperativeHousing => "Tenant Cooperative",
-        OwnershipType::SocialHousing => "Social Housing / Subsidized",
-    };
-
-    draw_ui_text_ex(
+    let model_name = ownership_name(&building.ownership_model);
+    draw_ui_text(
         model_name,
-        panel_x + 10.0,
-        y,
-        TextParams {
-            font_size: 16,
-            color: colors::ACCENT(),
-            ..Default::default()
-        },
+        inner.x,
+        inner.y + scale::BODY,
+        scale::BODY,
+        color::ACCENT(),
     );
-    y += 30.0;
+    let mut y = inner.y + line_height(scale::BODY) + space::SM;
 
-    // Handle different models
-    match &building.ownership_model {
-        OwnershipType::FullRental => {
-            draw_ui_text_ex(
-                "You own 100% of this building and collect all rent.",
-                panel_x + 10.0,
-                y,
-                TextParams {
-                    font_size: 14,
-                    color: colors::TEXT(),
-                    ..Default::default()
-                },
-            );
-            y += 20.0;
-            draw_ui_text_ex(
-                "You can convert individual units to Condos to raise quick capital.",
-                panel_x + 10.0,
-                y,
-                TextParams {
-                    font_size: 14,
-                    color: colors::TEXT_DIM(),
-                    ..Default::default()
-                },
-            );
-            y += 30.0;
+    let (description, apartments, reserve) = ownership_details(building);
+    for line in wrap(description, inner.w, scale::LABEL).iter().take(2) {
+        draw_ui_text(
+            line,
+            inner.x,
+            y + scale::LABEL,
+            scale::LABEL,
+            color::TEXT_DIM(),
+        );
+        y += line_height(scale::LABEL);
+    }
+    if let Some(reserve) = reserve {
+        draw_ui_text(
+            &format!("Board reserve: {}", format_money(reserve as i64)),
+            inner.x,
+            y + scale::LABEL,
+            scale::LABEL,
+            color::POSITIVE(),
+        );
+        y += line_height(scale::LABEL);
+    }
+    y += space::SM;
 
-            // Show conversion options for vacant units?
-            // For now, let's just list unit counts
-            let owned_count = building.apartments.len();
-            draw_ui_text_ex(
-                &format!("Units Owned: {}", owned_count),
-                panel_x + 10.0,
-                y,
-                TextParams {
-                    font_size: 14,
-                    color: colors::TEXT(),
-                    ..Default::default()
-                },
-            );
-            y += 30.0;
-
-            // Allow converting a unit?
-            // It's a bit complex to select WHICH unit here without a selector.
-            // Maybe just a note: "Select a unit in the main view to Sell as Condo"
-            // Or listed items.
-
-            draw_ui_text_ex(
-                "Available Units for Conversion:",
-                panel_x + 10.0,
-                y,
-                TextParams {
-                    font_size: 14,
-                    color: colors::TEXT(),
-                    ..Default::default()
-                },
-            );
-            y += 20.0;
-
-            for apt in &building.apartments {
-                // Background strip
-                draw_rectangle(
-                    panel_x + 10.0,
-                    y,
-                    panel_width - 20.0,
-                    44.0,
-                    colors::SURFACE(),
-                );
-
-                // Unit Name
-                draw_ui_text_ex(
-                    &format!("Unit {}", apt.unit_number),
-                    panel_x + 20.0,
-                    y + 20.0,
-                    TextParams {
-                        font_size: 14,
-                        color: colors::TEXT(),
-                        ..Default::default()
-                    },
-                );
-
-                // Status
-                let status = if apt.is_vacant() {
-                    "Vacant"
-                } else {
-                    "Occupied"
-                };
-                draw_ui_text_ex(
-                    status,
-                    panel_x + 100.0,
-                    y + 20.0,
-                    TextParams {
-                        font_size: 14,
-                        color: if apt.is_vacant() {
-                            colors::POSITIVE()
-                        } else {
-                            colors::WARNING()
-                        },
-                        ..Default::default()
-                    },
-                );
-
-                // Sell Button - use calculated market value
-                let sale_price = (apt.market_value() as f32 * market_multiplier) as i32;
-
-                if crate::ui::widgets::button_at(
-                    Rect::new(panel_x + panel_width - 172.0, y + 2.0, 160.0, 40.0),
-                    &format!("Sell Condo (${})", sale_price),
-                    true,
-                    crate::ui::theme::Tone::Positive,
-                ) {
-                    action = Some(UiAction::SellUnitAsCondo {
-                        apartment_id: apt.id,
-                    });
-                }
-
-                y += 48.0;
-                if y > panel_y + panel_height - 50.0 {
-                    break;
-                }
-            }
-        }
-        OwnershipType::MixedOwnership(board) | OwnershipType::FullCondo(board) => {
-            // Show condo board stats
-            draw_ui_text_ex(
-                &format!("Reserve Fund: ${}", board.reserve_fund),
-                panel_x + 10.0,
-                y,
-                TextParams {
-                    font_size: 16,
-                    color: colors::POSITIVE(),
-                    ..Default::default()
-                },
-            );
-            y += 25.0;
-
-            draw_ui_text_ex(
-                &format!(
-                    "Sold Units: {} | Remaining: {}",
-                    board.units.len(),
-                    building.apartments.len() - board.units.len()
-                ),
-                panel_x + 10.0,
-                y,
-                TextParams {
-                    font_size: 14,
-                    color: colors::TEXT(),
-                    ..Default::default()
-                },
-            );
-            y += 30.0;
-
-            // Show unsold units that can still be converted
-            let sold_ids: std::collections::HashSet<u32> =
-                board.units.iter().map(|u| u.apartment_id).collect();
-
-            let unsold: Vec<_> = building
-                .apartments
-                .iter()
-                .filter(|apt| !sold_ids.contains(&apt.id))
-                .collect();
-
-            if !unsold.is_empty() {
-                draw_ui_text_ex(
-                    "Remaining Units for Sale:",
-                    panel_x + 10.0,
-                    y,
-                    TextParams {
-                        font_size: 14,
-                        color: colors::ACCENT(),
-                        ..Default::default()
-                    },
-                );
-                y += 20.0;
-
-                for apt in unsold {
-                    // Background strip
-                    draw_rectangle(
-                        panel_x + 10.0,
-                        y,
-                        panel_width - 20.0,
-                        44.0,
-                        colors::SURFACE(),
-                    );
-
-                    // Unit Name
-                    draw_ui_text_ex(
-                        &format!("Unit {}", apt.unit_number),
-                        panel_x + 20.0,
-                        y + 20.0,
-                        TextParams {
-                            font_size: 14,
-                            color: colors::TEXT(),
-                            ..Default::default()
-                        },
-                    );
-
-                    // Status
-                    let status = if apt.is_vacant() {
-                        "Vacant"
-                    } else {
-                        "Occupied"
-                    };
-                    draw_ui_text_ex(
-                        status,
-                        panel_x + 100.0,
-                        y + 20.0,
-                        TextParams {
-                            font_size: 14,
-                            color: if apt.is_vacant() {
-                                colors::POSITIVE()
-                            } else {
-                                colors::WARNING()
-                            },
-                            ..Default::default()
-                        },
-                    );
-
-                    // Sell Button
-                    let sale_price = (apt.market_value() as f32 * market_multiplier) as i32;
-
-                    if crate::ui::widgets::button_at(
-                        Rect::new(panel_x + panel_width - 152.0, y + 2.0, 140.0, 40.0),
-                        &format!("Sell (${})", sale_price),
-                        true,
-                        crate::ui::theme::Tone::Positive,
-                    ) {
-                        action = Some(UiAction::SellUnitAsCondo {
-                            apartment_id: apt.id,
-                        });
-                    }
-
-                    y += 48.0;
-                    if y > panel_y + panel_height - 80.0 {
-                        break;
-                    }
-                }
-            } else {
-                draw_ui_text_ex(
-                    "All units have been sold as condos.",
-                    panel_x + 10.0,
-                    y,
-                    TextParams {
-                        font_size: 14,
-                        color: colors::TEXT_DIM(),
-                        ..Default::default()
-                    },
-                );
-            }
-        }
-        _ => {
-            draw_ui_text_ex(
-                "This ownership model is governed externally; no conversion actions are available.",
-                panel_x + 10.0,
-                y,
-                TextParams {
-                    font_size: 14,
-                    color: colors::TEXT_DIM(),
-                    ..Default::default()
-                },
-            );
-        }
+    let footer_h = 42.0;
+    let footer_y = inner.bottom() - footer_h;
+    if apartments.is_empty() {
+        draw_ui_text(
+            "No units are available for condo conversion.",
+            inner.x,
+            y + scale::BODY,
+            scale::BODY,
+            color::TEXT_DIM(),
+        );
+        let close = button_at(
+            Rect::new(inner.x, footer_y, inner.w, footer_h),
+            "Close ownership",
+            true,
+            Tone::Secondary,
+        );
+        return (close.then_some(UiAction::ClearSelection), 0.0);
     }
 
-    // Close / Back button
-    if crate::ui::common::button(
-        panel_x + 10.0,
-        panel_y + panel_height - 46.0,
-        120.0,
-        40.0,
-        "Close Panel",
+    draw_ui_text(
+        &format!("UNITS AVAILABLE · {}", apartments.len()),
+        inner.x,
+        y + scale::LABEL,
+        scale::LABEL,
+        color::TEXT_DIM(),
+    );
+    y += line_height(scale::LABEL) + space::SM;
+
+    let row_h = 58.0;
+    let visible = (((footer_y - space::SM - y) / row_h).floor() as usize).max(1);
+    let max_first = apartments.len().saturating_sub(visible);
+    let first = ((scroll_offset / row_h).round() as usize).min(max_first);
+    let mut action = None;
+    for apartment in apartments.iter().skip(first).take(visible) {
+        if draw_unit_row(
+            apartment,
+            market_multiplier,
+            Rect::new(inner.x, y, inner.w, 52.0),
+        ) {
+            action = Some(UiAction::SellUnitAsCondo {
+                apartment_id: apartment.id,
+            });
+        }
+        y += row_h;
+    }
+
+    let mut next_offset = first as f32 * row_h;
+    let close_w = inner.w.min(118.0);
+    if button_at(
+        Rect::new(inner.x, footer_y, close_w, footer_h),
+        "Close",
         true,
+        Tone::Secondary,
     ) {
         action = Some(UiAction::ClearSelection);
     }
+    if max_first > 0 {
+        let gap = space::SM;
+        let pager_x = inner.x + close_w + gap;
+        let pager_w = inner.right() - pager_x;
+        let button_w = (pager_w - gap) / 2.0;
+        if button_at(
+            Rect::new(pager_x, footer_y, button_w, footer_h),
+            "Earlier",
+            first > 0,
+            Tone::Secondary,
+        ) {
+            next_offset = first.saturating_sub(visible) as f32 * row_h;
+        }
+        if button_at(
+            Rect::new(pager_x + button_w + gap, footer_y, button_w, footer_h),
+            "More",
+            first < max_first,
+            Tone::Primary,
+        ) {
+            next_offset = (first + visible).min(max_first) as f32 * row_h;
+        }
+    }
+    (action, next_offset)
+}
 
-    action
+fn ownership_name(ownership: &OwnershipType) -> &'static str {
+    match ownership {
+        OwnershipType::FullRental => "Full rental · sole proprietor",
+        OwnershipType::MixedOwnership(_) => "Mixed ownership · partial condo",
+        OwnershipType::FullCondo(_) => "Full condo association",
+        OwnershipType::CooperativeHousing => "Tenant cooperative",
+        OwnershipType::SocialHousing => "Social and subsidized housing",
+    }
+}
+
+fn ownership_details<'a>(
+    building: &'a Building,
+) -> (&'static str, Vec<&'a Apartment>, Option<i32>) {
+    match &building.ownership_model {
+        OwnershipType::FullRental => (
+            "You own every unit and collect all rent. Selling a unit raises capital but gives up its future rent.",
+            building.apartments.iter().collect(),
+            None,
+        ),
+        OwnershipType::MixedOwnership(board) | OwnershipType::FullCondo(board) => {
+            let sold: HashSet<u32> = board.units.iter().map(|unit| unit.apartment_id).collect();
+            (
+                "The condo board shares responsibility for sold units. Remaining units can still be converted.",
+                building
+                    .apartments
+                    .iter()
+                    .filter(|apartment| !sold.contains(&apartment.id))
+                    .collect(),
+                Some(board.reserve_fund),
+            )
+        }
+        OwnershipType::CooperativeHousing | OwnershipType::SocialHousing => (
+            "This building is governed externally, so individual condo conversion is unavailable.",
+            Vec::new(),
+            None,
+        ),
+    }
+}
+
+fn draw_unit_row(apartment: &Apartment, multiplier: f32, rect: Rect) -> bool {
+    draw_card(rect, false);
+    let button_w = rect.w.min(166.0);
+    let text_w = (rect.w - button_w - space::MD * 3.0).max(50.0);
+    draw_ui_text(
+        &truncate_text_to_width(
+            &format!("Unit {}", apartment.unit_number),
+            text_w,
+            scale::BODY,
+        ),
+        rect.x + space::MD,
+        rect.y + 20.0,
+        scale::BODY,
+        color::TEXT_BRIGHT(),
+    );
+    draw_ui_text(
+        if apartment.is_vacant() {
+            "Vacant"
+        } else {
+            "Occupied"
+        },
+        rect.x + space::MD,
+        rect.y + 41.0,
+        scale::CAPTION,
+        if apartment.is_vacant() {
+            color::POSITIVE()
+        } else {
+            color::WARNING()
+        },
+    );
+    let sale_price = (apartment.market_value() as f32 * multiplier) as i32;
+    button_at(
+        Rect::new(rect.right() - button_w - 6.0, rect.y + 6.0, button_w, 40.0),
+        &format!("Sell · {}", format_money(sale_price as i64)),
+        true,
+        Tone::Positive,
+    )
 }

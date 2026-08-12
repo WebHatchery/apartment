@@ -52,7 +52,7 @@ impl GameNotification {
 
     pub fn hint(message: &str) -> Self {
         Self {
-            icon: "💡".to_string(),
+            icon: "i".to_string(),
             message: message.to_string(),
             description: None,
             category: NotificationCategory::Hint,
@@ -107,9 +107,9 @@ impl RelationshipChange {
                         tenant_a_name, tenant_b_name, relationship_type
                     );
                     if *is_positive {
-                        GameNotification::positive("💚", &msg)
+                        GameNotification::positive("+", &msg)
                     } else {
-                        GameNotification::warning("⚡", &msg)
+                        GameNotification::warning("!", &msg)
                     }
                 }
             }
@@ -164,7 +164,7 @@ impl Default for HintsConfig {
         relationship_notifications.insert(
             "new_friendly".to_string(),
             RelationshipNotificationTemplate {
-                icon: "💚".to_string(),
+                icon: "+".to_string(),
                 template: "{tenant_a} and {tenant_b} have become friends!".to_string(),
                 description: "Friendly neighbors boost each other's happiness.".to_string(),
             },
@@ -172,18 +172,18 @@ impl Default for HintsConfig {
         relationship_notifications.insert(
             "new_hostile".to_string(),
             RelationshipNotificationTemplate {
-                icon: "⚡".to_string(),
+                icon: "!".to_string(),
                 template: "Conflict brewing between {tenant_a} and {tenant_b}!".to_string(),
                 description: "Hostile relationships reduce happiness.".to_string(),
             },
         );
 
         let mut relationship_icons = HashMap::new();
-        relationship_icons.insert("friendly".to_string(), "💚".to_string());
-        relationship_icons.insert("neutral".to_string(), "⚪".to_string());
-        relationship_icons.insert("hostile".to_string(), "⚡".to_string());
-        relationship_icons.insert("romantic".to_string(), "💕".to_string());
-        relationship_icons.insert("family".to_string(), "👨‍👩‍👧".to_string());
+        relationship_icons.insert("friendly".to_string(), "+".to_string());
+        relationship_icons.insert("neutral".to_string(), "=".to_string());
+        relationship_icons.insert("hostile".to_string(), "!".to_string());
+        relationship_icons.insert("romantic".to_string(), "+".to_string());
+        relationship_icons.insert("family".to_string(), "+".to_string());
 
         Self {
             context_hints,

@@ -10,5 +10,5 @@ mod market;
 mod neighborhood;
 
 pub use city::City;
-pub use market::{PropertyListing, PropertyMarket};
+pub use market::{BuildingCondition, FinancingOption, PropertyListing, PropertyMarket};
 pub use neighborhood::{Neighborhood, NeighborhoodType};

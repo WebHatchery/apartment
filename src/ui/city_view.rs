@@ -407,7 +407,7 @@ pub fn draw_market_panel(
 
     // Back button
     if draw_button_icon(
-        "← Back to Map",
+        "Back to city",
         content.x,
         panel_y + panel_height - 60.0,
         150.0,

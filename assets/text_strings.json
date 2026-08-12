@@ -32,11 +32,11 @@
     "design_types": {
         "bare": "Bare",
         "practical": "Practical",
-        "cozy": "Cozy ★"
+        "cozy": "Cozy"
     },
     "noise_levels": {
         "low": "Quiet",
-        "high": "Noisy ⚠"
+        "high": "Noisy"
     },
     "sizes": {
         "small": "Small",
@@ -52,12 +52,12 @@
         "noise_complaint": "Noise complaint from {tenant}",
         "condition_complaint": "{tenant} complained about Unit {unit} condition",
         "poor_condition": "Unit {unit} in poor condition ({condition}%)",
-        "critical_condition": "⚠️ Unit {unit} CRITICAL ({condition}%)",
+        "critical_condition": "Unit {unit} CRITICAL ({condition}%)",
         "hallway_deteriorating": "Hallway deteriorating ({condition}%)",
         "month_end": "Month {tick} ended: +${income} -${expenses} = ${balance}",
-        "victory": "🎉 Victory!",
-        "bankruptcy": "💸 Bankrupt!",
-        "all_left": "🚪 All tenants left!"
+        "victory": "Career complete!",
+        "bankruptcy": "Bankruptcy declared!",
+        "all_left": "All tenants have left!"
     },
     "upgrade_buttons": {
         "repair": "Repair +{amount} (${cost})",

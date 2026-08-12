@@ -165,7 +165,7 @@ impl GameEvent {
                 damage,
             } => {
                 format!(
-                    "🔨 {} damaged Unit {} (-{} condition)",
+                    "{} damaged Unit {} (-{} condition)",
                     tenant_name, apartment_unit, damage
                 )
             }
@@ -188,7 +188,7 @@ impl GameEvent {
                 apartment_unit,
                 condition,
             } => {
-                format!("⚠️ Unit {} CRITICAL ({}%)", apartment_unit, condition)
+                format!("Unit {} CRITICAL ({}%)", apartment_unit, condition)
             }
             GameEvent::HallwayDeteriorating { condition } => {
                 format!("Hallway deteriorating ({}%)", condition)
@@ -218,19 +218,19 @@ impl GameEvent {
                 )
             }
             GameEvent::GameEnded { outcome } => match outcome {
-                GameOutcome::Victory { .. } => "🎉 Victory!".to_string(),
-                GameOutcome::Bankruptcy { .. } => "💸 Bankrupt!".to_string(),
-                GameOutcome::AllTenantsLeft => "🚪 All tenants left!".to_string(),
+                GameOutcome::Victory { .. } => "Career complete!".to_string(),
+                GameOutcome::Bankruptcy { .. } => "Bankruptcy declared!".to_string(),
+                GameOutcome::AllTenantsLeft => "All tenants have left!".to_string(),
             },
             GameEvent::Heatwave { tick_duration } => {
-                format!("☀️ Heatwave! (Duration: {} months)", tick_duration)
+                format!("Heatwave! (Duration: {} months)", tick_duration)
             }
             GameEvent::PipeBurst {
                 apartment_unit,
                 damage,
             } => {
                 format!(
-                    "💧 Pipe Burst in Unit {}! (-{} condition)",
+                    "Pipe burst in Unit {}! (-{} condition)",
                     apartment_unit, damage
                 )
             }
@@ -239,25 +239,25 @@ impl GameEvent {
                 effect_desc,
             } => {
                 format!(
-                    "📈 Neighborhood improving! {} (Duration: {})",
+                    "Neighborhood improving! {} (Duration: {})",
                     effect_desc, tick_duration
                 )
             }
             GameEvent::Inspection { result, fine } => {
                 if *fine > 0 {
-                    format!("📋 Inspection Failed: {} (Fine: -${})", result, fine)
+                    format!("Inspection failed: {} (Fine: -${})", result, fine)
                 } else {
-                    format!("📋 Inspection Passed: {}", result)
+                    format!("Inspection passed: {}", result)
                 }
             }
             GameEvent::BoilerFailure { cost } => {
-                format!("🔥 Boiler Failure! (-${} repair)", cost)
+                format!("Boiler failure! (-${} repair)", cost)
             }
             GameEvent::StructuralIssue { cost, description } => {
-                format!("🏗️ Structural Issue: {} (-${})", description, cost)
+                format!("Structural issue: {} (-${})", description, cost)
             }
             GameEvent::StaffAction { role, action } => {
-                format!("👔 {}: {}", role, action)
+                format!("{}: {}", role, action)
             }
             GameEvent::Notification { message, .. } => message.clone(),
         }

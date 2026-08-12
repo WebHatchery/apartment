@@ -243,9 +243,13 @@ impl GameplayState {
                 }
             }
             Selection::Ownership => {
-                if let Some(action) =
-                    draw_ownership_panel(&self.building, self.condo_sale_market_multiplier())
-                {
+                let (action, new_scroll) = draw_ownership_panel(
+                    &self.building,
+                    self.condo_sale_market_multiplier(),
+                    self.panel_scroll_offset,
+                );
+                self.panel_scroll_offset = new_scroll;
+                if let Some(action) = action {
                     self.pending_actions.push(action);
                 }
             }
@@ -279,7 +283,7 @@ impl GameplayState {
 
         // Menu panel
         let panel_w = 300.0;
-        let panel_h = 330.0;
+        let panel_h = 366.0;
         let panel_x = (screen_width() - panel_w) / 2.0;
         let panel_y = (screen_height() - panel_h) / 2.0;
 
@@ -348,10 +352,10 @@ impl GameplayState {
             }
         }
 
-        // ESC hint
+        // Touch-first continuation hint; keyboard shortcuts remain supplemental.
         draw_ui_text(
-            "Press ESC to resume",
-            panel_x + (panel_w - 140.0) / 2.0,
+            "Tap RESUME to continue",
+            panel_x + (panel_w - 164.0) / 2.0,
             panel_y + panel_h - 20.0,
             14.0,
             colors::TEXT_DIM(),
@@ -401,13 +405,13 @@ impl GameplayState {
         if self.tutorial.pending_messages.is_empty() {
             return;
         }
-        let message = self.tutorial.pending_messages[0].clone();
+        let message = format!("{} Tap CONTINUE.", self.tutorial.pending_messages[0]);
         if crate::ui::widgets::draw_toast(
             "",
             "Uncle Artie",
             &message,
             crate::ui::widgets::ToastKind::Info,
-            "Next",
+            "Continue",
         ) {
             self.tutorial.pending_messages.remove(0);
         }
@@ -525,13 +529,12 @@ impl GameplayState {
             NotificationCategory::Info => crate::ui::widgets::ToastKind::Info,
             NotificationCategory::Hint => crate::ui::widgets::ToastKind::Hint,
         };
-        let icon = notification.icon.clone();
         let mut body = notification.message.clone();
         if let Some(desc) = &notification.description {
             body.push('\n');
             body.push_str(desc);
         }
-        if crate::ui::widgets::draw_toast(&icon, "", &body, kind, "OK") {
+        if crate::ui::widgets::draw_toast("", "", &body, kind, "OK") {
             self.notifications.pop();
         }
     }
