@@ -67,6 +67,7 @@ impl AssetManager {
             "neighborhood_historic",
             // UI Icons
             "workspace_icons",
+            "upgrade_icons",
             "icon_money",
             "icon_repair",
             "icon_upgrade",
@@ -132,6 +133,7 @@ impl AssetManager {
                             | "achievement_emblems"
                             | "event_atlas"
                             | "workspace_icons"
+                            | "upgrade_icons"
                     ) {
                     FilterMode::Linear
                 } else {

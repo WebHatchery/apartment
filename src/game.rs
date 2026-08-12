@@ -70,7 +70,11 @@ impl Game {
                 self.seed_gameplay_capture(true);
                 if let GameState::Gameplay(state) = &mut self.state {
                     state.selection = crate::ui::Selection::Apartment(3);
-                    state.panel_scroll_offset = 240.0;
+                    state.panel_scroll_offset = if scene == "unit_scrolled_tiny" {
+                        480.0
+                    } else {
+                        240.0
+                    };
                 }
             }
             "hallway_showcase" | "hallway_compact" | "hallway_tiny" => {

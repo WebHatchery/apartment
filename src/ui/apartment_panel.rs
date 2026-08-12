@@ -109,6 +109,7 @@ pub fn draw_apartment_panel(
         content_bottom,
         new_scroll,
         config,
+        assets,
     );
     if let Some(act) = upgrade_action {
         action = Some(act);

@@ -1,9 +1,9 @@
 use crate::assets::AssetManager;
-use crate::building::{Apartment, ApartmentSize, Building, DesignType, NoiseLevel};
+use crate::building::{Apartment, ApartmentSize, Building, DesignType, NoiseLevel, UpgradeAction};
 use macroquad::prelude::*;
 
 use super::{common::*, UiAction};
-use macroquad_toolkit::ui::{draw_ui_text, measure_ui_text};
+use macroquad_toolkit::ui::{draw_ui_text, measure_ui_text, truncate_text_to_width};
 
 pub(super) fn draw_sold_condo_panel(
     apt: &Apartment,
@@ -228,6 +228,7 @@ pub(super) fn draw_upgrades(
     content_bottom: f32,
     current_scroll: f32,
     config: &crate::data::config::GameConfig,
+    assets: &AssetManager,
 ) -> (Option<UiAction>, f32, f32) {
     let w = panel_w - 30.0;
     if *y > content_top && *y < content_bottom {
@@ -271,7 +272,13 @@ pub(super) fn draw_upgrades(
 
             if *y >= content_top
                 && *y + btn_h <= content_bottom
-                && button(content_x, *y, btn_w, btn_h, &label, can_afford)
+                && upgrade_button(
+                    Rect::new(content_x, *y, btn_w, btn_h),
+                    &label,
+                    can_afford,
+                    &upgrade,
+                    assets,
+                )
             {
                 action = Some(UiAction::UpgradeAction(upgrade));
             }
@@ -297,3 +304,87 @@ pub(super) fn draw_upgrades(
 
     (action, final_scroll, max_scroll)
 }
+
+fn upgrade_icon_tile(action: &UpgradeAction) -> (f32, f32) {
+    match action {
+        UpgradeAction::RepairApartment { .. } | UpgradeAction::RepairHallway { .. } => (0.0, 0.0),
+        UpgradeAction::Apply { upgrade_id, .. } if upgrade_id == "soundproofing" => (1.0, 0.0),
+        UpgradeAction::Apply { upgrade_id, .. } if upgrade_id == "kitchen_renovation" => (2.0, 0.0),
+        UpgradeAction::Apply { upgrade_id, .. } if upgrade_id == "lighting_upgrade" => (0.0, 1.0),
+        UpgradeAction::Apply { upgrade_id, .. } if upgrade_id == "install_laundry" => (1.0, 1.0),
+        UpgradeAction::Apply { .. } => (2.0, 1.0),
+    }
+}
+
+fn upgrade_button(
+    rect: Rect,
+    label: &str,
+    enabled: bool,
+    action: &UpgradeAction,
+    assets: &AssetManager,
+) -> bool {
+    let clicked =
+        crate::ui::widgets::button_at(rect, "", enabled, crate::ui::theme::Tone::Secondary);
+    let icon_size = 28.0;
+    let icon_rect = Rect::new(
+        rect.x + 7.0,
+        rect.y + (rect.h - icon_size) * 0.5,
+        icon_size,
+        icon_size,
+    );
+    let text_x = icon_rect.right() + 7.0;
+    let text_w = rect.right() - text_x - 7.0;
+    draw_upgrade_icon(action, icon_rect, enabled, assets);
+    draw_ui_text(
+        &truncate_text_to_width(label, text_w, crate::ui::theme::scale::LABEL),
+        text_x,
+        rect.y + rect.h * 0.5 + crate::ui::theme::scale::LABEL * 0.5 - 1.0,
+        crate::ui::theme::scale::LABEL,
+        if enabled {
+            colors::TEXT()
+        } else {
+            colors::TEXT_DIM()
+        },
+    );
+    clicked
+}
+
+fn draw_upgrade_icon(
+    action: &UpgradeAction,
+    rect: Rect,
+    enabled: bool,
+    assets: &AssetManager,
+) -> bool {
+    let Some(texture) = assets.get_texture("upgrade_icons") else {
+        return false;
+    };
+    let (column, row) = upgrade_icon_tile(action);
+    let tile_w = texture.width() / 3.0;
+    let tile_h = texture.height() * 0.5;
+    let inset_x = tile_w * 0.08;
+    let inset_y = tile_h * 0.08;
+    draw_texture_ex(
+        texture,
+        rect.x,
+        rect.y,
+        if enabled {
+            WHITE
+        } else {
+            Color::new(0.45, 0.43, 0.4, 0.7)
+        },
+        DrawTextureParams {
+            dest_size: Some(vec2(rect.w, rect.h)),
+            source: Some(Rect::new(
+                column * tile_w + inset_x,
+                row * tile_h + inset_y,
+                tile_w - inset_x * 2.0,
+                tile_h - inset_y * 2.0,
+            )),
+            ..Default::default()
+        },
+    );
+    true
+}
+
+#[cfg(test)]
+mod tests;
