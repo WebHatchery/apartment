@@ -42,6 +42,9 @@ impl AssetManager {
             "tenant_artist",
             "tenant_family",
             "tenant_elderly",
+            // Modular in-room tenant layers
+            "tenant_body_poses",
+            "tenant_face_emotions",
             // Designs
             "design_bare",
             "design_practical",
@@ -110,9 +113,15 @@ impl AssetManager {
             };
             for extension in extensions {
                 let path = format!("assets/textures/{}.{}", id, extension);
+                let filter = if JPEG_TEXTURE_IDS.contains(&id)
+                    || matches!(id, "tenant_body_poses" | "tenant_face_emotions")
+                {
+                    FilterMode::Linear
+                } else {
+                    FilterMode::Nearest
+                };
                 if let Ok(texture) =
-                    load_texture_from_pack_or_file(asset_pack.as_ref(), &path, FilterMode::Nearest)
-                        .await
+                    load_texture_from_pack_or_file(asset_pack.as_ref(), &path, filter).await
                 {
                     self.textures.insert(id.to_string(), texture);
                     loaded = true;

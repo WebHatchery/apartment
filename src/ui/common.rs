@@ -1,8 +1,6 @@
 use macroquad::prelude::*;
 
-// Import toolkit utilities
 pub use macroquad_toolkit::input::{is_hovered, was_clicked};
-pub use macroquad_toolkit::ui::progress_bar;
 
 /// Color palette — single source of truth lives in [`crate::ui::theme::color`].
 /// Re-exported here so existing `colors::NAME()` references keep working while
@@ -45,9 +43,9 @@ pub mod layout {
     }
     pub fn PANEL_SPLIT() -> f32 {
         match macroquad::prelude::screen_width() {
-            width if width >= 1180.0 => 0.62,
-            width if width >= 960.0 => 0.57,
-            _ => 0.52,
+            width if width >= 1180.0 => 0.70,
+            width if width >= 960.0 => 0.68,
+            _ => 0.62,
         }
     }
     pub fn PADDING() -> f32 {

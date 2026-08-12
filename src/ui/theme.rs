@@ -99,9 +99,6 @@ pub mod color {
     pub fn OCCUPIED() -> Color {
         c(theme().occupied)
     }
-    pub fn SELECTED() -> Color {
-        c(theme().selected)
-    }
     pub fn HOVERED() -> Color {
         c(theme().hovered)
     }

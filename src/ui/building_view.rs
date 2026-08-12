@@ -1,3 +1,5 @@
+mod tenant_sprite;
+
 use super::theme::{color, scale, space, Tone};
 use super::widgets::button_at;
 use super::{common::*, Selection, UiAction};
@@ -5,7 +7,11 @@ use crate::assets::AssetManager;
 use crate::building::{Apartment, ApartmentSize, Building, DesignType, NoiseLevel};
 use crate::tenant::Tenant;
 use macroquad::prelude::*;
-use macroquad_toolkit::ui::{draw_ui_text, measure_ui_text};
+use macroquad_toolkit::ui::{draw_ui_text, measure_ui_text, truncate_text_to_width};
+
+const MASONRY: Color = Color::new(0.24, 0.15, 0.11, 1.0);
+const BEAM: Color = Color::new(0.11, 0.075, 0.055, 1.0);
+const MORTAR: Color = Color::new(0.42, 0.29, 0.20, 1.0);
 
 pub fn draw_building_view(
     building: &Building,
@@ -13,36 +19,18 @@ pub fn draw_building_view(
     selection: &Selection,
     assets: &AssetManager,
 ) -> Option<UiAction> {
-    let mut action = None;
+    let view = Rect::new(
+        0.0,
+        layout::HEADER_HEIGHT(),
+        screen_width() * layout::PANEL_SPLIT(),
+        screen_height() - layout::HEADER_HEIGHT() - layout::FOOTER_HEIGHT(),
+    );
+    draw_sunset_backdrop(view);
 
-    let view_width = screen_width() * layout::PANEL_SPLIT();
-    let view_height = screen_height() - layout::HEADER_HEIGHT() - layout::FOOTER_HEIGHT();
-    let view_x = 0.0;
-    let view_y = layout::HEADER_HEIGHT();
-
-    // Background - Building Exterior
-    if let Some(tex) = assets.get_texture("building_exterior") {
-        draw_texture_ex(
-            tex,
-            view_x,
-            view_y,
-            WHITE,
-            DrawTextureParams {
-                dest_size: Some(Vec2::new(view_width, view_height)),
-                ..Default::default()
-            },
-        );
-    } else {
-        draw_rectangle(view_x, view_y, view_width, view_height, color::BACKGROUND());
-    }
-
-    // Size the cutaway from the real workspace rectangle. This keeps five-floor
-    // / ten-unit campaigns readable at 800x600 instead of pushing the top
-    // floors behind the navigation bar.
     let max_floor = building
         .apartments
         .iter()
-        .map(|a| a.floor)
+        .map(|apartment| apartment.floor)
         .max()
         .unwrap_or(1);
     let max_floor_slots = (1..=max_floor)
@@ -52,464 +40,481 @@ pub fn draw_building_view(
                 .iter()
                 .filter(|apartment| apartment.floor == floor)
                 .map(|apartment| {
-                    if matches!(apartment.size, ApartmentSize::Penthouse) {
-                        2
-                    } else {
-                        1
-                    }
+                    usize::from(matches!(apartment.size, ApartmentSize::Penthouse)) + 1
                 })
                 .sum::<usize>()
         })
         .max()
         .unwrap_or(1);
-    let metrics = cutaway_metrics(
-        Rect::new(view_x, view_y, view_width, view_height),
-        max_floor as usize,
-        max_floor_slots,
-    );
+    let metrics = cutaway_metrics(view, max_floor as usize, max_floor_slots);
+    draw_building_shell(view, metrics, max_floor);
 
-    // Draw floors (bottom to top)
+    let mut action = None;
     for floor in 1..=max_floor {
         let floor_y = metrics.hallway_y
-            - space::SM
+            - metrics.unit_gap
             - metrics.unit_h
-            - (floor.saturating_sub(1) as f32 * metrics.floor_step);
-
-        // Floor label
-        let floor_label = if view_width < 500.0 {
-            format!("F{}", floor)
-        } else {
-            format!("Floor {}", floor)
-        };
-        draw_ui_text(
-            &floor_label,
-            view_x + space::MD,
-            floor_y + metrics.unit_h / 2.0 + scale::LABEL / 2.0,
-            scale::LABEL,
-            color::TEXT_DIM(),
-        );
-
-        // Draw units on this floor
+            - floor.saturating_sub(1) as f32 * metrics.floor_step;
         let floor_apartments: Vec<_> = building
             .apartments
             .iter()
-            .filter(|a| a.floor == floor)
+            .filter(|apartment| apartment.floor == floor)
             .collect();
+        let floor_width = floor_apartments
+            .iter()
+            .map(|apartment| unit_width(apartment, metrics) + metrics.unit_gap)
+            .sum::<f32>()
+            - metrics.unit_gap;
+        let mut x = metrics.units_left + (metrics.units_width - floor_width) / 2.0;
 
-        // Calculate total floor width (accounting for penthouse double-width)
-        let mut floor_total_width = 0.0;
-        for apt in &floor_apartments {
-            let unit_w = if matches!(apt.size, ApartmentSize::Penthouse) {
-                (metrics.unit_w * 2.0) + metrics.unit_gap
-            } else {
-                metrics.unit_w
-            };
-            floor_total_width += unit_w + metrics.unit_gap;
-        }
-        floor_total_width -= metrics.unit_gap;
-
-        // Center this floor's units
-        let floor_start_x = metrics.units_left + (metrics.units_width - floor_total_width) / 2.0;
-
-        let mut current_x = floor_start_x;
-        for apt in floor_apartments.iter() {
-            let unit_w = if matches!(apt.size, ApartmentSize::Penthouse) {
-                (metrics.unit_w * 2.0) + metrics.unit_gap
-            } else {
-                metrics.unit_w
-            };
-
-            if let Some(apt_action) = draw_apartment_unit_sized(
-                apt,
+        for apartment in floor_apartments {
+            let width = unit_width(apartment, metrics);
+            if let Some(unit_action) = draw_apartment(
+                apartment,
                 tenants,
-                current_x,
-                floor_y,
-                unit_w,
-                metrics.unit_h,
+                Rect::new(x, floor_y, width, metrics.unit_h),
                 selection,
                 assets,
             ) {
-                action = Some(apt_action);
+                action = Some(unit_action);
             }
-
-            current_x += unit_w + metrics.unit_gap;
+            x += width + metrics.unit_gap;
         }
     }
 
-    // Draw hallway at bottom
-    let hallway_y = metrics.hallway_y;
-    let hallway_width = metrics.units_width;
-    let hallway_h = metrics.hallway_h;
-    let start_x = metrics.units_left;
-
-    let hallway_selected = matches!(selection, Selection::Hallway);
-    let hallway_hovered = is_hovered(start_x, hallway_y, hallway_width, hallway_h);
-
-    let hallway_color = if hallway_selected {
-        color::SELECTED()
-    } else if hallway_hovered {
-        color::HOVERED()
-    } else {
-        color::SURFACE_ALT()
-    };
-
-    // Use texture for hallway if available
-    let drawn_texture = if let Some(tex) = assets.get_texture("hallway") {
-        draw_texture_ex(
-            tex,
-            start_x,
-            hallway_y,
-            WHITE,
-            DrawTextureParams {
-                dest_size: Some(Vec2::new(hallway_width, hallway_h)),
-                ..Default::default()
-            },
-        );
-        true
-    } else {
-        draw_rectangle(start_x, hallway_y, hallway_width, hallway_h, hallway_color);
-        false
-    };
-
-    let hallway_border = if hallway_selected {
-        color::PRIMARY()
-    } else {
-        color::BORDER()
-    };
-    draw_rectangle_lines(
-        start_x,
-        hallway_y,
-        hallway_width,
-        hallway_h,
-        if hallway_selected || !drawn_texture {
-            2.0
-        } else {
-            1.0
-        },
-        hallway_border,
-    );
-
-    // Hallway label and condition
-    draw_ui_text(
-        "HALLWAY",
-        start_x + space::MD,
-        hallway_y + hallway_h / 2.0 + scale::LABEL / 2.0,
-        scale::LABEL,
-        color::TEXT_BRIGHT(),
-    );
-
-    let cond_color = condition_color(building.hallway_condition);
-    progress_bar(
-        start_x + hallway_width - 110.0,
-        hallway_y + (hallway_h - 14.0) / 2.0,
-        100.0,
-        14.0,
-        building.hallway_condition as f32,
-        100.0,
-        cond_color,
-    );
-
-    if was_clicked(start_x, hallway_y, hallway_width, hallway_h) {
-        action = Some(UiAction::SelectHallway);
+    if let Some(hallway_action) = draw_lobby(building, metrics, selection, assets) {
+        action = Some(hallway_action);
     }
-
-    // Top action buttons (clear of the header band).
-    let btn_y = view_y + space::SM;
-    let btn_h = 40.0;
-    let controls_w = (view_width - space::LG * 2.0 - space::SM).min(300.0);
-    let app_w = (controls_w * 0.54).max(112.0);
-    let owner_w = controls_w - app_w - space::SM;
-    let controls_x = view_x + (view_width - controls_w) / 2.0;
-    if button_at(
-        Rect::new(controls_x, btn_y, app_w, btn_h),
-        "Applications",
-        true,
-        Tone::Secondary,
-    ) {
-        action = Some(UiAction::SelectApplications(None));
+    if let Some(control_action) = draw_building_controls(view) {
+        action = Some(control_action);
     }
-    if button_at(
-        Rect::new(controls_x + app_w + space::SM, btn_y, owner_w, btn_h),
-        "Ownership",
-        true,
-        Tone::Secondary,
-    ) {
-        action = Some(UiAction::SelectOwnership);
-    }
-
     action
 }
 
-fn draw_apartment_unit_sized(
-    apt: &Apartment,
+fn unit_width(apartment: &Apartment, metrics: CutawayMetrics) -> f32 {
+    if matches!(apartment.size, ApartmentSize::Penthouse) {
+        metrics.unit_w * 2.0 + metrics.unit_gap
+    } else {
+        metrics.unit_w
+    }
+}
+
+fn draw_sunset_backdrop(view: Rect) {
+    let top = Color::new(0.38, 0.42, 0.55, 1.0);
+    let bottom = Color::new(0.88, 0.58, 0.39, 1.0);
+    for index in 0..24 {
+        let t = index as f32 / 23.0;
+        let band_h = view.h / 24.0 + 1.0;
+        draw_rectangle(
+            view.x,
+            view.y + index as f32 * view.h / 24.0,
+            view.w,
+            band_h,
+            Color::new(
+                top.r + (bottom.r - top.r) * t,
+                top.g + (bottom.g - top.g) * t,
+                top.b + (bottom.b - top.b) * t,
+                1.0,
+            ),
+        );
+    }
+
+    let skyline_y = view.bottom() - 86.0;
+    for index in 0..10 {
+        let width = view.w / 9.0;
+        let height = 30.0 + ((index * 29) % 52) as f32;
+        let x = view.x + index as f32 * width - 8.0;
+        draw_rectangle(
+            x,
+            skyline_y - height,
+            width - 5.0,
+            height + 86.0,
+            Color::new(0.20, 0.20, 0.25, 0.42),
+        );
+    }
+    draw_circle(
+        view.w * 0.12,
+        view.y + 82.0,
+        25.0,
+        Color::new(1.0, 0.72, 0.42, 0.58),
+    );
+}
+
+fn draw_building_shell(view: Rect, metrics: CutawayMetrics, floors: u32) {
+    let top_y = metrics.hallway_y
+        - metrics.unit_gap
+        - metrics.unit_h
+        - floors.saturating_sub(1) as f32 * metrics.floor_step;
+    let shell = Rect::new(
+        metrics.units_left - 14.0,
+        top_y - 12.0,
+        metrics.units_width + 28.0,
+        metrics.hallway_y + metrics.hallway_h - top_y + 22.0,
+    );
+    draw_rectangle(
+        shell.x - 5.0,
+        shell.y + 7.0,
+        shell.w + 10.0,
+        shell.h,
+        Color::new(0.0, 0.0, 0.0, 0.35),
+    );
+    draw_rectangle(shell.x, shell.y, shell.w, shell.h, MASONRY);
+
+    for row in 0..14 {
+        let y = shell.y + 8.0 + row as f32 * 16.0;
+        let offset = if row % 2 == 0 { 0.0 } else { 18.0 };
+        let mut x = shell.x + offset;
+        while x < shell.right() {
+            draw_line(x, y, (x + 28.0).min(shell.right()), y, 1.0, MORTAR);
+            x += 36.0;
+        }
+    }
+
+    draw_triangle(
+        vec2(shell.x - 10.0, shell.y + 1.0),
+        vec2(shell.right() + 10.0, shell.y + 1.0),
+        vec2(shell.right() - 28.0, shell.y - 18.0),
+        Color::new(0.10, 0.09, 0.085, 1.0),
+    );
+    draw_rectangle(shell.x - 10.0, shell.y - 4.0, shell.w + 20.0, 8.0, BEAM);
+    draw_rectangle_lines(
+        shell.x,
+        shell.y,
+        shell.w,
+        shell.h,
+        2.0,
+        Color::new(0.08, 0.055, 0.04, 1.0),
+    );
+    draw_rectangle(
+        view.x,
+        view.bottom() - 12.0,
+        view.w,
+        12.0,
+        Color::new(0.12, 0.11, 0.10, 1.0),
+    );
+}
+
+fn draw_apartment(
+    apartment: &Apartment,
     tenants: &[Tenant],
-    x: f32,
-    y: f32,
-    w: f32,
-    h: f32,
+    room: Rect,
     selection: &Selection,
     assets: &AssetManager,
 ) -> Option<UiAction> {
-    let is_selected = matches!(selection, Selection::Apartment(id) if *id == apt.id);
-    let unit_hovered = is_hovered(x, y, w, h);
-
-    // Background color (fallback when no design texture)
-    let bg_color = if apt.is_vacant() {
-        color::VACANT()
-    } else {
-        color::OCCUPIED()
-    };
-
-    // Draw Design Texture as background
-    let design_id = match apt.design {
+    let selected = matches!(selection, Selection::Apartment(id) if *id == apartment.id);
+    let hovered = is_hovered(room.x, room.y, room.w, room.h);
+    let design_id = match apartment.design {
         DesignType::Bare => "design_bare",
         DesignType::Practical => "design_practical",
-        DesignType::Cozy => "design_cozy",
-        DesignType::Luxury => "design_luxury",
-        DesignType::Opulent => "design_opulent",
+        DesignType::Cozy | DesignType::Luxury | DesignType::Opulent => "design_cozy",
     };
 
-    if let Some(tex) = assets.get_texture(design_id) {
+    draw_rectangle(room.x - 4.0, room.y - 4.0, room.w + 8.0, room.h + 8.0, BEAM);
+    if let Some(texture) = assets.get_texture(design_id) {
         draw_texture_ex(
-            tex,
-            x,
-            y,
+            texture,
+            room.x,
+            room.y,
             WHITE,
             DrawTextureParams {
-                dest_size: Some(Vec2::new(w, h)),
+                dest_size: Some(room.size()),
                 ..Default::default()
             },
         );
     } else {
-        draw_rectangle(x, y, w, h, bg_color);
-    }
-
-    // Selection / hover tint
-    if is_selected {
         draw_rectangle(
-            x,
-            y,
-            w,
-            h,
-            Color::new(
-                color::PRIMARY().r,
-                color::PRIMARY().g,
-                color::PRIMARY().b,
-                0.16,
-            ),
+            room.x,
+            room.y,
+            room.w,
+            room.h,
+            if apartment.is_vacant() {
+                color::VACANT()
+            } else {
+                color::OCCUPIED()
+            },
         );
-    } else if unit_hovered {
-        draw_rectangle(x, y, w, h, Color::new(1.0, 1.0, 1.0, 0.08));
+    }
+    draw_condition_story(apartment, room, assets);
+
+    if let Some(tenant_id) = apartment.tenant_id {
+        if let Some(tenant) = tenants.iter().find(|tenant| tenant.id == tenant_id) {
+            tenant_sprite::draw_resident(apartment, tenant, room, assets);
+            let name = truncate_text_to_width(&tenant.name, room.w * 0.42, scale::CAPTION);
+            draw_ui_text(
+                &name,
+                room.x + space::SM,
+                room.bottom() - 8.0,
+                scale::CAPTION,
+                color::TEXT_BRIGHT(),
+            );
+        }
+    } else {
+        draw_vacancy(apartment, room, assets);
     }
 
-    // Legibility strip behind the unit number / size.
-    draw_rectangle(x, y, w, 22.0, Color::new(0.0, 0.0, 0.0, 0.45));
-
-    // Border
-    let (border_w, border_color) = if is_selected {
-        (2.0, color::PRIMARY())
-    } else if unit_hovered {
-        (1.0, color::BORDER_STRONG())
-    } else {
-        (1.0, color::BORDER())
-    };
-    draw_rectangle_lines(x, y, w, h, border_w, border_color);
-
-    // Unit number + size
-    draw_ui_text(
-        &apt.unit_number,
-        x + space::SM,
-        y + 16.0,
-        scale::BODY,
-        color::TEXT_BRIGHT(),
+    if selected {
+        draw_rectangle(
+            room.x,
+            room.y,
+            room.w,
+            room.h,
+            Color::new(0.91, 0.56, 0.18, 0.11),
+        );
+    } else if hovered {
+        draw_rectangle(
+            room.x,
+            room.y,
+            room.w,
+            room.h,
+            Color::new(1.0, 0.92, 0.72, 0.08),
+        );
+    }
+    draw_rectangle_lines(
+        room.x,
+        room.y,
+        room.w,
+        room.h,
+        if selected { 3.0 } else { 1.0 },
+        if selected {
+            color::PRIMARY()
+        } else {
+            Color::new(0.12, 0.08, 0.05, 1.0)
+        },
     );
-    let size_text = match apt.size {
+    draw_unit_plaque(apartment, room);
+
+    was_clicked(room.x, room.y, room.w, room.h).then_some(UiAction::SelectApartment(apartment.id))
+}
+
+fn draw_unit_plaque(apartment: &Apartment, room: Rect) {
+    let size = match apartment.size {
         ApartmentSize::Small => "S",
         ApartmentSize::Medium => "M",
         ApartmentSize::Large => "L",
         ApartmentSize::Penthouse => "PH",
     };
-    let size_w = measure_ui_text(size_text, None, scale::LABEL as u16, 1.0).width;
+    let plaque_w = if room.w < 150.0 { 50.0 } else { 64.0 };
+    draw_rectangle(
+        room.x + 6.0,
+        room.y + 6.0,
+        plaque_w,
+        23.0,
+        Color::new(0.08, 0.07, 0.055, 0.88),
+    );
     draw_ui_text(
-        size_text,
-        x + w - size_w - space::SM,
-        y + 16.0,
-        scale::LABEL,
+        &apartment.unit_number,
+        room.x + 11.0,
+        room.y + 22.0,
+        scale::BODY,
+        color::TEXT_BRIGHT(),
+    );
+    draw_ui_text(
+        size,
+        room.x + plaque_w - 11.0,
+        room.y + 21.0,
+        scale::CAPTION,
         color::TEXT_DIM(),
     );
-
-    // Condition meter
-    let cond_color = condition_color(apt.condition);
-    progress_bar(
-        x + space::SM,
-        y + 27.0,
-        w - space::SM * 2.0,
-        6.0,
-        apt.condition as f32,
-        100.0,
-        cond_color,
+    let meter_x = room.right() - 48.0;
+    draw_rectangle(
+        meter_x,
+        room.y + 11.0,
+        39.0,
+        8.0,
+        Color::new(0.04, 0.04, 0.035, 0.72),
     );
+    draw_rectangle(
+        meter_x + 1.0,
+        room.y + 12.0,
+        37.0 * apartment.condition.clamp(0, 100) as f32 / 100.0,
+        6.0,
+        condition_color(apartment.condition),
+    );
+}
 
-    // Noise indicator (if high)
-    if matches!(apt.effective_noise(), NoiseLevel::High) {
-        if let Some(icon) = assets.get_texture("icon_noise") {
-            draw_texture_ex(
-                icon,
-                x + space::SM,
-                y + 38.0,
-                WHITE,
-                DrawTextureParams {
-                    dest_size: Some(Vec2::new(18.0, 18.0)),
-                    ..Default::default()
-                },
-            );
-        } else {
-            draw_ui_text("!", x + space::SM, y + 50.0, scale::LABEL, color::WARNING());
-        }
-    }
-
-    // Soundproofing indicator
-    if apt.has_soundproofing {
-        if let Some(icon) = assets.get_texture("icon_soundproofing") {
-            draw_texture_ex(
-                icon,
-                x + 30.0,
-                y + 38.0,
-                WHITE,
-                DrawTextureParams {
-                    dest_size: Some(Vec2::new(18.0, 18.0)),
-                    ..Default::default()
-                },
-            );
-        } else {
-            draw_ui_text("S", x + 30.0, y + 50.0, scale::LABEL, color::POSITIVE());
-        }
-    }
-
-    // Low Condition Warning
-    if apt.condition < 40 {
-        draw_ui_text(
-            "!",
-            x + w - 16.0,
-            y + 50.0,
-            scale::HEADING,
-            color::NEGATIVE(),
+fn draw_condition_story(apartment: &Apartment, room: Rect, assets: &AssetManager) {
+    if apartment.condition < 45 {
+        draw_rectangle(
+            room.x,
+            room.y,
+            room.w,
+            room.h,
+            Color::new(0.20, 0.16, 0.11, 0.18),
         );
-    }
-
-    // Tenant / vacant content
-    if let Some(tenant_id) = apt.tenant_id {
-        if let Some(tenant) = tenants.iter().find(|t| t.id == tenant_id) {
-            let portrait_id = format!("tenant_{}", tenant.archetype.name().to_lowercase());
-            if h >= 64.0 {
-                if let Some(tex) = assets.get_texture(&portrait_id) {
-                    let portrait_size = (h - 38.0).clamp(20.0, 40.0);
-                    draw_texture_ex(
-                        tex,
-                        x + (w - portrait_size) / 2.0,
-                        y + 36.0,
-                        WHITE,
-                        DrawTextureParams {
-                            dest_size: Some(Vec2::new(portrait_size, portrait_size)),
-                            ..Default::default()
-                        },
-                    );
-                } else {
-                    draw_rectangle(
-                        x + space::SM,
-                        y + h - 16.0,
-                        3.0,
-                        12.0,
-                        archetype_color(&tenant.archetype),
-                    );
-                }
-            } else {
-                draw_circle(
-                    x + space::MD,
-                    y + h - space::SM,
-                    5.0,
-                    archetype_color(&tenant.archetype),
-                );
-            }
-
-            let happiness_level = if tenant.happiness >= 90 {
-                "happiness_ecstatic"
-            } else if tenant.happiness >= 70 {
-                "happiness_happy"
-            } else if tenant.happiness >= 40 {
-                "happiness_neutral"
-            } else if tenant.happiness >= 20 {
-                "happiness_unhappy"
-            } else {
-                "happiness_miserable"
-            };
-
-            if let Some(icon) = assets.get_texture(happiness_level) {
-                draw_texture_ex(
-                    icon,
-                    x + w - 24.0,
-                    y + h - 24.0,
-                    WHITE,
-                    DrawTextureParams {
-                        dest_size: Some(Vec2::new(20.0, 20.0)),
-                        ..Default::default()
-                    },
-                );
-            } else {
-                // Colored happiness dot fallback.
-                draw_circle(
-                    x + w - 12.0,
-                    y + h - 12.0,
-                    6.0,
-                    happiness_color(tenant.happiness),
-                );
-            }
+        let base_x = room.x + room.w * (0.22 + (apartment.id % 4) as f32 * 0.11);
+        let base_y = room.y + room.h * 0.34;
+        draw_line(
+            base_x,
+            base_y,
+            base_x + 8.0,
+            base_y + 12.0,
+            1.5,
+            Color::new(0.18, 0.12, 0.09, 0.8),
+        );
+        draw_line(
+            base_x + 8.0,
+            base_y + 12.0,
+            base_x + 2.0,
+            base_y + 23.0,
+            1.5,
+            Color::new(0.18, 0.12, 0.09, 0.8),
+        );
+        draw_line(
+            base_x + 7.0,
+            base_y + 12.0,
+            base_x + 15.0,
+            base_y + 17.0,
+            1.0,
+            Color::new(0.18, 0.12, 0.09, 0.8),
+        );
+    } else if apartment.condition >= 75 {
+        if let Some(plant) = assets.get_texture("decoration_plant") {
+            let size = room.h.min(room.w) * 0.24;
+            draw_texture_ex(
+                plant,
+                room.right() - size - 5.0,
+                room.bottom() - size,
+                WHITE,
+                DrawTextureParams {
+                    dest_size: Some(vec2(size, size)),
+                    ..Default::default()
+                },
+            );
         }
+    }
+}
+
+fn draw_vacancy(apartment: &Apartment, room: Rect, assets: &AssetManager) {
+    let window_id = if matches!(apartment.effective_noise(), NoiseLevel::High) {
+        "window_street"
     } else {
-        let window_tex = if matches!(apt.effective_noise(), NoiseLevel::High) {
-            "window_street"
-        } else {
-            "window_quiet"
-        };
-        if h >= 64.0 {
-            if let Some(tex) = assets.get_texture(window_tex) {
-                let window_size = (h - 38.0).clamp(20.0, 40.0);
-                draw_texture_ex(
-                    tex,
-                    x + (w - window_size) / 2.0,
-                    y + 36.0,
-                    WHITE,
-                    DrawTextureParams {
-                        dest_size: Some(Vec2::new(window_size, window_size)),
-                        ..Default::default()
-                    },
-                );
-            }
-        }
-
-        draw_ui_text(
-            "VACANT",
-            x + space::SM,
-            y + h - 8.0,
-            scale::CAPTION,
-            color::TEXT_DIM(),
-        );
-        let rent = format!("${}", apt.rent_price);
-        let rent_w = measure_ui_text(&rent, None, scale::CAPTION as u16, 1.0).width;
-        draw_ui_text(
-            &rent,
-            x + w - rent_w - space::SM,
-            y + h - 8.0,
-            scale::CAPTION,
-            color::PRIMARY(),
+        "window_quiet"
+    };
+    if let Some(window) = assets.get_texture(window_id) {
+        let size = (room.h * 0.38).clamp(28.0, 54.0);
+        draw_texture_ex(
+            window,
+            room.x + (room.w - size) / 2.0,
+            room.y + (room.h - size) / 2.0,
+            Color::new(1.0, 1.0, 1.0, 0.72),
+            DrawTextureParams {
+                dest_size: Some(vec2(size, size)),
+                ..Default::default()
+            },
         );
     }
+    draw_ui_text(
+        "VACANT",
+        room.x + space::SM,
+        room.bottom() - 8.0,
+        scale::CAPTION,
+        color::TEXT_DIM(),
+    );
+    let rent = format!("${}", apartment.rent_price);
+    let rent_w = measure_ui_text(&rent, None, scale::CAPTION as u16, 1.0).width;
+    draw_ui_text(
+        &rent,
+        room.right() - rent_w - space::SM,
+        room.bottom() - 8.0,
+        scale::CAPTION,
+        color::PRIMARY(),
+    );
+}
 
-    // Handle click
-    if was_clicked(x, y, w, h) {
-        return Some(UiAction::SelectApartment(apt.id));
+fn draw_lobby(
+    building: &Building,
+    metrics: CutawayMetrics,
+    selection: &Selection,
+    assets: &AssetManager,
+) -> Option<UiAction> {
+    let room = Rect::new(
+        metrics.units_left,
+        metrics.hallway_y,
+        metrics.units_width,
+        metrics.hallway_h,
+    );
+    draw_rectangle(room.x - 4.0, room.y - 4.0, room.w + 8.0, room.h + 8.0, BEAM);
+    if let Some(texture) = assets.get_texture("hallway") {
+        draw_texture_ex(
+            texture,
+            room.x,
+            room.y,
+            WHITE,
+            DrawTextureParams {
+                dest_size: Some(room.size()),
+                ..Default::default()
+            },
+        );
+    } else {
+        draw_rectangle(room.x, room.y, room.w, room.h, color::SURFACE_ALT());
     }
+    let selected = matches!(selection, Selection::Hallway);
+    draw_rectangle_lines(
+        room.x,
+        room.y,
+        room.w,
+        room.h,
+        if selected { 3.0 } else { 1.0 },
+        if selected { color::PRIMARY() } else { BEAM },
+    );
+    draw_rectangle(
+        room.x + 8.0,
+        room.y + 8.0,
+        100.0,
+        24.0,
+        Color::new(0.08, 0.07, 0.055, 0.86),
+    );
+    draw_ui_text(
+        "LOBBY",
+        room.x + 16.0,
+        room.y + 25.0,
+        scale::LABEL,
+        color::TEXT_BRIGHT(),
+    );
+    let bar_w = 72.0;
+    draw_rectangle(
+        room.right() - bar_w - 12.0,
+        room.y + 15.0,
+        bar_w,
+        9.0,
+        Color::new(0.05, 0.05, 0.04, 0.75),
+    );
+    draw_rectangle(
+        room.right() - bar_w - 11.0,
+        room.y + 16.0,
+        (bar_w - 2.0) * building.hallway_condition as f32 / 100.0,
+        7.0,
+        condition_color(building.hallway_condition),
+    );
+    was_clicked(room.x, room.y, room.w, room.h).then_some(UiAction::SelectHallway)
+}
 
+fn draw_building_controls(view: Rect) -> Option<UiAction> {
+    let y = view.y + space::SM;
+    let width = (view.w - space::LG * 2.0 - space::SM).min(330.0);
+    let x = view.x + (view.w - width) / 2.0;
+    let applications_w = width * 0.56;
+    if button_at(
+        Rect::new(x, y, applications_w, 38.0),
+        "Applications",
+        true,
+        Tone::Primary,
+    ) {
+        return Some(UiAction::SelectApplications(None));
+    }
+    if button_at(
+        Rect::new(
+            x + applications_w + space::SM,
+            y,
+            width - applications_w - space::SM,
+            38.0,
+        ),
+        "Ownership",
+        true,
+        Tone::Secondary,
+    ) {
+        return Some(UiAction::SelectOwnership);
+    }
     None
 }
 
@@ -526,28 +531,20 @@ struct CutawayMetrics {
 }
 
 fn cutaway_metrics(view: Rect, floors: usize, max_slots: usize) -> CutawayMetrics {
-    let compact = view.w < 500.0;
-    let edge = if compact { space::SM } else { space::LG };
-    let label_w = if compact { 34.0 } else { 62.0 };
-    let unit_gap = if compact {
-        8.0
-    } else {
-        layout::UNIT_GAP().min(12.0)
-    };
-    let hallway_h = 44.0;
-    let hallway_y = view.bottom() - hallway_h - space::SM;
-    let units_top = view.y + 40.0 + space::XL;
-    let vertical_room = (hallway_y - space::SM - units_top).max(80.0);
+    let edge = if view.w < 500.0 { space::SM } else { space::XL };
+    let unit_gap = layout::UNIT_GAP().clamp(8.0, 12.0);
+    let hallway_h = if view.h < 430.0 { 42.0 } else { 54.0 };
+    let hallway_y = view.bottom() - hallway_h - space::MD;
+    let units_top = view.y + 58.0;
+    let vertical_room = (hallway_y - unit_gap - units_top).max(80.0);
     let floor_step = (vertical_room / floors.max(1) as f32).min(layout::FLOOR_HEIGHT());
-    let unit_h = (floor_step - unit_gap).clamp(42.0, layout::UNIT_HEIGHT());
-
-    let horizontal_room = (view.w - edge * 2.0 - label_w).max(120.0);
+    let unit_h = (floor_step - unit_gap).clamp(46.0, layout::UNIT_HEIGHT());
+    let horizontal_room = (view.w - edge * 2.0).max(120.0);
     let slots = max_slots.max(1) as f32;
     let unit_w =
-        ((horizontal_room - unit_gap * (slots - 1.0)) / slots).clamp(68.0, layout::UNIT_WIDTH());
+        ((horizontal_room - unit_gap * (slots - 1.0)) / slots).clamp(80.0, layout::UNIT_WIDTH());
     let units_width = unit_w * slots + unit_gap * (slots - 1.0);
-    let units_left = view.x + label_w + (horizontal_room - units_width) / 2.0;
-
+    let units_left = view.x + (view.w - units_width) / 2.0;
     CutawayMetrics {
         unit_w,
         unit_h,
