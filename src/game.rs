@@ -54,8 +54,8 @@ impl Game {
     /// Seed a specific scene for the screenshot harness.
     pub fn begin_capture_scene(&mut self, scene: &str) {
         match scene {
-            "menu" | "menu_compact" => self.state = GameState::Menu(MenuState::new()),
-            "showcase" | "showcase_compact" => self.seed_gameplay_capture(true),
+            "menu" | "menu_compact" | "menu_wide" => self.state = GameState::Menu(MenuState::new()),
+            "showcase" | "showcase_compact" | "showcase_wide" => self.seed_gameplay_capture(true),
             "unit_showcase" | "unit_compact" => {
                 self.seed_gameplay_capture(true);
                 if let GameState::Gameplay(state) = &mut self.state {
@@ -88,7 +88,7 @@ impl Game {
                     state.selection = crate::ui::Selection::Applications(None);
                 }
             }
-            "ownership_showcase" | "ownership_compact" => {
+            "ownership_showcase" | "ownership_compact" | "ownership_wide" => {
                 self.seed_gameplay_capture(true);
                 if let GameState::Gameplay(state) = &mut self.state {
                     state.selection = crate::ui::Selection::Ownership;
@@ -104,13 +104,13 @@ impl Game {
             "tenants_showcase" | "tenants_compact" => {
                 self.seed_workspace_capture(ViewMode::Tenants);
             }
-            "finances_showcase" | "finances_compact" => {
+            "finances_showcase" | "finances_compact" | "finances_wide" => {
                 self.seed_workspace_capture(ViewMode::Finances);
             }
-            "city_showcase" | "city_compact" => {
+            "city_showcase" | "city_compact" | "city_wide" => {
                 self.seed_workspace_capture(ViewMode::CityMap);
             }
-            "market_showcase" | "market_compact" => {
+            "market_showcase" | "market_compact" | "market_wide" => {
                 self.seed_workspace_capture(ViewMode::Market);
                 if let GameState::Gameplay(state) = &mut self.state {
                     seed_showcase_market(state);
@@ -135,13 +135,15 @@ impl Game {
                     state.activity_drawer_open = true;
                 }
             }
-            "career_showcase" | "career_compact" => {
+            "career_showcase" | "career_compact" | "career_wide" => {
                 self.seed_workspace_capture(ViewMode::CareerSummary);
                 if let GameState::Gameplay(state) = &mut self.state {
                     seed_showcase_career(state);
                 }
             }
-            "tutorial_showcase" | "tutorial_compact" => self.seed_gameplay_capture(false),
+            "tutorial_showcase" | "tutorial_compact" | "tutorial_wide" => {
+                self.seed_gameplay_capture(false)
+            }
             "event_showcase" | "event_compact" => {
                 self.seed_gameplay_capture(true);
                 if let GameState::Gameplay(state) = &mut self.state {

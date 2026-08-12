@@ -292,3 +292,6 @@ fn draw_achievement_card(state: &GameplayState, achievement: &Achievement, rect:
         color::TEXT_DIM(),
     );
 }
+
+#[cfg(test)]
+mod tests;

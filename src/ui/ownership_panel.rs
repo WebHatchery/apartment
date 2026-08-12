@@ -88,8 +88,7 @@ pub fn draw_ownership_panel(
 
     let row_h = 58.0;
     let visible = (((footer_y - space::SM - y) / row_h).floor() as usize).max(1);
-    let max_first = apartments.len().saturating_sub(visible);
-    let first = ((scroll_offset / row_h).round() as usize).min(max_first);
+    let (first, max_first) = ownership_page(apartments.len(), visible, scroll_offset, row_h);
     let mut action = None;
     for apartment in apartments.iter().skip(first).take(visible) {
         if draw_unit_row(
@@ -137,6 +136,12 @@ pub fn draw_ownership_panel(
         }
     }
     (action, next_offset)
+}
+
+fn ownership_page(len: usize, visible: usize, offset: f32, row_h: f32) -> (usize, usize) {
+    let max_first = len.saturating_sub(visible);
+    let first = ((offset.max(0.0) / row_h).round() as usize).min(max_first);
+    (first, max_first)
 }
 
 fn ownership_name(ownership: &OwnershipType) -> &'static str {
@@ -216,3 +221,6 @@ fn draw_unit_row(apartment: &Apartment, multiplier: f32, rect: Rect) -> bool {
         Tone::Positive,
     )
 }
+
+#[cfg(test)]
+mod tests;

@@ -18,20 +18,6 @@ impl GameplayState {
     /// Main draw function - dispatches to appropriate view
     pub fn draw(&mut self, assets: &AssetManager) {
         let pause_was_showing = self.show_pause_menu;
-        if self.view_mode != ViewMode::CareerSummary {
-            let monthly_net = self.ledger.reports.last().map_or(0, |report| report.net);
-            if let Some(action) = draw_header(
-                self.funds.balance,
-                monthly_net,
-                self.current_tick,
-                &self.building.name,
-                self.building.occupancy_count(),
-                self.building.rental_unit_count(),
-                assets,
-            ) {
-                self.pending_actions.push(action);
-            }
-        }
         match self.view_mode {
             ViewMode::Building => {
                 self.draw_building_mode(assets);
@@ -91,6 +77,18 @@ impl GameplayState {
         }
 
         if self.view_mode != ViewMode::CareerSummary {
+            let monthly_net = self.ledger.reports.last().map_or(0, |report| report.net);
+            if let Some(action) = draw_header(
+                self.funds.balance,
+                monthly_net,
+                self.current_tick,
+                &self.building.name,
+                self.building.occupancy_count(),
+                self.building.rental_unit_count(),
+                assets,
+            ) {
+                self.pending_actions.push(action);
+            }
             let active_tab = match self.view_mode {
                 ViewMode::Building => WorkspaceTab::Building,
                 ViewMode::Tenants => WorkspaceTab::Tenants,

@@ -256,11 +256,22 @@ pub fn draw_portfolio_panel(
             is_selected,
         );
 
-        // Building Icon/Thumbnail?
-        // Maybe just use a generic icon for now or small building exterior
-        if let Some(_tex) = assets.get_texture("icon_building") { // Assuming we have one, or reuse building_exterior
-             // If we don't have icon_building, we can use building_exterior scaled down?
-             // But building_exterior is large. Let's just skip for now or use rectangle.
+        let thumbnail_w = if assets.get_texture("building_exterior").is_some() {
+            64.0
+        } else {
+            0.0
+        };
+        if let Some(texture) = assets.get_texture("building_exterior") {
+            draw_texture_ex(
+                texture,
+                item_x + 8.0,
+                y + 8.0,
+                WHITE,
+                DrawTextureParams {
+                    dest_size: Some(vec2(56.0, 59.0)),
+                    ..Default::default()
+                },
+            );
         }
 
         if is_selected {
@@ -271,13 +282,14 @@ pub fn draw_portfolio_panel(
         }
 
         // Building name
+        let text_x = item_x + 10.0 + thumbnail_w;
         draw_ui_text_ex(
             &truncate_text_to_width(
                 &building.name,
-                item_width - if is_selected { 100.0 } else { 20.0 },
+                item_width - thumbnail_w - if is_selected { 100.0 } else { 20.0 },
                 scale::HEADING,
             ),
-            item_x + 10.0,
+            text_x,
             y + 22.0,
             text_params(
                 scale::HEADING,
@@ -291,8 +303,12 @@ pub fn draw_portfolio_panel(
 
         // Location
         draw_ui_text_ex(
-            &neighborhood_name,
-            item_x + 10.0,
+            &truncate_text_to_width(
+                &neighborhood_name,
+                item_width - thumbnail_w - if is_selected { 100.0 } else { 20.0 },
+                scale::LABEL,
+            ),
+            text_x,
             y + 40.0,
             text_params(scale::LABEL, colors::TEXT_DIM()),
         );
@@ -302,9 +318,14 @@ pub fn draw_portfolio_panel(
         let total = building.apartments.len();
         let appeal = building.building_appeal();
 
+        let stats = format!("Occupancy: {}/{} · Appeal: {}", occupancy, total, appeal);
         draw_ui_text_ex(
-            &format!("Occupancy: {}/{} | Appeal: {}", occupancy, total, appeal),
-            item_x + 10.0,
+            &truncate_text_to_width(
+                &stats,
+                item_width - thumbnail_w - if is_selected { 100.0 } else { 20.0 },
+                scale::LABEL,
+            ),
+            text_x,
             y + 58.0,
             text_params(
                 scale::LABEL,
