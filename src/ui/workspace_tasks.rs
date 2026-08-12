@@ -177,7 +177,18 @@ pub fn draw_tasks_view(state: &GameplayState, assets: &AssetManager) -> Option<U
             color::TEXT_DIM(),
         );
     }
-    for (tenant_id, request) in requests.iter().take(4) {
+    let request_row_h = 108.0;
+    let request_needs_pager = requests.len() as f32 * request_row_h > request_panel.h;
+    let request_pager_h = if request_needs_pager { 44.0 } else { 0.0 };
+    let request_page_size =
+        (((request_panel.h - request_pager_h) / request_row_h).floor() as usize).max(1);
+    let request_page_count = requests.len().max(1).div_ceil(request_page_size);
+    let request_page = state.requests_page.min(request_page_count - 1);
+    for (tenant_id, request) in requests
+        .iter()
+        .skip(request_page * request_page_size)
+        .take(request_page_size)
+    {
         let tenant = state.tenants.iter().find(|tenant| tenant.id == *tenant_id);
         let tenant_name = tenant.map_or("Former tenant", |tenant| tenant.name.as_str());
         let portrait_size = 44.0;
@@ -234,6 +245,31 @@ pub fn draw_tasks_view(state: &GameplayState, assets: &AssetManager) -> Option<U
             });
         }
         ry += 44.0;
+    }
+    if request_needs_pager {
+        let pager_y = request_panel.bottom() - 40.0;
+        let gap = space::SM;
+        let button_w = (request_panel.w - gap) * 0.5;
+        if button_at(
+            Rect::new(request_panel.x, pager_y, button_w, 40.0),
+            "Earlier",
+            request_page > 0,
+            Tone::Secondary,
+        ) {
+            return Some(UiAction::SetRequestsPage {
+                page: request_page - 1,
+            });
+        }
+        if button_at(
+            Rect::new(request_panel.x + button_w + gap, pager_y, button_w, 40.0),
+            "More",
+            request_page + 1 < request_page_count,
+            Tone::Primary,
+        ) {
+            return Some(UiAction::SetRequestsPage {
+                page: request_page + 1,
+            });
+        }
     }
     None
 }

@@ -34,6 +34,7 @@ param(
         "purchase_review_showcase",
         "inbox_showcase",
         "tasks_showcase",
+        "requests_more_showcase",
         "pause_showcase",
         "history_showcase",
         "career_showcase",

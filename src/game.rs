@@ -159,6 +159,13 @@ impl Game {
             "tasks_showcase" | "tasks_compact" | "tasks_tiny" => {
                 self.seed_workspace_capture(ViewMode::Tasks);
             }
+            "requests_more_showcase" | "requests_more_tiny" => {
+                self.seed_workspace_capture(ViewMode::Tasks);
+                if let GameState::Gameplay(state) = &mut self.state {
+                    seed_showcase_requests(state);
+                    state.requests_page = 1;
+                }
+            }
             "pause_showcase" | "pause_compact" => {
                 self.seed_gameplay_capture(true);
                 if let GameState::Gameplay(state) = &mut self.state {
@@ -511,6 +518,30 @@ fn seed_showcase_residents(state: &mut crate::state::GameplayState) {
     .collect();
     seed_showcase_finances(state);
     seed_showcase_mail(state);
+}
+
+fn seed_showcase_requests(state: &mut crate::state::GameplayState) {
+    let requests = [
+        TenantRequest::Pet {
+            pet_type: "small rescue dog".to_string(),
+        },
+        TenantRequest::TemporaryGuest {
+            guest_name: "aunt Lila".to_string(),
+            duration_months: 2,
+        },
+        TenantRequest::HomeBusiness {
+            business_type: "ceramics studio".to_string(),
+        },
+        TenantRequest::Modification {
+            description: "install accessible handrails".to_string(),
+        },
+        TenantRequest::Sublease,
+    ];
+    for (tenant, request) in state.tenants.iter().zip(requests) {
+        if let Some(story) = state.tenant_stories.get_mut(&tenant.id) {
+            story.pending_request = Some(request);
+        }
+    }
 }
 
 fn seed_showcase_finances(state: &mut crate::state::GameplayState) {
