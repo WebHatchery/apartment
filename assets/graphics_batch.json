@@ -183,6 +183,13 @@
             "Height": 1254
         },
         {
+            "id": "mail_icons",
+            "title": "Mail Category Seal Atlas",
+            "description": "A 4x2 crop-safe atlas for tenant, city, finance, offer, news, personal, official, and unread mail seals.",
+            "Width": 1254,
+            "Height": 1254
+        },
+        {
             "id": "icon_repair",
             "title": "Icon Repair",
             "description": "2D pixel art wrench and hammer crossed icon, repair and maintenance symbol, simple clean design, warm muted colors, apartment management game style, transparent background",

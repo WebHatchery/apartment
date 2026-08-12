@@ -70,6 +70,7 @@ impl AssetManager {
             "upgrade_icons",
             "status_icons",
             "mission_icons",
+            "mail_icons",
             "icon_money",
             "icon_repair",
             "icon_upgrade",
@@ -138,6 +139,7 @@ impl AssetManager {
                             | "upgrade_icons"
                             | "status_icons"
                             | "mission_icons"
+                            | "mail_icons"
                     ) {
                     FilterMode::Linear
                 } else {

@@ -47,7 +47,7 @@ pub fn draw_inbox_view(state: &GameplayState, assets: &AssetManager) -> Option<U
     let selected_id = state
         .selected_mail_id
         .or_else(|| state.mailbox.items.last().map(|item| item.id));
-    if let Some(action) = draw_mail_list(state, list, selected_id) {
+    if let Some(action) = draw_mail_list(state, list, selected_id, assets) {
         return Some(action);
     }
     let detail = draw_panel(detail_rect, "Reading room");
@@ -84,7 +84,12 @@ fn draw_title(rect: Rect, subtitle: &str) -> f32 {
     rect.y + scale::TITLE + line_height(scale::BODY) + space::LG
 }
 
-fn draw_mail_list(state: &GameplayState, list: Rect, selected_id: Option<u32>) -> Option<UiAction> {
+fn draw_mail_list(
+    state: &GameplayState,
+    list: Rect,
+    selected_id: Option<u32>,
+    assets: &AssetManager,
+) -> Option<UiAction> {
     let mut y = list.y;
     let page_size = (((list.h - 38.0) / 53.0).floor() as usize).max(1);
     let page_count = state.mailbox.items.len().max(1).div_ceil(page_size);
@@ -98,6 +103,14 @@ fn draw_mail_list(state: &GameplayState, list: Rect, selected_id: Option<u32>) -
     {
         let row = Rect::new(list.x, y, list.w, 48.0);
         draw_card(row, selected_id == Some(item.id));
+        let icon_rect = Rect::new(row.x + space::SM, row.y + 7.0, 34.0, 34.0);
+        let has_icon = draw_mail_icon(&item.mail_type, icon_rect, item.read, assets);
+        let text_x = if has_icon {
+            icon_rect.right() + space::SM
+        } else {
+            row.x + space::MD
+        };
+        let text_w = row.right() - space::MD - text_x;
         let marker = if item.read { "" } else { "• " };
         let subject = truncate_text_to_width(
             &format!(
@@ -106,12 +119,12 @@ fn draw_mail_list(state: &GameplayState, list: Rect, selected_id: Option<u32>) -
                 mail_type_label(&item.mail_type),
                 item.subject
             ),
-            row.w - space::MD * 2.0,
+            text_w,
             scale::LABEL,
         );
         draw_ui_text(
             &subject,
-            row.x + space::MD,
+            text_x,
             row.y + 19.0,
             scale::LABEL,
             if item.read {
@@ -123,10 +136,10 @@ fn draw_mail_list(state: &GameplayState, list: Rect, selected_id: Option<u32>) -
         draw_ui_text(
             &truncate_text_to_width(
                 &format!("{} · Month {}", item.sender, item.month_received),
-                row.w - space::MD * 2.0,
+                text_w,
                 scale::CAPTION,
             ),
-            row.x + space::MD,
+            text_x,
             row.y + 38.0,
             scale::CAPTION,
             color::TEXT_DIM(),
@@ -303,3 +316,50 @@ fn mail_type_label(mail_type: &MailType) -> &'static str {
         MailType::Official => "OFFICIAL",
     }
 }
+
+fn mail_icon_tile(mail_type: &MailType) -> (f32, f32) {
+    match mail_type {
+        MailType::TenantLetter { .. } => (0.0, 0.0),
+        MailType::CityNotice => (1.0, 0.0),
+        MailType::Financial => (2.0, 0.0),
+        MailType::Advertisement => (3.0, 0.0),
+        MailType::News => (0.0, 1.0),
+        MailType::Personal => (1.0, 1.0),
+        MailType::Official => (2.0, 1.0),
+    }
+}
+
+fn draw_mail_icon(mail_type: &MailType, rect: Rect, read: bool, assets: &AssetManager) -> bool {
+    let Some(texture) = assets.get_texture("mail_icons") else {
+        return false;
+    };
+    let (column, row) = mail_icon_tile(mail_type);
+    let tile_w = texture.width() * 0.25;
+    let tile_h = texture.height() * 0.5;
+    let inset_x = tile_w * 0.06;
+    let inset_y = tile_h * 0.06;
+    draw_texture_ex(
+        texture,
+        rect.x,
+        rect.y,
+        if read {
+            Color::new(0.62, 0.6, 0.56, 0.78)
+        } else {
+            WHITE
+        },
+        DrawTextureParams {
+            dest_size: Some(vec2(rect.w, rect.h)),
+            source: Some(Rect::new(
+                column * tile_w + inset_x,
+                row * tile_h + inset_y,
+                tile_w - inset_x * 2.0,
+                tile_h - inset_y * 2.0,
+            )),
+            ..Default::default()
+        },
+    );
+    true
+}
+
+#[cfg(test)]
+mod tests;

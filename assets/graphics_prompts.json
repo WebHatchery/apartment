@@ -185,6 +185,12 @@
                     "prompt": "Clean 3x2 pixel-art mission atlas with crop-safe icons for welcoming doorway with residents, fully lit apartment and key occupancy, home cradled by hands with heart, ledger and coins with green seal, restored brick wall with repair tools, and two properties with deed keyring; deep charcoal-brown cells, warm cream terracotta teal amber moss and plum palette, readable at 34x34, no text"
                 },
                 {
+                    "id": "mail_icons",
+                    "filename": "mail_icons.png",
+                    "resolution": "1254x1254",
+                    "prompt": "Clean 4x2 pixel-art mail seal atlas with crop-safe icons for resident and envelope, civic building and notice, ledger and coins, vendor parcel tag, newspaper skyline, heart-sealed envelope, official sealed document, and unread envelope with amber dot; deep charcoal-brown cells, warm cream terracotta teal amber moss and plum palette, readable at 24x24, no text"
+                },
+                {
                     "id": "achievement_emblems",
                     "filename": "achievement_emblems.png",
                     "resolution": "1254x1254",
