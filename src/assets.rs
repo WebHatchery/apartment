@@ -34,7 +34,16 @@ impl AssetManager {
     }
 
     pub async fn load_assets(&mut self) {
-        let asset_pack = AssetPack::load(ASSET_PACK_PATH).await.ok();
+        let asset_pack = match AssetPack::load(ASSET_PACK_PATH).await {
+            Ok(pack) => Some(pack),
+            Err(error) => {
+                #[cfg(not(target_arch = "wasm32"))]
+                eprintln!("Asset pack unavailable; using loose files: {error}");
+                #[cfg(target_arch = "wasm32")]
+                let _ = error;
+                None
+            }
+        };
         let asset_ids = vec![
             // Tenant Portraits
             "tenant_student",
