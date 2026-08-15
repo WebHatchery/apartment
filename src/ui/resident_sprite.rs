@@ -61,6 +61,14 @@ fn emotion_column(happiness: i32) -> f32 {
     }
 }
 
+fn head_drop_for_pose(pose: ResidentPose) -> f32 {
+    match pose {
+        ResidentPose::Standing => 0.04,
+        ResidentPose::Sitting => 0.15,
+        ResidentPose::Cooking => 0.06,
+    }
+}
+
 fn face_texture<'a>(tenant: &Tenant, assets: &'a AssetManager) -> Option<&'a Texture2D> {
     let face_id = if tenant.id % 2 == 0 {
         "tenant_face_emotions"
@@ -160,13 +168,8 @@ pub(super) fn draw_resident(
 
     let head_h = sprite_h * 0.48;
     let head_w = head_h * 0.83;
-    let seated_drop = if pose == ResidentPose::Sitting {
-        sprite_h * 0.10
-    } else {
-        0.0
-    };
     let head_x = body_x + (body_w - head_w) / 2.0;
-    let head_y = body_y - head_h * 0.42 + seated_drop;
+    let head_y = body_y - head_h * 0.42 + sprite_h * head_drop_for_pose(pose);
     draw_texture_ex(
         faces,
         head_x,

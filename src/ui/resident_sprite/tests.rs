@@ -40,3 +40,10 @@ fn happiness_maps_across_all_five_face_columns() {
     assert_eq!(emotion_column(30), 3.0);
     assert_eq!(emotion_column(5), 4.0);
 }
+
+#[test]
+fn head_anchor_accounts_for_each_pose() {
+    assert!(head_drop_for_pose(ResidentPose::Standing) > 0.0);
+    assert!(head_drop_for_pose(ResidentPose::Sitting) > head_drop_for_pose(ResidentPose::Cooking));
+    assert!(head_drop_for_pose(ResidentPose::Cooking) > head_drop_for_pose(ResidentPose::Standing));
+}
