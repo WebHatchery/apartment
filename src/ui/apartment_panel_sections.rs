@@ -363,17 +363,22 @@ fn draw_upgrade_icon(
     let tile_h = texture.height() * 0.5;
     let inset_x = tile_w * 0.08;
     let inset_y = tile_h * 0.08;
+    let source_w = tile_w - inset_x * 2.0;
+    let source_h = tile_h - inset_y * 2.0;
+    let fit_scale = (rect.w / source_w).min(rect.h / source_h);
+    let fitted_w = source_w * fit_scale;
+    let fitted_h = source_h * fit_scale;
     draw_texture_ex(
         texture,
-        rect.x,
-        rect.y,
+        rect.x + (rect.w - fitted_w) * 0.5,
+        rect.y + (rect.h - fitted_h) * 0.5,
         if enabled {
             WHITE
         } else {
             Color::new(0.45, 0.43, 0.4, 0.7)
         },
         DrawTextureParams {
-            dest_size: Some(vec2(rect.w, rect.h)),
+            dest_size: Some(vec2(fitted_w, fitted_h)),
             source: Some(Rect::new(
                 column * tile_w + inset_x,
                 row * tile_h + inset_y,

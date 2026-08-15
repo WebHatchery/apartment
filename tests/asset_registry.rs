@@ -3,13 +3,14 @@ use std::collections::BTreeSet;
 use std::fs;
 use std::path::Path;
 
-const RUNTIME_TEXTURES: [&str; 65] = [
+const RUNTIME_TEXTURES: [&str; 66] = [
     "assets/textures/tenant_student.jpg",
     "assets/textures/tenant_professional.jpg",
     "assets/textures/tenant_artist.jpg",
     "assets/textures/tenant_family.jpg",
     "assets/textures/tenant_elderly.jpg",
     "assets/textures/tenant_body_poses.png",
+    "assets/textures/tenant_body_poses_alt.png",
     "assets/textures/tenant_face_emotions.png",
     "assets/textures/tenant_face_emotions_alt.png",
     "assets/textures/npc_uncle_artie.png",

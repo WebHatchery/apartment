@@ -89,87 +89,6 @@ pub fn draw_hallway_panel(
     }
     y += 50.0;
 
-    if y >= content_top && y + 14.0 <= content_bottom {
-        draw_ui_text("STAFF", content_x, y, 14.0, colors::TEXT_DIM());
-    }
-    y += 25.0;
-
-    let mut staff_count = 0;
-    let mut staff_types: Vec<_> = config.economy.staff_costs.keys().collect();
-    staff_types.sort();
-
-    for staff_type in staff_types {
-        let Some(cost) = config.economy.staff_costs.get(staff_type) else {
-            continue;
-        };
-        let flag = format!("staff_{}", staff_type);
-
-        if building.flags.contains(&flag) {
-            let mut chars = staff_type.chars();
-            let label = match chars.next() {
-                None => String::new(),
-                Some(f) => f.to_uppercase().collect::<String>() + chars.as_str(),
-            };
-
-            let portrait_rect = Rect::new(content_x, y - 7.0, 38.0, 38.0);
-            let has_portrait = draw_staff_portrait(staff_type, portrait_rect, assets);
-            let staff_x = if has_portrait {
-                portrait_rect.right() + 8.0
-            } else {
-                content_x
-            };
-            if y >= content_top && y + 16.0 <= content_bottom {
-                draw_ui_text(
-                    &format!("{} (${}/mo)", label, cost),
-                    staff_x,
-                    y,
-                    16.0,
-                    colors::TEXT(),
-                );
-            }
-            y += 20.0;
-            let benefit = match staff_type.as_str() {
-                "janitor" => format!(
-                    "Maintains {} units against monthly wear",
-                    config.staff_effects.janitor_units_maintained
-                ),
-                "security" => format!(
-                    "+{} happiness; {}% fewer emergencies",
-                    config.staff_effects.security_happiness_bonus,
-                    config.staff_effects.security_failure_reduction_percent
-                ),
-                "manager" => format!(
-                    "+{} happiness; handles resident requests",
-                    config.staff_effects.manager_happiness_bonus
-                ),
-                "receptionist" => format!(
-                    "{:.2}× applicant volume",
-                    config.staff_effects.receptionist_application_multiplier
-                ),
-                _ => String::new(),
-            };
-            if !benefit.is_empty() {
-                if y >= content_top && y + 13.0 <= content_bottom {
-                    draw_ui_text(&benefit, staff_x, y, 13.0, colors::TEXT_DIM());
-                }
-                y += 20.0;
-            }
-            if has_portrait {
-                y = y.max(portrait_rect.bottom() + 6.0);
-            }
-            staff_count += 1;
-        }
-    }
-
-    if staff_count == 0 {
-        if y >= content_top && y + 16.0 <= content_bottom {
-            draw_ui_text("None hired", content_x, y, 16.0, colors::TEXT_DIM());
-        }
-        y += 25.0;
-    }
-
-    y += 25.0;
-
     let available =
         crate::building::upgrades::available_building_upgrades(building, &config.upgrades);
 
@@ -225,6 +144,105 @@ pub fn draw_hallway_panel(
 
     let btn_w = panel_w - 30.0;
 
+    if y >= content_top && y + 14.0 <= content_bottom {
+        draw_ui_text("UPGRADES", content_x, y, 14.0, colors::TEXT_DIM());
+    }
+    y += 25.0;
+
+    for upgrade in other_actions {
+        if let Some(cost) = upgrade.cost(building, &config.economy, &config.upgrades) {
+            let can_afford = money >= cost;
+            let label = format!(
+                "{} (${})",
+                upgrade.label(building, &config.ui, &config.upgrades),
+                cost
+            );
+
+            if y >= content_top
+                && y + 40.0 <= content_bottom
+                && button(content_x, y, btn_w, 40.0, &label, can_afford)
+            {
+                action = Some(UiAction::UpgradeAction(upgrade));
+            }
+            y += 44.0;
+        }
+    }
+
+    if y >= content_top && y + 14.0 <= content_bottom {
+        draw_ui_text("STAFF", content_x, y, 14.0, colors::TEXT_DIM());
+    }
+    y += 25.0;
+
+    let mut staff_count = 0;
+    let mut staff_types: Vec<_> = config.economy.staff_costs.keys().collect();
+    staff_types.sort();
+    for staff_type in staff_types {
+        let Some(cost) = config.economy.staff_costs.get(staff_type) else {
+            continue;
+        };
+        let flag = format!("staff_{}", staff_type);
+        if building.flags.contains(&flag) {
+            let mut chars = staff_type.chars();
+            let label = match chars.next() {
+                None => String::new(),
+                Some(f) => f.to_uppercase().collect::<String>() + chars.as_str(),
+            };
+            let portrait_rect = Rect::new(content_x, y - 7.0, 38.0, 38.0);
+            let has_portrait = draw_staff_portrait(staff_type, portrait_rect, assets);
+            let staff_x = if has_portrait {
+                portrait_rect.right() + 8.0
+            } else {
+                content_x
+            };
+            if y >= content_top && y + 16.0 <= content_bottom {
+                draw_ui_text(
+                    &format!("{} (${}/mo)", label, cost),
+                    staff_x,
+                    y,
+                    16.0,
+                    colors::TEXT(),
+                );
+            }
+            y += 20.0;
+            let benefit = match staff_type.as_str() {
+                "janitor" => format!(
+                    "Maintains {} units against monthly wear",
+                    config.staff_effects.janitor_units_maintained
+                ),
+                "security" => format!(
+                    "+{} happiness; {}% fewer emergencies",
+                    config.staff_effects.security_happiness_bonus,
+                    config.staff_effects.security_failure_reduction_percent
+                ),
+                "manager" => format!(
+                    "+{} happiness; handles resident requests",
+                    config.staff_effects.manager_happiness_bonus
+                ),
+                "receptionist" => format!(
+                    "{:.2}× applicant volume",
+                    config.staff_effects.receptionist_application_multiplier
+                ),
+                _ => String::new(),
+            };
+            if !benefit.is_empty() {
+                if y >= content_top && y + 13.0 <= content_bottom {
+                    draw_ui_text(&benefit, staff_x, y, 13.0, colors::TEXT_DIM());
+                }
+                y += 20.0;
+            }
+            if has_portrait {
+                y = y.max(portrait_rect.bottom() + 6.0);
+            }
+            staff_count += 1;
+        }
+    }
+    if staff_count == 0 {
+        if y >= content_top && y + 16.0 <= content_bottom {
+            draw_ui_text("None hired", content_x, y, 16.0, colors::TEXT_DIM());
+        }
+        y += 25.0;
+    }
+
     for upgrade in staff_actions {
         if let Some(cost) = upgrade.cost(building, &config.economy, &config.upgrades) {
             let can_afford = money >= cost;
@@ -240,31 +258,6 @@ pub fn draw_hallway_panel(
                 || action_label.clone(),
                 |monthly| format!("{} (${} / month)", action_label, monthly),
             );
-
-            if y >= content_top
-                && y + 40.0 <= content_bottom
-                && button(content_x, y, btn_w, 40.0, &label, can_afford)
-            {
-                action = Some(UiAction::UpgradeAction(upgrade));
-            }
-            y += 44.0;
-        }
-    }
-
-    if y >= content_top && y + 14.0 <= content_bottom {
-        draw_ui_text("UPGRADES", content_x, y, 14.0, colors::TEXT_DIM());
-    }
-    y += 25.0;
-
-    for upgrade in other_actions {
-        if let Some(cost) = upgrade.cost(building, &config.economy, &config.upgrades) {
-            let can_afford = money >= cost;
-            let label = format!(
-                "{} (${})",
-                upgrade.label(building, &config.ui, &config.upgrades),
-                cost
-            );
-
             if y >= content_top
                 && y + 40.0 <= content_bottom
                 && button(content_x, y, btn_w, 40.0, &label, can_afford)

@@ -53,6 +53,7 @@ impl AssetManager {
             "tenant_elderly",
             // Modular in-room tenant layers
             "tenant_body_poses",
+            "tenant_body_poses_alt",
             "tenant_face_emotions",
             "tenant_face_emotions_alt",
             "npc_uncle_artie",
@@ -137,6 +138,7 @@ impl AssetManager {
                     || matches!(
                         id,
                         "tenant_body_poses"
+                            | "tenant_body_poses_alt"
                             | "tenant_face_emotions"
                             | "tenant_face_emotions_alt"
                             | "npc_uncle_artie"

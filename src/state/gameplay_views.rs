@@ -415,7 +415,7 @@ impl GameplayState {
         if self.tutorial.pending_messages.is_empty() {
             return;
         }
-        let message = format!("{} Tap CONTINUE.", self.tutorial.pending_messages[0]);
+        let message = self.tutorial.pending_messages[0].clone();
         let clicked = if let Some(portrait) = assets.get_texture("npc_uncle_artie") {
             crate::ui::widgets::draw_portrait_toast(
                 portrait,

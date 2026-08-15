@@ -2,7 +2,9 @@
 
 use super::common::archetype_color;
 use crate::assets::AssetManager;
-use crate::building::{Apartment, DesignType};
+use crate::building::Apartment;
+#[cfg(test)]
+use crate::building::DesignType;
 use crate::tenant::Tenant;
 use macroquad::prelude::*;
 
@@ -26,6 +28,7 @@ impl ResidentPose {
     }
 }
 
+#[cfg(test)]
 fn pose_for(apartment: &Apartment) -> ResidentPose {
     if apartment.kitchen_level > 0 || matches!(apartment.design, DesignType::Practical) {
         ResidentPose::Cooking
@@ -36,6 +39,15 @@ fn pose_for(apartment: &Apartment) -> ResidentPose {
         ResidentPose::Sitting
     } else {
         ResidentPose::Standing
+    }
+}
+
+fn animated_pose(apartment: &Apartment, tenant_id: u32, elapsed_seconds: f64) -> ResidentPose {
+    let phase = (elapsed_seconds * 0.45 + f64::from(apartment.id + tenant_id) * 0.37) % 3.0;
+    match phase as u32 {
+        0 => ResidentPose::Standing,
+        1 => ResidentPose::Sitting,
+        _ => ResidentPose::Cooking,
     }
 }
 
@@ -106,14 +118,22 @@ pub(super) fn draw_resident(
     room: Rect,
     assets: &AssetManager,
 ) {
-    let Some(bodies) = assets.get_texture("tenant_body_poses") else {
+    let body_id = if tenant.id % 2 == 0 {
+        "tenant_body_poses"
+    } else {
+        "tenant_body_poses_alt"
+    };
+    let Some(bodies) = assets
+        .get_texture(body_id)
+        .or_else(|| assets.get_texture("tenant_body_poses"))
+    else {
         return;
     };
     let Some(faces) = face_texture(tenant, assets) else {
         return;
     };
 
-    let pose = pose_for(apartment);
+    let pose = animated_pose(apartment, tenant.id, get_time());
     let body_column_w = bodies.width() / BODY_COLUMNS;
     let face_column_w = faces.width() / FACE_COLUMNS;
     let sprite_h = (room.h * 0.68).clamp(58.0, 112.0);

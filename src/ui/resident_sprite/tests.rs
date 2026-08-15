@@ -1,5 +1,5 @@
 use super::*;
-use crate::building::{ApartmentSize, NoiseLevel};
+use crate::building::{ApartmentSize, DesignType, NoiseLevel};
 
 fn apartment(design: DesignType, kitchen_level: i32) -> Apartment {
     let mut apartment = Apartment::new(1, "1A", 1, ApartmentSize::Small, NoiseLevel::Low);
@@ -22,6 +22,14 @@ fn room_features_choose_visible_activities() {
         pose_for(&apartment(DesignType::Bare, 1)),
         ResidentPose::Cooking
     );
+}
+
+#[test]
+fn resident_animation_cycles_through_all_available_poses() {
+    let apartment = apartment(DesignType::Practical, 1);
+    assert_eq!(animated_pose(&apartment, 1, 0.0), ResidentPose::Standing);
+    assert_eq!(animated_pose(&apartment, 1, 2.3), ResidentPose::Sitting);
+    assert_eq!(animated_pose(&apartment, 1, 4.6), ResidentPose::Cooking);
 }
 
 #[test]

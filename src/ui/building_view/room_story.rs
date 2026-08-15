@@ -126,6 +126,24 @@ fn draw_damage(room: Rect, apartment_id: u32, severe: bool) {
         room.h,
         Color::new(0.20, 0.16, 0.11, 0.18),
     );
+    let marker = Color::new(0.93, 0.12, 0.10, 0.96);
+    let marker_w = (room.w * 0.34).max(38.0);
+    draw_rectangle_lines(
+        room.x + 2.0,
+        room.y + 2.0,
+        room.w - 4.0,
+        room.h - 4.0,
+        3.0,
+        marker,
+    );
+    draw_rectangle(room.x + 2.0, room.y + 2.0, marker_w, 5.0, marker);
+    draw_rectangle(
+        room.right() - marker_w - 2.0,
+        room.bottom() - 7.0,
+        marker_w,
+        5.0,
+        marker,
+    );
     let base_x = room.x + room.w * (0.22 + (apartment_id % 4) as f32 * 0.11);
     let base_y = room.y + room.h * 0.34;
     let crack = Color::new(0.18, 0.12, 0.09, 0.8);
