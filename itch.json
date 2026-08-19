@@ -1,0 +1,7 @@
+{
+  "target": "kalaith/second-story",
+  "channels": {
+    "html5": "html5",
+    "windows": "windows"
+  }
+}

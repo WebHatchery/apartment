@@ -28,6 +28,13 @@ There is no local wrapper for the everyday loop — use `cargo` directly from th
 
 `publish.ps1` is a thin wrapper that delegates to the workspace-root `../publish.ps1` for cross-platform builds and deployment (`-WindowsOnly`, `-WebGLOnly`, `-Production`, `-DryRun`, etc.). Per `AGENTS.md`, `.\publish.ps1` (no params) is the sanctioned end-to-end validation path after meaningful changes — but for tight iteration prefer `cargo clippy` + `cargo test`, which is exactly what CI (`.github/workflows/rust-ci.yml`) runs.
 
+The itch.io release is separate: `itch.json` identifies the existing
+`kalaith/second-story` page and its stable `html5`/`windows` channels. Run
+`.\publish.ps1` first, then use `.\publish-itch.ps1 -DryRun`,
+`.\publish-itch.ps1 -Preview`, and finally `.\publish-itch.ps1` when the
+channel diff is correct. `.\publish-itch.ps1 -Status` only queries Butler and
+does not upload.
+
 ## Architecture
 
 The whole app is a single `#[macroquad::main]` loop in `main.rs` calling `Game::update()` then `Game::draw()` each frame (`game.rs`). `Game` owns three things: a `GameState` enum, the loaded `GameConfig`, and the `AssetManager`.
