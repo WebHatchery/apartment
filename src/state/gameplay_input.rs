@@ -38,7 +38,7 @@ impl GameplayState {
         let paused_on_entry = was_paused || self.show_pause_menu;
         let blocked_on_entry =
             self.has_blocking_narrative_event() || self.has_blocking_tutorial_message();
-        let actions: Vec<UiAction> = self.pending_actions.drain(..).collect();
+        let actions = std::mem::take(&mut self.pending_actions);
         for action in actions {
             if action_allowed_while_blocked(paused_on_entry, blocked_on_entry, &action) {
                 self.process_action(action);
