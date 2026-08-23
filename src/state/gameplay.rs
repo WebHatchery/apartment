@@ -371,6 +371,12 @@ impl GameplayState {
 
     /// Restore fields that are intentionally skipped from save data.
     pub fn post_load(&mut self) {
+        if self.current_building_id.is_empty() {
+            self.current_building_id = crate::data::templates::load_templates()
+                .and_then(|templates| templates.templates.into_iter().next())
+                .map(|template| template.id)
+                .unwrap_or_else(|| "mvp_default".to_string());
+        }
         self.config = crate::data::config::load_config();
         // config isn't serialized, so re-apply the building's difficulty
         // modifiers that were baked in at new-game time.
@@ -426,13 +432,6 @@ impl GameplayState {
         if self.ever_occupied_buildings.is_empty() && self.has_ever_had_tenant {
             self.ever_occupied_buildings
                 .insert(self.city.active_building_index as u32);
-        }
-
-        if self.current_building_id.is_empty() {
-            self.current_building_id = crate::data::templates::load_templates()
-                .and_then(|templates| templates.templates.into_iter().next())
-                .map(|template| template.id)
-                .unwrap_or_else(|| "mvp_default".to_string());
         }
     }
 

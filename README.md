@@ -28,6 +28,15 @@ Survive 36 months while keeping the building financially stable and livable. Com
 
 Playable building progression with multiple properties, tenant systems, repairs, upgrades, missions, and month-by-month management.
 
+## Save Compatibility
+
+New saves use a versioned envelope (`save_format_version: 1`) around the game
+state. Unwrapped saves from before this release remain supported: the loader
+restores their non-persistent runtime fields, tenant building addresses, and a
+missing current-building ID. A save from a newer format is rejected without
+being overwritten, so the player can return to a compatible build instead of
+losing progress.
+
 ## Balance Harness
 
 `src/sim_harness.rs` plays the full 36 months headlessly under six strategies

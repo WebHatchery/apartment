@@ -5,6 +5,77 @@ use serde::{Deserialize, Serialize};
 const GAME_NAME: &str = "apartment_manager";
 const SAVE_FILE_NAME: &str = "savegame.json";
 const PROGRESS_FILE_NAME: &str = "player_progress.json";
+const CURRENT_SAVE_FORMAT_VERSION: u32 = 1;
+
+/// The persistent save envelope. Keeping the version outside gameplay state
+/// lets the loader distinguish a future file format from ordinary game data.
+#[derive(Deserialize)]
+struct VersionedSave {
+    state: GameplayState,
+}
+
+#[derive(Serialize)]
+struct CurrentSave<'a> {
+    save_format_version: u32,
+    state: &'a GameplayState,
+}
+
+fn current_save(state: &GameplayState) -> CurrentSave<'_> {
+    CurrentSave {
+        save_format_version: CURRENT_SAVE_FORMAT_VERSION,
+        state,
+    }
+}
+
+/// Decode either the current envelope or the unwrapped gameplay state used by
+/// pre-versioned releases. An envelope is identified before deserialization so
+/// an unsupported newer save can never fall through to the legacy path.
+fn decode_save(value: serde_json::Value) -> std::io::Result<GameplayState> {
+    if value.get("save_format_version").is_none() && value.get("state").is_none() {
+        return serde_json::from_value(value).map_err(|error| {
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("Legacy save could not be decoded: {error}"),
+            )
+        });
+    }
+
+    let version = value
+        .get("save_format_version")
+        .and_then(serde_json::Value::as_u64)
+        .ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "Versioned save has no numeric format version",
+            )
+        })?;
+
+    if version > u64::from(CURRENT_SAVE_FORMAT_VERSION) {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            format!(
+                "Save format {version} is newer than supported format {CURRENT_SAVE_FORMAT_VERSION}"
+            ),
+        ));
+    }
+    if version < u64::from(CURRENT_SAVE_FORMAT_VERSION) {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            format!(
+                "Save format {version} cannot be migrated to format {CURRENT_SAVE_FORMAT_VERSION}"
+            ),
+        ));
+    }
+
+    let save: VersionedSave = serde_json::from_value(value).map_err(|error| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            format!("Versioned save could not be decoded: {error}"),
+        )
+    })?;
+
+    Ok(save.state)
+}
 
 /// Player progress - persists across game sessions
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -55,15 +126,16 @@ impl PlayerProgress {
 
 /// Save the current game state to disk
 pub fn save_game(state: &GameplayState) -> std::io::Result<()> {
-    save_json_key(GAME_NAME, SAVE_FILE_NAME, state).map_err(std::io::Error::other)
+    save_json_key(GAME_NAME, SAVE_FILE_NAME, &current_save(state)).map_err(std::io::Error::other)
 }
 
 /// Load the game state from disk
 pub fn load_game() -> std::io::Result<GameplayState> {
-    let mut state: GameplayState =
+    let value: serde_json::Value =
         load_json_key(GAME_NAME, SAVE_FILE_NAME).map_err(std::io::Error::other)?;
+    let mut state = decode_save(value)?;
 
-    // Restore non-serialized fields and repair older save shapes.
+    // Restore non-serialized fields and repair legacy state shapes.
     state.post_load();
 
     Ok(state)

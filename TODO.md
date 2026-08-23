@@ -1,27 +1,8 @@
 # Second Story — Release Work
 
-The remediation program is complete; this list covers the remaining work to
-turn the current playable build into a release candidate. Work it in order.
-
-## Release blockers
-
-- [ ] Restore the strict lint gate on the current Rust toolchain. `cargo clippy
-  --all-targets --all-features -- -D warnings` currently fails on needless
-  lifetimes in `src/ui/ownership_panel.rs` and two manual even-number checks in
-  `src/ui/resident_sprite.rs`. Apply the small idiomatic fixes, then pass fmt,
-  clippy, and the full test suite with no warning allowances.
-
-- [ ] Reconcile player-facing release metadata with the shipped game. The
-  catalog page advertises three buildings while `assets/building_templates.json`
-  contains six campaigns, and the README says the balance harness uses three
-  strategies while it defines six. Rewrite the controls to lead with the
-  visible tap/click actions; keyboard shortcuts remain supplementary.
-
-- [ ] Establish a versioned save compatibility contract before the release.
-  Add an explicit save-format version and fixtures for the pre-versioned save
-  shape, then prove that `post_load` preserves valid progress while repairing
-  legacy tenant addresses and blank building ids. Document how incompatible
-  future saves are handled.
+The remediation program and pre-release engineering blockers are complete.
+This list covers the remaining work to turn the current playable build into a
+release candidate. Work it in order.
 
 ## Release candidate validation
 
