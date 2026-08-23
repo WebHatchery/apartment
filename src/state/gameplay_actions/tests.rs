@@ -2,6 +2,15 @@ use super::*;
 use crate::economy::TransactionType;
 
 #[test]
+fn visible_pause_action_opens_the_pause_menu() {
+    let mut state = GameplayState::new();
+
+    state.process_action(UiAction::OpenPauseMenu);
+
+    assert!(state.show_pause_menu);
+}
+
+#[test]
 fn stale_application_is_not_discarded_when_the_unit_became_unavailable() {
     let mut state = GameplayState::new();
     let apartment_id = state.building.apartments[0].id;

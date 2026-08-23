@@ -285,6 +285,9 @@ impl GameplayState {
             UiAction::EndTurn => {
                 self.end_turn();
             }
+            UiAction::OpenPauseMenu => {
+                self.show_pause_menu = true;
+            }
             UiAction::ReturnToMenu => {
                 self.pending_quit_to_menu = true;
             }

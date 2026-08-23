@@ -117,23 +117,34 @@ pub fn draw_header(
     draw_rectangle(0.0, 0.0, w, h, color::SURFACE_HEADER());
     draw_line(0.0, h, w, h, 1.0, color::BORDER_STRONG());
 
-    // End Month button, right-anchored, vertically centered.
+    // Keep primary time control and recovery/menu control together so both
+    // paths remain reachable with touch or a mouse.
     let btn_h = 40.0;
     let compact = w < 1000.0;
-    let btn_w = button_width("End Month", btn_h).max(if compact { 106.0 } else { 120.0 });
+    let end_month_w = button_width("End Month", btn_h).max(if compact { 106.0 } else { 120.0 });
+    let menu_w = button_width("Menu", btn_h).max(if compact { 74.0 } else { 84.0 });
     let outer = if compact { space::SM } else { space::LG };
-    let btn_x = w - btn_w - outer;
+    let end_month_x = w - end_month_w - outer;
+    let menu_x = end_month_x - menu_w - space::SM;
     let btn_y = (h - btn_h) / 2.0;
     if button_at(
-        Rect::new(btn_x, btn_y, btn_w, btn_h),
+        Rect::new(end_month_x, btn_y, end_month_w, btn_h),
         "End Month",
         true,
         Tone::Primary,
     ) {
         action = Some(UiAction::EndTurn);
     }
+    if button_at(
+        Rect::new(menu_x, btn_y, menu_w, btn_h),
+        "Menu",
+        true,
+        Tone::Secondary,
+    ) {
+        action = Some(UiAction::OpenPauseMenu);
+    }
     // Stat cluster: money / month / occupancy chips, flowed right-to-left so
-    // they hug the button and never collide with the building name.
+    // they hug the controls and never collide with the building name.
     let money_color = if money < 0 {
         color::NEGATIVE()
     } else if money < 500 {
@@ -182,7 +193,7 @@ pub fn draw_header(
         })
         .collect();
     let cluster_w: f32 = widths.iter().sum::<f32>() + chip_gap * (chips.len() as f32 - 1.0);
-    let cluster_right = btn_x - space::MD;
+    let cluster_right = menu_x - space::MD;
     let mut cx = (cluster_right - cluster_w).max(0.0);
     let cluster_left = cx;
     for (i, (icon, label, text_color)) in chips.iter().enumerate() {

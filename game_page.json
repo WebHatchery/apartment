@@ -10,22 +10,22 @@
   ],
   "controls": [
     {
-      "key": "Space",
-      "desc": "End turn / Advance time"
+      "key": "Tap / click",
+      "desc": "Select apartments and use the labelled controls."
     },
     {
-      "key": "Esc",
-      "desc": "Pause menu (save, quit)"
+      "key": "END MONTH",
+      "desc": "Tap the visible top-bar control to advance time. Space is optional."
     },
     {
-      "key": "Mouse",
-      "desc": "Select apartments, click buttons"
+      "key": "MENU",
+      "desc": "Tap the visible top-bar control to save or quit. Esc is optional."
     }
   ],
   "extra_sections": [
     {
       "heading": "Features",
-      "body": "<p>- <strong>Progressive Building Unlock</strong> - Complete challenges to unlock harder properties<br>- <strong>Three Unique Buildings</strong> - From starter apartments to historic manor estates<br>- <strong>Tenant System</strong> - Diverse archetypes with unique needs and stories<br>- <strong>Building Upgrades</strong> - Improve hallways, install facilities, upgrade designs</p>"
+      "body": "<p>- <strong>Progressive Building Unlock</strong> - Complete challenges to unlock harder properties<br>- <strong>Six Campaign Buildings</strong> - From starter apartments to historic manor estates<br>- <strong>Tenant System</strong> - Diverse archetypes with unique needs and stories<br>- <strong>Building Upgrades</strong> - Improve hallways, install facilities, upgrade designs</p>"
     }
   ],
   "details": [

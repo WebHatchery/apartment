@@ -88,6 +88,7 @@ pub enum UiAction {
 
     // Game flow
     EndTurn,
+    OpenPauseMenu,
     ReturnToMenu, // Used by Career Summary
 
     // Phase 3: City navigation
