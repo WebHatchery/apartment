@@ -155,9 +155,7 @@ fn ownership_name(ownership: &OwnershipType) -> &'static str {
     }
 }
 
-fn ownership_details<'a>(
-    building: &'a Building,
-) -> (&'static str, Vec<&'a Apartment>, Option<i32>) {
+fn ownership_details(building: &Building) -> (&'static str, Vec<&Apartment>, Option<i32>) {
     match &building.ownership_model {
         OwnershipType::FullRental => (
             "You own every unit and collect all rent. Selling a unit raises capital but gives up its future rent.",

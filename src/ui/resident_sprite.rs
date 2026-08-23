@@ -70,7 +70,7 @@ fn head_drop_for_pose(pose: ResidentPose) -> f32 {
 }
 
 fn face_texture<'a>(tenant: &Tenant, assets: &'a AssetManager) -> Option<&'a Texture2D> {
-    let face_id = if tenant.id % 2 == 0 {
+    let face_id = if tenant.id.is_multiple_of(2) {
         "tenant_face_emotions"
     } else {
         "tenant_face_emotions_alt"
@@ -126,7 +126,7 @@ pub(super) fn draw_resident(
     room: Rect,
     assets: &AssetManager,
 ) {
-    let body_id = if tenant.id % 2 == 0 {
+    let body_id = if tenant.id.is_multiple_of(2) {
         "tenant_body_poses"
     } else {
         "tenant_body_poses_alt"
