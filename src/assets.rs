@@ -54,8 +54,12 @@ impl AssetManager {
             // Modular in-room tenant layers
             "tenant_body_poses",
             "tenant_body_poses_alt",
+            "tenant_body_poses_senior",
+            "tenant_body_poses_indigo",
             "tenant_face_emotions",
             "tenant_face_emotions_alt",
+            "tenant_face_emotions_senior",
+            "tenant_face_emotions_indigo",
             "npc_uncle_artie",
             "staff_portraits",
             "achievement_emblems",
@@ -139,8 +143,12 @@ impl AssetManager {
                         id,
                         "tenant_body_poses"
                             | "tenant_body_poses_alt"
+                            | "tenant_body_poses_senior"
+                            | "tenant_body_poses_indigo"
                             | "tenant_face_emotions"
                             | "tenant_face_emotions_alt"
+                            | "tenant_face_emotions_senior"
+                            | "tenant_face_emotions_indigo"
                             | "npc_uncle_artie"
                             | "property_facades"
                             | "staff_portraits"

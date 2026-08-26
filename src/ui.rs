@@ -37,6 +37,7 @@ pub use building_view::draw_building_view;
 pub use common::*;
 pub use hallway_panel::draw_hallway_panel;
 pub use ownership_panel::draw_ownership_panel;
+pub(crate) use resident_sprite::draw_resident_sprite_gallery;
 
 pub use application_panel::draw_application_panel;
 pub use header::draw_header;

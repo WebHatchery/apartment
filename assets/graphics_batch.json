@@ -36,6 +36,62 @@
             "Height": 512
         },
         {
+            "id": "tenant_body_poses",
+            "title": "Tenant Body Poses",
+            "description": "Matched rust-jacket resident body sheet: standing, sitting, and cooking, with centered neck attachment points.",
+            "Width": 1611,
+            "Height": 976
+        },
+        {
+            "id": "tenant_face_emotions",
+            "title": "Tenant Face Emotions",
+            "description": "Matching short-haired resident head sheet: ecstatic, happy, neutral, unhappy, and miserable.",
+            "Width": 1611,
+            "Height": 976
+        },
+        {
+            "id": "tenant_body_poses_alt",
+            "title": "Tenant Body Poses Alt",
+            "description": "Matched teal-shirt resident body sheet: standing, sitting, and cooking, with centered neck attachment points.",
+            "Width": 1536,
+            "Height": 1024
+        },
+        {
+            "id": "tenant_face_emotions_alt",
+            "title": "Tenant Face Emotions Alt",
+            "description": "Matching curly-haired resident head sheet: ecstatic, happy, neutral, unhappy, and miserable.",
+            "Width": 1630,
+            "Height": 965
+        },
+        {
+            "id": "tenant_body_poses_senior",
+            "title": "Tenant Body Poses Senior",
+            "description": "Matched moss-cardigan older resident body sheet: standing, sitting, and cooking, with centered neck attachment points.",
+            "Width": 1626,
+            "Height": 967
+        },
+        {
+            "id": "tenant_face_emotions_senior",
+            "title": "Tenant Face Emotions Senior",
+            "description": "Matching salt-and-pepper-haired older resident head sheet: ecstatic, happy, neutral, unhappy, and miserable.",
+            "Width": 1619,
+            "Height": 971
+        },
+        {
+            "id": "tenant_body_poses_indigo",
+            "title": "Tenant Body Poses Indigo",
+            "description": "Matched indigo-overshirt resident body sheet: standing, sitting, and cooking, with centered neck attachment points.",
+            "Width": 1536,
+            "Height": 1024
+        },
+        {
+            "id": "tenant_face_emotions_indigo",
+            "title": "Tenant Face Emotions Indigo",
+            "description": "Matching teal-streak-haired resident head sheet: ecstatic, happy, neutral, unhappy, and miserable.",
+            "Width": 1627,
+            "Height": 967
+        },
+        {
             "id": "npc_uncle_artie",
             "title": "NPC Uncle Artie",
             "description": "2D pixel art portrait of Uncle Artie, a kind retired apartment landlord in his late sixties, swept-back silver hair, gray mustache, brown cardigan and muted teal shirt, gentle encouraging smile, upper-body portrait against a deep charcoal-brown interior vignette, warm amber and terracotta palette, no text",

@@ -47,3 +47,16 @@ fn head_anchor_accounts_for_each_pose() {
     assert!(head_drop_for_pose(ResidentPose::Sitting) > head_drop_for_pose(ResidentPose::Cooking));
     assert!(head_drop_for_pose(ResidentPose::Cooking) > head_drop_for_pose(ResidentPose::Standing));
 }
+
+#[test]
+fn tenant_ids_cycle_through_four_matched_sprite_sets() {
+    assert_eq!(style_for(0), RESIDENT_STYLES[0]);
+    assert_eq!(style_for(1), RESIDENT_STYLES[1]);
+    assert_eq!(style_for(2), RESIDENT_STYLES[2]);
+    assert_eq!(style_for(3), RESIDENT_STYLES[3]);
+    assert_eq!(style_for(4), RESIDENT_STYLES[0]);
+    for style in RESIDENT_STYLES {
+        assert!(style.body_id.starts_with("tenant_body_poses"));
+        assert!(style.face_id.starts_with("tenant_face_emotions"));
+    }
+}

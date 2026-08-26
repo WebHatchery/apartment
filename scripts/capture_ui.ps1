@@ -19,6 +19,7 @@ param(
         "menu",
         "gameplay",
         "showcase",
+        "resident_sprites",
         "unit_showcase",
         "hallway_showcase",
         "applications_showcase",

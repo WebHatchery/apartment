@@ -51,6 +51,54 @@
                     "prompt": "2D pixel art portrait of an elderly retired tenant, kind wise expression, comfortable cardigan or sweater, reading glasses, perhaps holding knitting or book, warm muted colors, apartment management game style, upper body shot, cozy illustration style, transparent or simple flat background"
                 },
                 {
+                    "id": "tenant_body_poses",
+                    "filename": "tenant_body_poses.png",
+                    "resolution": "1611x976",
+                    "prompt": "Matched modular resident body sheet with three headless poses in equal columns: standing, sitting, and cooking; rust jacket and dark trousers; transparent background; consistent centered neck attachment points"
+                },
+                {
+                    "id": "tenant_face_emotions",
+                    "filename": "tenant_face_emotions.png",
+                    "resolution": "1611x976",
+                    "prompt": "Matching modular resident head sheet with five emotions in equal columns: ecstatic, happy, neutral, unhappy, and miserable; short brown hair; transparent background; consistent neck attachment points"
+                },
+                {
+                    "id": "tenant_body_poses_alt",
+                    "filename": "tenant_body_poses_alt.png",
+                    "resolution": "1536x1024",
+                    "prompt": "Matched modular resident body sheet with three headless poses in equal columns: standing, sitting, and cooking; teal shirt, rust overshirt, and dark trousers; transparent background; consistent centered neck attachment points"
+                },
+                {
+                    "id": "tenant_face_emotions_alt",
+                    "filename": "tenant_face_emotions_alt.png",
+                    "resolution": "1630x965",
+                    "prompt": "Matching modular resident head sheet with five emotions in equal columns: ecstatic, happy, neutral, unhappy, and miserable; deep-brown skin and curly hair; transparent background; consistent neck attachment points"
+                },
+                {
+                    "id": "tenant_body_poses_senior",
+                    "filename": "tenant_body_poses_senior.png",
+                    "resolution": "1626x967",
+                    "prompt": "Matched modular older East Asian resident body sheet with three headless poses in equal columns: standing, sitting, and cooking; moss cardigan, cream shirt, charcoal trousers; transparent background; consistent centered neck attachment points"
+                },
+                {
+                    "id": "tenant_face_emotions_senior",
+                    "filename": "tenant_face_emotions_senior.png",
+                    "resolution": "1619x971",
+                    "prompt": "Matching modular older East Asian resident head sheet with five emotions in equal columns: ecstatic, happy, neutral, unhappy, and miserable; short salt-and-pepper hair; transparent background; consistent neck attachment points"
+                },
+                {
+                    "id": "tenant_body_poses_indigo",
+                    "filename": "tenant_body_poses_indigo.png",
+                    "resolution": "1536x1024",
+                    "prompt": "Matched modular South Asian nonbinary resident body sheet with three headless poses in equal columns: standing, sitting, and cooking; plum overshirt, ochre tee, navy trousers; transparent background; consistent centered neck attachment points"
+                },
+                {
+                    "id": "tenant_face_emotions_indigo",
+                    "filename": "tenant_face_emotions_indigo.png",
+                    "resolution": "1627x967",
+                    "prompt": "Matching modular South Asian nonbinary resident head sheet with five emotions in equal columns: ecstatic, happy, neutral, unhappy, and miserable; wavy black hair with teal streak; transparent background; consistent neck attachment points"
+                },
+                {
                     "id": "npc_uncle_artie",
                     "filename": "npc_uncle_artie.png",
                     "resolution": "512x512",
@@ -436,7 +484,7 @@
         }
     },
     "summary": {
-        "total_images": 54,
+        "total_images": 62,
         "categories_count": 10,
         "priority_order": [
             "tenant_portraits",

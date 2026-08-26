@@ -10,6 +10,7 @@ pub struct Game {
     pub state: GameState,
     pub config: GameConfig,
     pub assets: AssetManager,
+    capture_resident_gallery: bool,
 }
 
 impl Game {
@@ -23,10 +24,14 @@ impl Game {
             state: GameState::Menu(MenuState::new()),
             config,
             assets,
+            capture_resident_gallery: false,
         }
     }
 
     pub fn update(&mut self) {
+        if self.capture_resident_gallery {
+            return;
+        }
         let transition = match &mut self.state {
             GameState::Menu(s) => s.update(&self.assets, &self.config),
             GameState::Gameplay(s) => s.update(&self.assets),
@@ -38,6 +43,10 @@ impl Game {
     }
 
     pub fn draw(&mut self) {
+        if self.capture_resident_gallery {
+            crate::ui::draw_resident_sprite_gallery(&self.assets);
+            return;
+        }
         match &mut self.state {
             GameState::Menu(s) => s.draw(&self.assets),
             GameState::Gameplay(s) => s.draw(&self.assets),
@@ -53,7 +62,11 @@ impl Game {
 
     /// Seed a specific scene for the screenshot harness.
     pub fn begin_capture_scene(&mut self, scene: &str) {
+        self.capture_resident_gallery = false;
         match scene {
+            "resident_sprites" => {
+                self.capture_resident_gallery = true;
+            }
             "menu" | "menu_compact" | "menu_wide" | "menu_tiny" => {
                 self.state = GameState::Menu(MenuState::new())
             }

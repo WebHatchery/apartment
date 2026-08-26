@@ -240,6 +240,14 @@ fn draw_apartment(
         if let Some(tenant) = tenants.iter().find(|tenant| tenant.id == tenant_id) {
             super::resident_sprite::draw_resident(apartment, tenant, room, assets);
             let name = truncate_text_to_width(&tenant.name, room.w * 0.42, scale::CAPTION);
+            let name_metrics = measure_text(&name, None, scale::CAPTION as u16, 1.0);
+            draw_rectangle(
+                room.x + space::XS,
+                room.bottom() - 23.0,
+                name_metrics.width + space::SM * 2.0,
+                19.0,
+                Color::new(0.04, 0.04, 0.05, 0.76),
+            );
             draw_ui_text(
                 &name,
                 room.x + space::SM,

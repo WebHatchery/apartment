@@ -59,6 +59,34 @@ foreach ($entry in $batchImages) {
                 "expected $($entry.Width)x$($entry.Height)"
             )
         }
+
+        if ($entry.id -like "tenant_body_poses*" -or $entry.id -like "tenant_face_emotions*") {
+            $bitmap = [System.Drawing.Bitmap]$image
+            if ($bitmap.GetPixel(0, 0).A -ne 0) {
+                $errors.Add("$(Split-Path -Leaf $path) does not have a transparent outer background")
+            }
+
+            $columns = if ($entry.id -like "tenant_body_poses*") { 3 } else { 5 }
+            $cellWidth = [Math]::Floor($bitmap.Width / $columns)
+            for ($column = 0; $column -lt $columns; $column++) {
+                $hasVisiblePixel = $false
+                $startX = $column * $cellWidth
+                $endX = if ($column -eq $columns - 1) { $bitmap.Width - 1 } else { ($column + 1) * $cellWidth - 1 }
+                $stepX = [Math]::Max(1, [Math]::Floor(($endX - $startX + 1) / 40))
+                $stepY = [Math]::Max(1, [Math]::Floor($bitmap.Height / 40))
+                for ($y = 0; $y -lt $bitmap.Height -and -not $hasVisiblePixel; $y += $stepY) {
+                    for ($x = $startX; $x -le $endX; $x += $stepX) {
+                        if ($bitmap.GetPixel($x, $y).A -gt 32) {
+                            $hasVisiblePixel = $true
+                            break
+                        }
+                    }
+                }
+                if (-not $hasVisiblePixel) {
+                    $errors.Add("$(Split-Path -Leaf $path) has no visible art in sprite column $($column + 1)")
+                }
+            }
+        }
     }
     finally {
         $image.Dispose()

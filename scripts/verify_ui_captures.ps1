@@ -29,6 +29,7 @@ if ($files.Count -eq 0) {
 $required = @(
     "ui_menu.png",
     "ui_showcase.png",
+    "ui_resident_sprites.png",
     "ui_finances_showcase.png",
     "ui_city_showcase.png",
     "ui_inbox_showcase.png",
