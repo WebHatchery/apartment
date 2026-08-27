@@ -20,6 +20,10 @@ struct ResidentStyle {
     body_source_height: f32,
     body_width_ratio: f32,
     head_height_ratio: f32,
+    body_anchor_x: [f32; 3],
+    body_anchor_y: [f32; 3],
+    face_anchor_x: [f32; 5],
+    face_anchor_y: [f32; 5],
 }
 
 const RESIDENT_STYLES: [ResidentStyle; 4] = [
@@ -30,7 +34,11 @@ const RESIDENT_STYLES: [ResidentStyle; 4] = [
         body_source_top: 0.12,
         body_source_height: 0.76,
         body_width_ratio: 0.72,
-        head_height_ratio: 0.48,
+        head_height_ratio: 0.40,
+        body_anchor_x: [0.540, 0.500, 0.500],
+        body_anchor_y: [0.061, 0.153, 0.082],
+        face_anchor_x: [0.576, 0.539, 0.516, 0.484, 0.452],
+        face_anchor_y: [0.902, 0.902, 0.902, 0.902, 0.902],
     },
     ResidentStyle {
         name: "Teal shirt",
@@ -39,7 +47,11 @@ const RESIDENT_STYLES: [ResidentStyle; 4] = [
         body_source_top: 0.0,
         body_source_height: 1.0,
         body_width_ratio: 0.54,
-        head_height_ratio: 0.46,
+        head_height_ratio: 0.39,
+        body_anchor_x: [0.580, 0.500, 0.500],
+        body_anchor_y: [0.112, 0.200, 0.132],
+        face_anchor_x: [0.644, 0.617, 0.566, 0.514, 0.480],
+        face_anchor_y: [0.956, 0.956, 0.956, 0.956, 0.956],
     },
     ResidentStyle {
         name: "Moss cardigan",
@@ -48,7 +60,11 @@ const RESIDENT_STYLES: [ResidentStyle; 4] = [
         body_source_top: 0.10,
         body_source_height: 0.80,
         body_width_ratio: 0.70,
-        head_height_ratio: 0.48,
+        head_height_ratio: 0.40,
+        body_anchor_x: [0.540, 0.500, 0.500],
+        body_anchor_y: [0.064, 0.164, 0.099],
+        face_anchor_x: [0.574, 0.552, 0.537, 0.520, 0.505],
+        face_anchor_y: [0.959, 0.959, 0.959, 0.959, 0.959],
     },
     ResidentStyle {
         name: "Indigo overshirt",
@@ -57,7 +73,11 @@ const RESIDENT_STYLES: [ResidentStyle; 4] = [
         body_source_top: 0.0,
         body_source_height: 1.0,
         body_width_ratio: 0.52,
-        head_height_ratio: 0.46,
+        head_height_ratio: 0.39,
+        body_anchor_x: [0.580, 0.500, 0.500],
+        body_anchor_y: [0.114, 0.202, 0.132],
+        face_anchor_x: [0.586, 0.548, 0.502, 0.471, 0.491],
+        face_anchor_y: [0.924, 0.924, 0.924, 0.926, 0.926],
     },
 ];
 
@@ -115,12 +135,29 @@ fn emotion_column(happiness: i32) -> f32 {
     }
 }
 
-fn head_drop_for_pose(pose: ResidentPose) -> f32 {
-    match pose {
-        ResidentPose::Standing => 0.04,
-        ResidentPose::Sitting => 0.15,
-        ResidentPose::Cooking => 0.06,
-    }
+fn anchor_index(pose: ResidentPose) -> usize {
+    pose.column() as usize
+}
+
+fn resident_anchor(
+    style: ResidentStyle,
+    pose: ResidentPose,
+    happiness: i32,
+    body_x: f32,
+    body_y: f32,
+    body_w: f32,
+    sprite_h: f32,
+    head_w: f32,
+    head_h: f32,
+) -> (f32, f32) {
+    let pose_index = anchor_index(pose);
+    let face_index = emotion_column(happiness) as usize;
+    let neck_x = body_x + style.body_anchor_x[pose_index] * body_w;
+    let neck_y = body_y + style.body_anchor_y[pose_index] * sprite_h;
+    (
+        neck_x - style.face_anchor_x[face_index] * head_w,
+        neck_y - style.face_anchor_y[face_index] * head_h,
+    )
 }
 
 fn face_texture<'a>(tenant: &Tenant, assets: &'a AssetManager) -> Option<&'a Texture2D> {
@@ -205,7 +242,8 @@ fn draw_resident_layers(
     let face_column_w = faces.width() / FACE_COLUMNS;
     let sprite_h = (room.h * 0.68).clamp(58.0, 112.0);
     let body_w = sprite_h * style.body_width_ratio;
-    let body_x = room.x + room.w * 0.58 - body_w / 2.0;
+    let body_anchor = room.x + room.w * 0.58;
+    let body_x = body_anchor - style.body_anchor_x[anchor_index(pose)] * body_w;
     let body_y = room.bottom() - sprite_h - 4.0;
 
     draw_texture_ex(
@@ -227,8 +265,9 @@ fn draw_resident_layers(
 
     let head_h = sprite_h * style.head_height_ratio;
     let head_w = head_h * 0.72;
-    let head_x = body_x + (body_w - head_w) / 2.0;
-    let head_y = body_y - head_h * 0.42 + sprite_h * head_drop_for_pose(pose);
+    let (head_x, head_y) = resident_anchor(
+        style, pose, happiness, body_x, body_y, body_w, sprite_h, head_w, head_h,
+    );
     draw_texture_ex(
         faces,
         head_x,
