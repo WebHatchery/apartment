@@ -28,6 +28,22 @@ Survive 36 months while keeping the building financially stable and livable. Com
 
 Playable building progression with multiple properties, tenant systems, repairs, upgrades, missions, and month-by-month management.
 
+## Demo builds
+
+The `demo` Cargo feature produces the itch.io storefront edition. A demo run
+lasts three monthly turns, representing about 90 in-world days, and ends with a
+dedicated demo summary. Demo saves and campaign progress use their own storage
+namespace, so they cannot overwrite the unrestricted game's saves.
+
+```powershell
+cargo build --release --features demo --target-dir target-demo
+cargo build --release --features demo --target wasm32-unknown-unknown --target-dir target-demo
+```
+
+The itch.io publisher builds this demo automatically for the HTML5 channel and
+uploads it in place of the unrestricted WebGL module. Pass `-SkipDemoBuild` only
+when reusing an already validated module in `target-demo`.
+
 ## Save Compatibility
 
 New saves use a versioned envelope (`save_format_version: 1`) around the game

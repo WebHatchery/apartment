@@ -18,7 +18,8 @@ impl Game {
         let mut assets = AssetManager::new();
         assets.load_assets().await;
 
-        let config = load_config();
+        let mut config = load_config();
+        crate::release_mode::apply_config(&mut config);
 
         Self {
             state: GameState::Menu(MenuState::new()),
@@ -312,6 +313,11 @@ fn seed_showcase_activity(state: &mut crate::state::GameplayState) {
 
 fn seed_showcase_career(state: &mut crate::state::GameplayState) {
     state.current_tick = 36;
+    state.game_outcome = Some(crate::simulation::GameOutcome::Victory {
+        score: 0,
+        months: state.current_tick,
+        total_income: state.funds.total_income,
+    });
     state.funds.balance = 32_750;
     for id in [
         "first_tenant",

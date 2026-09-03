@@ -12,6 +12,7 @@ mod building;
 mod data;
 mod economy;
 mod game;
+mod release_mode;
 mod simulation;
 mod state;
 mod tenant;

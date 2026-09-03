@@ -2,7 +2,6 @@ use crate::state::GameplayState;
 use macroquad_toolkit::persistence::{json_key_exists, load_json_key, save_json_key};
 use serde::{Deserialize, Serialize};
 
-const GAME_NAME: &str = "apartment_manager";
 const SAVE_FILE_NAME: &str = "savegame.json";
 const PROGRESS_FILE_NAME: &str = "player_progress.json";
 const CURRENT_SAVE_FORMAT_VERSION: u32 = 1;
@@ -126,13 +125,19 @@ impl PlayerProgress {
 
 /// Save the current game state to disk
 pub fn save_game(state: &GameplayState) -> std::io::Result<()> {
-    save_json_key(GAME_NAME, SAVE_FILE_NAME, &current_save(state)).map_err(std::io::Error::other)
+    save_json_key(
+        crate::release_mode::save_namespace(),
+        SAVE_FILE_NAME,
+        &current_save(state),
+    )
+    .map_err(std::io::Error::other)
 }
 
 /// Load the game state from disk
 pub fn load_game() -> std::io::Result<GameplayState> {
     let value: serde_json::Value =
-        load_json_key(GAME_NAME, SAVE_FILE_NAME).map_err(std::io::Error::other)?;
+        load_json_key(crate::release_mode::save_namespace(), SAVE_FILE_NAME)
+            .map_err(std::io::Error::other)?;
     let mut state = decode_save(value)?;
 
     // Restore non-serialized fields and repair legacy state shapes.
@@ -143,20 +148,26 @@ pub fn load_game() -> std::io::Result<GameplayState> {
 
 /// Check if a save file exists
 pub fn has_save_game() -> bool {
-    json_key_exists(GAME_NAME, SAVE_FILE_NAME)
+    json_key_exists(crate::release_mode::save_namespace(), SAVE_FILE_NAME)
 }
 
 /// Load player progress (persistent unlock state)
 pub fn load_player_progress() -> PlayerProgress {
     let mut progress: PlayerProgress =
-        load_json_key(GAME_NAME, PROGRESS_FILE_NAME).unwrap_or_else(|_| PlayerProgress::new());
+        load_json_key(crate::release_mode::save_namespace(), PROGRESS_FILE_NAME)
+            .unwrap_or_else(|_| PlayerProgress::new());
     progress.sanitize();
     progress
 }
 
 /// Save player progress (persistent unlock state)
 pub fn save_player_progress(progress: &PlayerProgress) -> std::io::Result<()> {
-    save_json_key(GAME_NAME, PROGRESS_FILE_NAME, progress).map_err(std::io::Error::other)
+    save_json_key(
+        crate::release_mode::save_namespace(),
+        PROGRESS_FILE_NAME,
+        progress,
+    )
+    .map_err(std::io::Error::other)
 }
 
 #[cfg(test)]

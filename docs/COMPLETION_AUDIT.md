@@ -88,5 +88,5 @@ changed responsive sizing and management presentation.
 - `cargo test balance_report -- --ignored --nocapture`: pass; all six campaigns,
   six strategies, and 60 seeds per strategy reproduced the table above.
 - `publish.ps1`: pass; Windows and WebGL release builds packaged 67 assets and
-  deployed the preview to `D:\xampp\htdocs\games\apartment` with the local
+  deployed the preview to `\\wsl.localhost\Ubuntu\home\kalai\dev\games\apartment` with the local
   catalog refreshed.

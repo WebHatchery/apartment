@@ -29,15 +29,28 @@ pub fn draw_career_summary(state: &GameplayState, assets: &AssetManager) -> Opti
     let score = career_score(state);
     let (rank, rank_color) = career_rank(score);
 
+    let demo_complete = is_demo_completion(state);
+    let heading = if demo_complete {
+        format!(
+            "{}-day demo complete",
+            crate::release_mode::DEMO_DURATION_DAYS
+        )
+    } else {
+        "Career summary".to_string()
+    };
     draw_ui_text(
-        "Career summary",
+        &heading,
         page.x,
         page.y + scale::TITLE,
         scale::TITLE,
         color::TEXT_BRIGHT(),
     );
     draw_ui_text(
-        "The final ledger for everything you built together.",
+        if demo_complete {
+            "Thanks for caring for this building. The full story continues on itch.io."
+        } else {
+            "The final ledger for everything you built together."
+        },
         page.x,
         page.y + scale::TITLE + line_height(scale::LABEL),
         scale::LABEL,
@@ -71,13 +84,26 @@ pub fn draw_career_summary(state: &GameplayState, assets: &AssetManager) -> Opti
     let button_w = page.w.min(280.0);
     if button_at(
         Rect::new(page.right() - button_w, button_y, button_w, button_h),
-        "Return to menu",
+        if demo_complete {
+            "Play demo again"
+        } else {
+            "Return to menu"
+        },
         true,
         Tone::Primary,
     ) {
         return Some(UiAction::ReturnToMenu);
     }
     None
+}
+
+fn is_demo_completion(state: &GameplayState) -> bool {
+    crate::release_mode::is_demo()
+        && matches!(
+            state.game_outcome,
+            Some(crate::simulation::GameOutcome::Victory { months, .. })
+                if months >= crate::release_mode::DEMO_DURATION_MONTHS
+        )
 }
 
 fn career_score(state: &GameplayState) -> i32 {

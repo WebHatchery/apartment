@@ -1,11 +1,12 @@
 use super::*;
 
 /// Fast smoke test (always runs in CI): a single greedy playthrough must
-/// complete 36 months without panicking and stay internally consistent.
+/// complete the active release mode without panicking and stay consistent.
 #[test]
 fn balance_harness_runs_without_panic() {
     rng::srand(1);
-    let config = crate::data::config::load_config();
+    let mut config = crate::data::config::load_config();
+    crate::release_mode::apply_config(&mut config);
     let template = crate::data::templates::load_templates()
         .and_then(|templates| templates.templates.into_iter().next())
         .expect("starter template");

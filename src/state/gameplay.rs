@@ -216,6 +216,8 @@ impl GameplayState {
     ) -> Self {
         use crate::building::Building;
 
+        crate::release_mode::apply_config(&mut config);
+
         // Seed the shared RNG before any generation so the run is reproducible
         // from `seed`.
         macroquad_toolkit::rng::srand(seed);
@@ -378,6 +380,7 @@ impl GameplayState {
                 .unwrap_or_else(|| "mvp_default".to_string());
         }
         self.config = crate::data::config::load_config();
+        crate::release_mode::apply_config(&mut self.config);
         // config isn't serialized, so re-apply the building's difficulty
         // modifiers that were baked in at new-game time.
         if let Some(templates) = crate::data::templates::load_templates() {

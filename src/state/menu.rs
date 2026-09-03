@@ -182,12 +182,19 @@ impl MenuState {
         // On very short screens the logo and cards communicate the same
         // instruction without competing for the narrow strip between them.
         if screen_height() >= 520.0 {
-            let section_title = "Tap a building to begin";
+            let section_title = if crate::release_mode::is_demo() {
+                format!(
+                    "{}-DAY DEMO · Tap a building to begin",
+                    crate::release_mode::DEMO_DURATION_DAYS
+                )
+            } else {
+                "Tap a building to begin".to_string()
+            };
             let section_size = 28.0;
             let section_width =
-                measure_ui_text(section_title, None, section_size as u16, 1.0).width;
+                measure_ui_text(&section_title, None, section_size as u16, 1.0).width;
             draw_ui_text(
-                section_title,
+                &section_title,
                 screen_width() / 2.0 - section_width / 2.0,
                 grid_top() - 8.0,
                 section_size,

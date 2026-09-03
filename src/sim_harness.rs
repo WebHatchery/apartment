@@ -88,11 +88,13 @@ impl Sim {
     /// template's difficulty, historic regulations, inherited tenant, initial
     /// applications, and starting cash before the headless driver takes over.
     fn new(template: &BuildingTemplate, seed: u64) -> Self {
-        let state = crate::state::GameplayState::new_with_template_seed(
-            crate::data::config::load_config(),
-            template.clone(),
-            seed,
-        );
+        let config = crate::data::config::load_config();
+        let full_win_conditions = config.win_conditions.clone();
+        let mut state =
+            crate::state::GameplayState::new_with_template_seed(config, template.clone(), seed);
+        // Balance reports always model the unrestricted 36-month career, even
+        // when `cargo test --all-features` compiles the runtime demo feature.
+        state.config.win_conditions = full_win_conditions;
 
         Self {
             building: state.building.clone(),

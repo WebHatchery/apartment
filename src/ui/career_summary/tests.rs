@@ -36,3 +36,18 @@ fn achievement_conditions_select_their_visual_family() {
         (1.0, 1.0)
     );
 }
+
+#[test]
+fn demo_completion_copy_only_applies_to_the_demo_time_limit() {
+    let mut state = GameplayState::new();
+    state.game_outcome = Some(crate::simulation::GameOutcome::Victory {
+        score: 100,
+        months: crate::release_mode::DEMO_DURATION_MONTHS,
+        total_income: 1_000,
+    });
+
+    assert_eq!(is_demo_completion(&state), cfg!(feature = "demo"));
+
+    state.game_outcome = Some(crate::simulation::GameOutcome::Bankruptcy { debt: 10 });
+    assert!(!is_demo_completion(&state));
+}
