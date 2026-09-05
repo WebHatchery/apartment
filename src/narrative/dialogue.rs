@@ -420,16 +420,12 @@ fn build_choices(template: &DialogueBodyTemplate, ctx: &DialogueContext) -> Vec<
 }
 
 fn load_dialogue_bodies() -> DialogueBodies {
-    #[cfg(target_arch = "wasm32")]
-    let json =
-        macroquad_toolkit::include_json_str!("../../assets/dialogue_bodies.json").to_string();
-
-    #[cfg(not(target_arch = "wasm32"))]
-    let json = std::fs::read_to_string("assets/dialogue_bodies.json").unwrap_or_else(|_| {
-        macroquad_toolkit::include_json_str!("../../assets/dialogue_bodies.json").to_string()
-    });
-
-    serde_json::from_str(&json).unwrap_or_else(|e| {
+    macroquad_toolkit::data_loader::load_json_file_with_fallback_sync(
+        "assets/dialogue_bodies.json",
+        macroquad_toolkit::include_json_str!("../../assets/dialogue_bodies.json"),
+        macroquad_toolkit::data_loader::JsonFallbackPolicy::ReadError,
+    )
+    .unwrap_or_else(|e| {
         eprintln!("Failed to parse dialogue_bodies.json: {}", e);
         DialogueBodies::default()
     })

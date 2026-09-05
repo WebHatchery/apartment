@@ -1,3 +1,4 @@
+use macroquad_toolkit::data_loader::{load_json_file_with_fallback_sync, JsonFallbackPolicy};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -36,15 +37,13 @@ pub enum RequestTemplate {
 }
 
 pub fn load_events_config() -> TenantEventsConfig {
-    #[cfg(target_arch = "wasm32")]
-    let json = macroquad_toolkit::include_json_str!("../../assets/tenant_events.json");
+    let json_result = load_json_file_with_fallback_sync(
+        "assets/tenant_events.json",
+        macroquad_toolkit::include_json_str!("../../assets/tenant_events.json"),
+        JsonFallbackPolicy::ReadError,
+    );
 
-    #[cfg(not(target_arch = "wasm32"))]
-    let json = std::fs::read_to_string("assets/tenant_events.json").unwrap_or_else(|_| {
-        macroquad_toolkit::include_json_str!("../../assets/tenant_events.json").to_string()
-    });
-
-    serde_json::from_str(&json).unwrap_or_else(|e| {
+    json_result.unwrap_or_else(|e| {
         eprintln!("Failed to parse tenant_events.json: {}", e);
         TenantEventsConfig::default()
     })

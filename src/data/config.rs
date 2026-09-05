@@ -2,6 +2,8 @@
 //! live in `config/` grouped by the system they tune, and are re-exported here
 //! so callers keep using `crate::data::config::<Thing>`.
 
+use macroquad_toolkit::data_loader::{load_json_file_with_fallback_sync, JsonFallbackPolicy};
+
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{OnceLock, RwLock};
@@ -110,30 +112,26 @@ pub fn active() -> GameConfig {
 
 pub fn load_config() -> GameConfig {
     // For WASM, embed configs at compile time
-    #[cfg(target_arch = "wasm32")]
-    let config_json = macroquad_toolkit::include_json_str!("../../assets/config.json");
+    let config_json_result = load_json_file_with_fallback_sync(
+        "assets/config.json",
+        macroquad_toolkit::include_json_str!("../../assets/config.json"),
+        JsonFallbackPolicy::ReadError,
+    );
 
-    #[cfg(not(target_arch = "wasm32"))]
-    let config_json = std::fs::read_to_string("assets/config.json").unwrap_or_else(|_| {
-        macroquad_toolkit::include_json_str!("../../assets/config.json").to_string()
-    });
-
-    let mut config: GameConfig = serde_json::from_str(&config_json).unwrap_or_else(|e| {
+    let mut config: GameConfig = config_json_result.unwrap_or_else(|e| {
         eprintln!("Failed to parse config.json: {}", e);
         GameConfig::default()
     });
 
     // Load upgrades from separate file
-    #[cfg(target_arch = "wasm32")]
-    let upgrades_json = macroquad_toolkit::include_json_str!("../../assets/upgrades.json");
+    let upgrades_json_result =
+        load_json_file_with_fallback_sync::<HashMap<String, UpgradeDefinition>>(
+            "assets/upgrades.json",
+            macroquad_toolkit::include_json_str!("../../assets/upgrades.json"),
+            JsonFallbackPolicy::ReadError,
+        );
 
-    #[cfg(not(target_arch = "wasm32"))]
-    let upgrades_json = std::fs::read_to_string("assets/upgrades.json").unwrap_or_else(|_| {
-        macroquad_toolkit::include_json_str!("../../assets/upgrades.json").to_string()
-    });
-
-    if let Ok(upgrades) = serde_json::from_str::<HashMap<String, UpgradeDefinition>>(&upgrades_json)
-    {
+    if let Ok(upgrades) = upgrades_json_result {
         config.upgrades = upgrades;
     }
 

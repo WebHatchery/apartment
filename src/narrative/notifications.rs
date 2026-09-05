@@ -1,3 +1,4 @@
+use macroquad_toolkit::data_loader::{load_json_file_with_fallback_sync, JsonFallbackPolicy};
 use macroquad_toolkit::rng;
 // Game notification system for relationship changes and contextual hints
 // Uses pop-up modals similar to the tutorial system
@@ -209,15 +210,13 @@ impl Default for HintThresholds {
 
 /// Load hints config from JSON file
 pub fn load_hints_config() -> HintsConfig {
-    #[cfg(target_arch = "wasm32")]
-    let json = macroquad_toolkit::include_json_str!("../../assets/hints.json");
+    let json_result = load_json_file_with_fallback_sync(
+        "assets/hints.json",
+        macroquad_toolkit::include_json_str!("../../assets/hints.json"),
+        JsonFallbackPolicy::ReadError,
+    );
 
-    #[cfg(not(target_arch = "wasm32"))]
-    let json = std::fs::read_to_string("assets/hints.json").unwrap_or_else(|_| {
-        macroquad_toolkit::include_json_str!("../../assets/hints.json").to_string()
-    });
-
-    serde_json::from_str(&json).unwrap_or_else(|e| {
+    json_result.unwrap_or_else(|e| {
         eprintln!("Failed to parse hints.json: {}", e);
         HintsConfig::default()
     })

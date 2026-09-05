@@ -1,7 +1,6 @@
 use crate::building::{ApartmentSize, DesignType, NoiseLevel};
+use macroquad_toolkit::data_loader::{load_json_file_with_fallback_sync, JsonFallbackPolicy};
 use serde::{Deserialize, Serialize};
-#[cfg(not(target_arch = "wasm32"))]
-use std::fs;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct BuildingTemplates {
@@ -82,19 +81,11 @@ pub struct InitialTenantData {
 }
 
 pub fn load_templates() -> Option<BuildingTemplates> {
-    // For WASM, embed at compile time
-    #[cfg(target_arch = "wasm32")]
-    let json = macroquad_toolkit::include_json_str!("../../assets/building_templates.json");
-
-    #[cfg(not(target_arch = "wasm32"))]
-    let json = match fs::read_to_string("assets/building_templates.json") {
-        Ok(s) => s,
-        Err(_) => {
-            macroquad_toolkit::include_json_str!("../../assets/building_templates.json").to_string()
-        }
-    };
-
-    match serde_json::from_str::<BuildingTemplates>(&json) {
+    match load_json_file_with_fallback_sync::<BuildingTemplates>(
+        "assets/building_templates.json",
+        macroquad_toolkit::include_json_str!("../../assets/building_templates.json"),
+        JsonFallbackPolicy::ReadError,
+    ) {
         Ok(templates) => Some(templates),
         Err(e) => {
             eprintln!("Failed to parse building_templates.json: {}", e);

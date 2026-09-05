@@ -1,4 +1,5 @@
 use crate::building::DesignType;
+use macroquad_toolkit::data_loader::{load_json_file_with_fallback_sync, JsonFallbackPolicy};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -46,15 +47,13 @@ pub struct ArchetypeRegistry {
 impl ArchetypeRegistry {
     /// Load archetypes from JSON file
     pub fn load() -> Self {
-        #[cfg(target_arch = "wasm32")]
-        let json = macroquad_toolkit::include_json_str!("../../assets/tenant_archetypes.json");
+        let json_result = load_json_file_with_fallback_sync::<ArchetypeData>(
+            "assets/tenant_archetypes.json",
+            macroquad_toolkit::include_json_str!("../../assets/tenant_archetypes.json"),
+            JsonFallbackPolicy::ReadError,
+        );
 
-        #[cfg(not(target_arch = "wasm32"))]
-        let json = std::fs::read_to_string("assets/tenant_archetypes.json").unwrap_or_else(|_| {
-            macroquad_toolkit::include_json_str!("../../assets/tenant_archetypes.json").to_string()
-        });
-
-        match serde_json::from_str::<ArchetypeData>(&json) {
+        match json_result {
             Ok(data) => {
                 let mut definitions = HashMap::new();
                 for archetype in data.archetypes {

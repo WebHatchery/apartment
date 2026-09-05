@@ -1,3 +1,4 @@
+use macroquad_toolkit::data_loader::{load_json_file_with_fallback_sync, JsonFallbackPolicy};
 use macroquad_toolkit::rng;
 use serde::{Deserialize, Serialize};
 
@@ -189,15 +190,13 @@ impl Neighborhood {
 }
 
 fn load_neighborhood_config() -> HashMap<String, NeighborhoodStats> {
-    #[cfg(target_arch = "wasm32")]
-    let json = macroquad_toolkit::include_json_str!("../../assets/neighborhoods.json");
+    let json_result = load_json_file_with_fallback_sync(
+        "assets/neighborhoods.json",
+        macroquad_toolkit::include_json_str!("../../assets/neighborhoods.json"),
+        JsonFallbackPolicy::ReadError,
+    );
 
-    #[cfg(not(target_arch = "wasm32"))]
-    let json = std::fs::read_to_string("assets/neighborhoods.json").unwrap_or_else(|_| {
-        macroquad_toolkit::include_json_str!("../../assets/neighborhoods.json").to_string()
-    });
-
-    serde_json::from_str(&json).unwrap_or_default()
+    json_result.unwrap_or_default()
 }
 
 #[cfg(test)]

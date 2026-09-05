@@ -118,15 +118,12 @@ fn load_achievements_config() -> Vec<Achievement> {
     // native. The previous disk-only read left achievements empty in every shipped
     // build (wasm has no filesystem; the Windows zip ships assets.zip, not loose
     // assets/), so the fallback is what actually loads in released builds.
-    #[cfg(target_arch = "wasm32")]
-    let json = macroquad_toolkit::include_json_str!("../../assets/achievements.json").to_string();
-
-    #[cfg(not(target_arch = "wasm32"))]
-    let json = std::fs::read_to_string("assets/achievements.json").unwrap_or_else(|_| {
-        macroquad_toolkit::include_json_str!("../../assets/achievements.json").to_string()
-    });
-
-    serde_json::from_str(&json).unwrap_or_else(|e| {
+    macroquad_toolkit::data_loader::load_json_file_with_fallback_sync(
+        "assets/achievements.json",
+        macroquad_toolkit::include_json_str!("../../assets/achievements.json"),
+        macroquad_toolkit::data_loader::JsonFallbackPolicy::ReadError,
+    )
+    .unwrap_or_else(|e| {
         eprintln!("Failed to parse achievements.json: {}", e);
         Vec::new()
     })

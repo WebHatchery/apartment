@@ -520,15 +520,12 @@ struct NewsEventsConfig {
 }
 
 fn load_news_events() -> NewsEventsConfig {
-    #[cfg(target_arch = "wasm32")]
-    let json = macroquad_toolkit::include_json_str!("../../assets/news_events.json").to_string();
-
-    #[cfg(not(target_arch = "wasm32"))]
-    let json = std::fs::read_to_string("assets/news_events.json").unwrap_or_else(|_| {
-        macroquad_toolkit::include_json_str!("../../assets/news_events.json").to_string()
-    });
-
-    serde_json::from_str(&json).unwrap_or_else(|e| {
+    macroquad_toolkit::data_loader::load_json_file_with_fallback_sync(
+        "assets/news_events.json",
+        macroquad_toolkit::include_json_str!("../../assets/news_events.json"),
+        macroquad_toolkit::data_loader::JsonFallbackPolicy::ReadError,
+    )
+    .unwrap_or_else(|e| {
         eprintln!("Failed to parse news_events.json: {}", e);
         NewsEventsConfig::default()
     })

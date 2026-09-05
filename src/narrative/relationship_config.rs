@@ -1,4 +1,5 @@
 use crate::narrative::events::NarrativeEffect;
+use macroquad_toolkit::data_loader::{load_json_file_with_fallback_sync, JsonFallbackPolicy};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -40,15 +41,13 @@ pub struct RelationshipChoiceTemplate {
 }
 
 pub fn load_relationship_config() -> RelationshipEventsConfig {
-    #[cfg(target_arch = "wasm32")]
-    let json = macroquad_toolkit::include_json_str!("../../assets/relationship_events.json");
+    let json_result = load_json_file_with_fallback_sync(
+        "assets/relationship_events.json",
+        macroquad_toolkit::include_json_str!("../../assets/relationship_events.json"),
+        JsonFallbackPolicy::ReadError,
+    );
 
-    #[cfg(not(target_arch = "wasm32"))]
-    let json = std::fs::read_to_string("assets/relationship_events.json").unwrap_or_else(|_| {
-        macroquad_toolkit::include_json_str!("../../assets/relationship_events.json").to_string()
-    });
-
-    serde_json::from_str(&json).unwrap_or_else(|e| {
+    json_result.unwrap_or_else(|e| {
         eprintln!("Failed to parse relationship_events.json: {}", e);
         RelationshipEventsConfig::default()
     })

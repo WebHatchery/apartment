@@ -29,7 +29,6 @@ mod sim_harness;
 mod city;
 mod consequences;
 mod narrative;
-mod util;
 
 use game::Game;
 
