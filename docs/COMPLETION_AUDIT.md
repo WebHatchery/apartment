@@ -1,9 +1,9 @@
 # Second Story — Remediation Completion Audit
 
-Audited against `docs/REMEDIATION_PLAN.md` on 5 August 2026. The five
-milestones are complete. Evidence below combines focused regression tests, the
-60-seed representative balance harness, browser interaction checks, and the
-normal WebHatchery publisher.
+Audited against `docs/REMEDIATION_PLAN.md` on 12 September 2026. The five
+milestones remain complete after the release-candidate rerun. Evidence below
+combines focused regression tests, the 60-seed representative balance harness,
+fresh-save browser interaction checks, and both release publishers.
 
 ## Milestone 1 — Authoritative addresses and safe transactions
 
@@ -28,17 +28,18 @@ normal WebHatchery publisher.
 
 ## Milestone 3 — Representative balance and progression
 
-Each entry is the mean of 60 deterministic, 36-month runs. `V/A/B` means
-victory / all-tenants-left / bankruptcy terminal outcomes.
+Each entry is the mean of 60 deterministic runs using the live 36-month
+rules. `V/A/B` means victory / all-tenants-left / bankruptcy terminal
+outcomes. This is the 12 September 2026 release-candidate rerun.
 
-| Campaign | Tier | Investor score vs Greedy | Investor cash | Payback | Investor V/A/B | Neglect V/A/B |
-|---|---|---:|---:|---:|---:|---:|
-| Sunset Apartments | Easy | 1812 vs 1312 (+38%) | $85,137 | 15.0 mo | 60/0/0 | 58/0/2 |
-| Riverside Court | Easy | 2121 vs 1594 (+33%) | $165,907 | 15.5 mo | 60/0/0 | 60/0/0 |
-| Blackwood Manor | Medium | 2671 vs 220 (+1114%) | $340,124 | 14.9 mo | 59/0/1 | 0/7/53 |
-| The Foundry Lofts | Medium | 2359 vs 1222 (+93%) | $243,594 | 15.4 mo | 60/0/0 | 33/0/27 |
-| The Meridian | Hard | 2474 vs 1760 (+41%) | $238,637 | 15.1 mo | 60/0/0 | 14/0/46 |
-| The Commons | Hard | 1584 vs -2285 | $115,114 | 15.4 mo | 55/0/5 | 5/0/55 |
+| Campaign | Tier | Greedy score / cash | Investor score / cash / payback / V/A/B | Neglect score / condition / V/A/B | Rent max score / cash | Condo score / cash / sales | Portfolio score / cash / buildings |
+|---|---|---:|---:|---:|---:|---:|---:|
+| Sunset Apartments | Easy | 1312 / $80,270 | 1812 / $85,137 / 15.0 mo / 60/0/0 | 552 / 0 / 58/0/2 | 1438 / $141,957 | 1253 / $63,617 / 1.0 | 1441 / $74,849 / 0.0 |
+| Riverside Court | Easy | 1594 / $146,088 | 2121 / $165,907 / 15.5 mo / 60/0/0 | 891 / 0 / 60/0/0 | 1812 / $252,190 | 1521 / $132,101 / 1.0 | 1807 / $130,234 / 0.2 |
+| Blackwood Manor | Medium | 220 / $212,869 | 2671 / $340,124 / 14.9 mo / 59/0/1 | -7366 / 1 / 0/7/53 | 1208 / $366,661 | -146 / $149,272 / 0.8 | 2397 / $137,304 / 1.4 |
+| The Foundry Lofts | Medium | 1222 / $159,261 | 2359 / $243,594 / 15.4 mo / 60/0/0 | -2041 / 7 / 33/0/27 | 1502 / $289,693 | 905 / $148,046 / 0.9 | 2061 / $130,902 / 0.8 |
+| The Meridian | Hard | 1760 / $173,543 | 2474 / $238,637 / 15.1 mo / 60/0/0 | -5985 / 3 / 14/0/46 | 2185 / $340,985 | 1612 / $126,941 / 1.0 | 2145 / $114,036 / 0.9 |
+| The Commons | Hard | -2285 / $33,984 | 1584 / $115,114 / 15.4 mo / 55/0/5 | -5732 / 20 / 5/0/55 | -982 / $108,310 | -2743 / $17,152 / 0.4 | -466 / $85,177 / 0.0 |
 
 The investor strategy clears the 10% score target in every campaign and is
 never behind Greedy in both score and cash. Investment payback stays within
@@ -47,23 +48,38 @@ inflation. Medium and Hard expose real failure profiles. Neglect sharply harms
 condition, retention, score, and survival. Condo liquidity and rent maximization
 can raise cash but do not dominate the care strategy's score.
 
-The report also records occupancy, happiness, condition, application volume,
-departures, investment, missions, grants, condo sales, and portfolio expansion.
-`representative_balance_targets_hold` enforces the plan's target bands.
+The generated report also records occupancy, happiness, condition, application
+volume, departures, investment, missions, grants, condo sales, and portfolio
+expansion. `representative_balance_targets_hold` enforces the plan's target
+bands. Investor still beats Greedy by at least 10% in every campaign, is ahead
+in cash on every campaign, and pays back investment in 14.9–15.5 months.
+Neglect remains materially worse on condition, retention, and terminal risk;
+rent-maximisation, condo liquidity, and portfolio saving do not beat Investor
+on score.
 
 ## Milestone 4 — Responsive management UI
 
-Browser checks used 1280×720, 1024×768, and 800×600 windows. The hosting shell
-preserved its 16:9 canvas at 1200×675, 977×550, and 753×424 respectively. At
-each size the title screen exposed all six campaign cards and gameplay retained
-the status bar, six labelled workspace routes, cutaway, useful inspector,
-activity handle, and anchored tutorial coach without overlap or unreachable
-controls.
+Release-candidate browser QA used the freshly deployed full package with a new
+save at 1280×720 and 800×600. The hosting shell preserved its 16:9 canvas at
+1200×675 and 753×423.6 respectively. At both sizes the title screen exposed
+all six campaign cards and gameplay retained the status bar, six labelled
+workspace routes, cutaway, inspector, activity handle, and anchored tutorial
+coach without overlap or unreachable controls.
 
-Interaction checks traversed Building, Tenants, Finances, City, Inbox, and
-Tasks; opened Hallway and Ownership inspectors; toggled activity history; and
-verified Escape pause focus. The six-unit and ten-unit layouts are also covered
-by `ten_unit_cutaway_fits_short_workspace` and
+At 1280×720 the pass selected Sunset Apartments, repaired the hallway (60% to
+70%), listed a vacant apartment, accepted an application, raised another
+vacant unit's rent from $650 to $700, resolved a developer-offer response,
+saved at Month 6, reloaded, and restored that saved state. Continuing the same
+run reached a Month 14 bankruptcy and displayed the career summary with the
+distress outcome and final portfolio. At 800×600 a separate fresh run advanced
+the tutorial, exposed and used the narrow hallway-upgrade drawer, and
+traversed Building, Tenants, Finances, City, Inbox, and Tasks. A clean isolated
+tab produced no browser warnings or errors after first render and interaction.
+
+The existing committed captures already cover the same layout states and no UI
+or artwork changed during this validation, so no unrelated captures were
+regenerated. The six-unit and ten-unit layouts remain covered by
+`ten_unit_cutaway_fits_short_workspace` and
 `four_across_manor_units_remain_clickable_at_narrow_breakpoint`.
 
 The root `catalog_thumbnail.png` remains a valid title-screen capture with the
@@ -83,10 +99,23 @@ changed responsive sizing and management presentation.
 - `source_files_stay_under_the_limit` verifies the 800-line Rust source limit.
 - `cargo fmt --check`: pass.
 - `cargo clippy --all-targets -- -D warnings`: pass.
-- `cargo test`: 123 unit tests passed, one report generator intentionally
-  ignored, and the source-size test passed (124 passed in total).
+- `cargo test`: 153 unit tests passed, one report generator intentionally
+  ignored, plus the two integration tests passed (155 passed in total).
 - `cargo test balance_report -- --ignored --nocapture`: pass; all six campaigns,
   six strategies, and 60 seeds per strategy reproduced the table above.
-- `publish.ps1`: pass; Windows and WebGL release builds packaged 67 assets and
-  deployed the preview to `\\wsl.localhost\Ubuntu\home\kalai\dev\games\apartment` with the local
-  catalog refreshed.
+- `publish.ps1`: pass on 12 September 2026; Windows and WebGL release builds
+  packaged 70 registered assets and deployed the preview to
+  `\\wsl.localhost\Ubuntu\home\kalai\dev\games\apartment` with the local catalog
+  refreshed.
+- `publish-itch.ps1 -DryRun`: pass; the standalone HTML5 stage contained the
+  root launcher, demo WASM, packed assets, shared CSS, and six localized runtime
+  bridges (11 files, 55.75 MiB), while the Windows channel staged the full
+  `apartment_windows.zip` (29.21 MiB). No upload was performed.
+- `publish-itch.ps1 -Status`: pass; Butler reported the configured `html5` and
+  `windows` channels and their current remote builds.
+- Static package inspection: the preview and itch launchers identify Second
+  Story, expose the Tap/click, END MONTH, and MENU controls, and carry the
+  six-campaign description; the preview catalog thumbnail is 1280×720, the
+  itch stage contains `apartment.wasm`, `assets.zip`, and
+  `apartment_windows.zip`, and the Windows archive contains `apartment.exe`
+  and `assets.zip`.
