@@ -50,7 +50,7 @@ Continue in independently useful, validated commits. Preserve the distinction be
 - Existing secondary management screens have their own layouts. This slice changes their shared header and preserves routes, but does not fully redesign every screen for phone portrait.
 - On a short bottom-panel workspace, the selected room can require Up/Down scrolling to bring back into view. Selection-aware camera positioning is a possible polish improvement.
 - No new dynamic history or fixture-level maintenance model exists. Later visual progression must reflect actual upgrades and tenant changes.
-- Legacy tests under `src/**/tests.rs` predate this work. New tests belong under `tests/`; do not expand legacy suites without first migrating the affected feature. Existing cutaway regression tests in `tests/ui/building_view.rs` retain their legacy include seam.
+- Legacy tests under `src/**/tests.rs` and the source include seam in `tests/ui/building_view.rs` are migration work. Migrate the affected feature through intentional public library APIs in a separate change before expanding coverage. Keep all tests and test-only helpers under the crate's `tests/` directory, with no test declarations under `src/`. Follow the strong five-case feature target in `CODE_STANDARDS.md` §11; preserve useful regressions and explain necessary additional cases. UI and rendering generally use visual and interaction checks rather than unit tests.
 
 ## Validation and capture workflow
 
