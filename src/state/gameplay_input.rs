@@ -1,7 +1,7 @@
 //! Gameplay input dispatch and overlay ownership.
 
 use crate::assets::AssetManager;
-use crate::ui::{Selection, UiAction};
+use crate::ui::UiAction;
 use macroquad::prelude::*;
 
 use super::gameplay::{GameplayState, ViewMode};
@@ -48,13 +48,6 @@ impl GameplayState {
         let dt = get_frame_time();
         self.floating_texts.update(dt);
         self.dialogue_system.tick(self.current_tick);
-
-        if matches!(self.selection, Selection::None) {
-            self.panel_tween.set_target(0.0);
-        } else {
-            self.panel_tween.set_target(1.0);
-        }
-        self.panel_tween.update(dt);
 
         if self.game_outcome.is_some() && self.view_mode != ViewMode::CareerSummary {
             self.view_mode = ViewMode::CareerSummary;

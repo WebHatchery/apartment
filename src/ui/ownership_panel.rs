@@ -17,12 +17,7 @@ pub fn draw_ownership_panel(
     market_multiplier: f32,
     scroll_offset: f32,
 ) -> (Option<UiAction>, f32) {
-    let padding = crate::ui::layout::PADDING();
-    let panel_x = screen_width() * crate::ui::layout::PANEL_SPLIT() + padding;
-    let panel_y = crate::ui::layout::HEADER_HEIGHT() + padding;
-    let panel_w = screen_width() - panel_x - padding;
-    let panel_h = screen_height() - panel_y - crate::ui::layout::FOOTER_HEIGHT() - padding;
-    let panel = Rect::new(panel_x, panel_y, panel_w, panel_h);
+    let panel = crate::ui::layout::context_panel();
     let inner = draw_panel(panel, "Building ownership");
 
     let model_name = ownership_name(&building.ownership_model);

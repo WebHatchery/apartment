@@ -112,20 +112,9 @@ pub fn draw_application_panel(
 }
 
 fn application_panel_rect(offset_x: f32) -> Option<Rect> {
-    let panel_x = screen_width() * layout::PANEL_SPLIT() + layout::PADDING() + offset_x;
-    if panel_x > screen_width() {
-        return None;
-    }
-
-    Some(Rect::new(
-        panel_x,
-        layout::HEADER_HEIGHT() + layout::PADDING(),
-        screen_width() * (1.0 - layout::PANEL_SPLIT()) - layout::PADDING() * 2.0,
-        screen_height()
-            - layout::HEADER_HEIGHT()
-            - layout::FOOTER_HEIGHT()
-            - layout::PADDING() * 2.0,
-    ))
+    let mut rect = layout::context_panel();
+    rect.x += offset_x;
+    Some(rect)
 }
 
 fn draw_empty_applications(content_x: f32, y: f32, filter_apartment_id: Option<u32>) {

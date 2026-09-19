@@ -68,3 +68,7 @@ the economy. A fast single-playthrough smoke test runs in CI as
 `balance_harness_runs_without_panic`.
 
 Open work is tracked in `TODO.md`.
+
+## UI overhaul development
+
+The first building-first layout slice is implemented. Read [the continuation guide](docs/UI_UX_CONTINUATION.md) for the remaining phases, implementation map, and validation workflow. The original [UI/UX brief](docs/UI_UX_OVERHAUL_BRIEF.md) is preserved alongside it.

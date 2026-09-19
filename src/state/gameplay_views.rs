@@ -85,15 +85,11 @@ impl GameplayState {
         }
 
         if self.view_mode != ViewMode::CareerSummary {
-            let monthly_net = self.ledger.reports.last().map_or(0, |report| report.net);
             if let Some(action) = draw_header(
                 self.funds.balance,
-                monthly_net,
                 self.current_tick,
-                &self.building.name,
                 self.building.occupancy_count(),
                 self.building.rental_unit_count(),
-                assets,
             ) {
                 self.pending_actions.push(action);
             }
@@ -120,6 +116,15 @@ impl GameplayState {
                 assets,
             ) {
                 self.pending_actions.push(action);
+            }
+        }
+
+        // The history drawer owns clicks in its covered area.
+        if self.activity_drawer_open {
+            let footer_y = screen_height() - crate::ui::layout::FOOTER_HEIGHT();
+            let drawer_h = 168.0_f32.min(footer_y - crate::ui::layout::HEADER_HEIGHT() - 8.0);
+            if mouse_position().1 >= footer_y - drawer_h {
+                self.pending_actions.clear();
             }
         }
 
@@ -156,6 +161,7 @@ impl GameplayState {
 
         if self.view_mode == ViewMode::Building
             && self.tutorial.active
+            && self.selection == Selection::None
             && self.tutorial.pending_messages.is_empty()
             && !self.activity_drawer_open
         {
@@ -203,9 +209,8 @@ impl GameplayState {
             self.pending_actions.push(action);
         }
 
-        // Slide the detail panel in from the right as the selection tween eases
-        // to 1.0 (0 offset = settled in place).
-        let panel_offset = (1.0 - self.panel_tween.current()) * 60.0;
+        // Keep panel rendering aligned with the shared input bounds.
+        let panel_offset = 0.0;
 
         match self.selection {
             Selection::Apartment(id) => {
@@ -266,7 +271,8 @@ impl GameplayState {
                     self.pending_actions.push(action);
                 }
             }
-            Selection::None => {
+            Selection::None => {}
+            Selection::Building => {
                 let monthly_net = self.ledger.reports.last().map_or(0, |report| report.net);
                 if let Some(action) = draw_building_summary(
                     &self.building,
@@ -279,6 +285,19 @@ impl GameplayState {
                 ) {
                     self.pending_actions.push(action);
                 }
+            }
+        }
+        if self.selection != Selection::None {
+            let panel = crate::ui::layout::context_panel();
+            if crate::ui::widgets::button_at(
+                Rect::new(panel.right() - 68.0, panel.y + 2.0, 64.0, 34.0),
+                "Close",
+                true,
+                crate::ui::theme::Tone::Secondary,
+            ) {
+                self.pending_actions.clear();
+                self.pending_actions
+                    .push(crate::ui::UiAction::ClearSelection);
             }
         }
     }
@@ -447,23 +466,21 @@ impl GameplayState {
     /// Non-blocking, target-anchored coaching for the current tutorial step.
     /// The introductory dialogue still uses a modal toast; once dismissed,
     /// this marker stays beside the control the player actually needs.
-    fn draw_tutorial_coach(&self, assets: &AssetManager) {
+    fn draw_tutorial_coach(&mut self, assets: &AssetManager) {
         use crate::ui::theme::{color, scale, space};
         use crate::ui::widgets::{draw_card, line_height, wrap};
 
         let Some(milestone) = self.tutorial.current_milestone.as_ref() else {
             return;
         };
-        let view_w = screen_width() * crate::ui::layout::PANEL_SPLIT();
-        let footer_y = screen_height() - crate::ui::layout::FOOTER_HEIGHT();
+        let world = crate::ui::layout::building(self.selection != Selection::None).world;
+        let view_w = world.w;
+        let footer_y = world.bottom();
         let (anchor, message, place_above) = match milestone {
             TutorialMilestone::InheritedMess => (
-                vec2(
-                    view_w / 2.0 - (view_w - space::LG * 2.0 - space::SM).min(450.0) * 0.39,
-                    crate::ui::layout::HEADER_HEIGHT() + 50.0,
-                ),
-                "Tap the LOBBY, then tap a repair until its condition reaches 80%.",
-                false,
+                vec2(view_w / 2.0, world.bottom() - 70.0),
+                "Tap the lobby in the building, then repair the hallway to 80%.",
+                true,
             ),
             TutorialMilestone::FirstResident => {
                 let listed = self
@@ -481,7 +498,7 @@ impl GameplayState {
                             view_w / 2.0 - 72.0,
                             crate::ui::layout::HEADER_HEIGHT() + 28.0,
                         ),
-                        "Applicants are ready. Tap APPLICATIONS and choose a resident.",
+                        "Tap the building name, then Applications to choose a resident.",
                         false,
                     )
                 } else if listed {
@@ -493,7 +510,7 @@ impl GameplayState {
                 } else {
                     (
                         vec2(view_w / 2.0, crate::ui::layout::HEADER_HEIGHT() + 150.0),
-                        "Tap a VACANT unit, set a fair rent, then tap LIST FOR LEASE.",
+                        "Tap a vacant unit, set rent, then tap Any Tenant under List for Lease.",
                         false,
                     )
                 }
@@ -519,7 +536,7 @@ impl GameplayState {
         };
         let card_y = preferred_y.clamp(
             crate::ui::layout::HEADER_HEIGHT() + space::SM,
-            footer_y - card_h - space::SM,
+            (footer_y - card_h - space::SM).max(crate::ui::layout::HEADER_HEIGHT() + space::SM),
         );
 
         draw_line(
@@ -531,6 +548,9 @@ impl GameplayState {
             color::PRIMARY(),
         );
         draw_circle(anchor.x, anchor.y, 7.0, color::PRIMARY());
+        if crate::ui::was_clicked(card_x, card_y, card_w, card_h) {
+            self.pending_actions.clear();
+        }
         draw_card(Rect::new(card_x, card_y, card_w, card_h), true);
         let title_x = if let Some(portrait) = assets.get_texture("npc_uncle_artie") {
             let portrait_size = 38.0;

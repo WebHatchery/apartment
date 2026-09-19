@@ -3,8 +3,7 @@
 //! Pure view layer using Macroquad immediate mode UI:
 //! - Uses `UiAction` pattern to send intents back to the game logic.
 //! - Contains sub-panels for different views (Building, Apartment, City).
-//! - Floating text and panel-slide animations come from `macroquad-toolkit`
-//!   (`fx::FloatingTextLayer`, `math::Tween`), re-exported below.
+//! - Floating text comes from the toolkit `fx::FloatingTextLayer`.
 //! - Strictly separation of concerns: No game state mutation happens here.
 
 pub mod theme;
@@ -43,7 +42,6 @@ pub use application_panel::draw_application_panel;
 pub use header::draw_header;
 pub use inspector_summary::draw_building_summary;
 pub use macroquad_toolkit::fx::FloatingTextLayer;
-pub use macroquad_toolkit::math::Tween;
 pub use notifications::draw_notifications;
 
 use serde::{Deserialize, Serialize};
@@ -55,6 +53,7 @@ pub enum Selection {
     None,
     Apartment(u32),            // Apartment ID
     Applications(Option<u32>), // Show pending applications (Optionally filtered by apartment)
+    Building,                  // Overall building details
     Hallway,                   // Hallway details
     Ownership,                 // Ownership View
 }
@@ -67,6 +66,7 @@ pub enum UiAction {
     SelectApartment(u32),
     SelectApplications(Option<u32>),
     SelectHallway,
+    SelectBuilding,
     SelectOwnership,
     ClearSelection,
     ToggleActivityDrawer,

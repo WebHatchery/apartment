@@ -3,7 +3,7 @@ use crate::data::config::GameConfig;
 use crate::economy::{FinancialLedger, PlayerFunds};
 use crate::simulation::{ActiveWorldEvent, EventLog, GameOutcome, TickResult};
 use crate::tenant::{Tenant, TenantApplication};
-use crate::ui::{FloatingTextLayer, Selection, Tween, UiAction};
+use crate::ui::{FloatingTextLayer, Selection, UiAction};
 use std::collections::{HashMap, HashSet};
 
 // Phase 3 imports
@@ -16,12 +16,6 @@ use crate::narrative::{
 };
 
 use serde::{Deserialize, Serialize};
-
-/// Panel slide-in tween defaults, matching the feel of the game's previous
-/// hand-rolled `Tween` (speed 10.0, resting at 0.0).
-fn default_panel_tween() -> Tween {
-    Tween::new(0.0, 10.0)
-}
 
 /// Floating text layer defaults, tuned to match the game's previous
 /// hand-rolled `FloatingText` (1.5s life, 30px/s rise, quick velocity decay).
@@ -112,8 +106,6 @@ pub struct GameplayState {
     pub pending_actions: Vec<UiAction>,
     #[serde(skip, default = "default_floating_text_layer")]
     pub floating_texts: FloatingTextLayer,
-    #[serde(skip, default = "default_panel_tween")]
-    pub panel_tween: Tween,
     #[serde(skip)]
     pub panel_scroll_offset: f32,
     #[serde(skip)]
@@ -294,7 +286,6 @@ impl GameplayState {
             selection: Selection::None,
             pending_actions: Vec::new(),
             floating_texts: default_floating_text_layer(),
-            panel_tween: default_panel_tween(),
             panel_scroll_offset: 0.0,
             tower_scroll_offset: 0.0,
             selected_mail_id: None,
@@ -404,7 +395,6 @@ impl GameplayState {
         self.selection = Selection::None;
         self.pending_actions.clear();
         self.floating_texts = default_floating_text_layer();
-        self.panel_tween = default_panel_tween();
         self.panel_scroll_offset = 0.0;
         self.selected_mail_id = None;
         self.inbox_page = 0;

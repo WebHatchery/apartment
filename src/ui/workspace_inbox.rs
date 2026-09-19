@@ -25,6 +25,14 @@ fn content_rect() -> Rect {
 
 pub fn draw_inbox_view(state: &GameplayState, assets: &AssetManager) -> Option<UiAction> {
     let rect = content_rect();
+    if button_at(
+        Rect::new(rect.right() - 130.0, rect.y, 130.0, 40.0),
+        "Tasks & requests",
+        true,
+        Tone::Secondary,
+    ) {
+        return Some(UiAction::OpenTasks);
+    }
     let pending_dialogues = state.dialogue_system.pending_dialogues();
     let body_y = draw_title(
         rect,

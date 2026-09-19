@@ -1,14 +1,12 @@
 //! Persistent navigation between the game's management workspaces.
 
 use macroquad::prelude::*;
-use macroquad_toolkit::ui::{draw_surface, draw_ui_text, measure_ui_text, SurfaceStyle};
+use macroquad_toolkit::ui::{draw_ui_text, measure_ui_text};
 
 use super::theme::{color, space, Tone};
 use super::widgets::button_at;
 use super::UiAction;
 use crate::assets::AssetManager;
-
-pub const STATUS_BAR_HEIGHT: f32 = 64.0;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum WorkspaceTab {
@@ -26,13 +24,16 @@ pub fn draw_workspace_nav(
     pending_tasks: usize,
     assets: &AssetManager,
 ) -> Option<UiAction> {
-    let y = STATUS_BAR_HEIGHT;
-    let h = (crate::ui::layout::HEADER_HEIGHT() - y).max(40.0);
-    draw_surface(
-        Rect::new(0.0, y, screen_width(), h),
-        &SurfaceStyle::new(color::SURFACE_HEADER()).with_border(1.0, color::BORDER_STRONG()),
-    );
-
+    let desktop = screen_width() >= 1180.0;
+    let y = if desktop {
+        0.0
+    } else {
+        apartment::screen_layout::status_height(screen_width())
+    };
+    let h = if desktop { 56.0 } else { 48.0 };
+    if desktop {
+        draw_ui_text("Second Story", 12.0, 34.0, 22.0, color::TEXT_BRIGHT());
+    }
     let labels = [
         (
             WorkspaceTab::Building,
@@ -42,7 +43,7 @@ pub fn draw_workspace_nav(
         ),
         (
             WorkspaceTab::Tenants,
-            "Tenants",
+            "People",
             "icon_application",
             UiAction::OpenTenants,
         ),
@@ -64,32 +65,22 @@ pub fn draw_workspace_nav(
             "icon_mail",
             UiAction::OpenMail,
         ),
-        (
-            WorkspaceTab::Tasks,
-            "Tasks",
-            "icon_inspection",
-            UiAction::OpenTasks,
-        ),
     ];
-    let gap = if screen_width() < 900.0 {
-        space::XS
+    let gap = 4.0;
+    let outer = if desktop { 155.0 } else { 8.0 };
+    let available = if desktop {
+        screen_width() - 520.0 - outer
     } else {
-        space::SM
+        screen_width() - 16.0
     };
-    let outer = if screen_width() < 900.0 {
-        space::SM
-    } else {
-        space::LG
-    };
-    let available = screen_width() - outer * 2.0 - gap * (labels.len() as f32 - 1.0);
-    let button_w = available / labels.len() as f32;
-    let button_h = h - space::SM * 2.0;
+    let button_w = ((available - gap * 4.0) / 5.0).min(96.0);
+    let button_h = 40.0;
     let mut x = outer;
     let mut action = None;
 
     for (tab, base_label, icon_id, intent) in labels {
         let count = match tab {
-            WorkspaceTab::Inbox => unread_mail,
+            WorkspaceTab::Inbox => unread_mail + pending_tasks,
             WorkspaceTab::Tasks => pending_tasks,
             _ => 0,
         };
@@ -106,16 +97,17 @@ pub fn draw_workspace_nav(
             base_label
         };
         let label = if count > 0 {
-            format!("{} ({})", base_label, count)
+            format!("{} *", base_label)
         } else {
             base_label.to_string()
         };
-        let tone = if tab == active {
+        let tone = if tab == active || (tab == WorkspaceTab::Inbox && active == WorkspaceTab::Tasks)
+        {
             Tone::Primary
         } else {
             Tone::Secondary
         };
-        let rect = Rect::new(x, y + space::SM, button_w, button_h);
+        let rect = Rect::new(x, y + (h - button_h) / 2.0, button_w, button_h);
         if button_at(rect, "", true, tone) {
             action = Some(intent);
         }

@@ -10,6 +10,8 @@ use crate::tenant::Tenant;
 use macroquad::prelude::*;
 use macroquad_toolkit::ui::{draw_ui_text, measure_ui_text, truncate_text_to_width};
 
+const MIN_FLOOR_HEIGHT: f32 = 112.0;
+
 const MASONRY: Color = Color::new(0.24, 0.15, 0.11, 1.0);
 const BEAM: Color = Color::new(0.11, 0.075, 0.055, 1.0);
 const MORTAR: Color = Color::new(0.42, 0.29, 0.20, 1.0);
@@ -21,12 +23,7 @@ pub fn draw_building_view(
     assets: &AssetManager,
     scroll_offset: f32,
 ) -> (Option<UiAction>, f32) {
-    let view = Rect::new(
-        0.0,
-        layout::HEADER_HEIGHT(),
-        screen_width() * layout::PANEL_SPLIT(),
-        screen_height() - layout::HEADER_HEIGHT() - layout::FOOTER_HEIGHT(),
-    );
+    let view = layout::building(*selection != Selection::None).world;
     draw_sunset_backdrop(view);
 
     let max_floor = building
@@ -49,8 +46,8 @@ pub fn draw_building_view(
         .max()
         .unwrap_or(1);
     // Keep rooms readable and scroll the tower when its natural height exceeds
-    // the workspace. The controls and inspector stay fixed.
-    let natural_height = 88.0 + max_floor as f32 * layout::FLOOR_HEIGHT() + 96.0 + space::MD;
+    // the workspace. The controls and contextual panel stay fixed.
+    let natural_height = 58.0 + max_floor as f32 * MIN_FLOOR_HEIGHT + 96.0 + space::MD;
     let overflow = natural_height > view.h;
     let viewport = Rect::new(
         view.x,
@@ -88,8 +85,12 @@ pub fn draw_building_view(
             "Down",
         );
     }
-    if let Some(control_action) = draw_building_controls(view) {
+    if let Some(control_action) = draw_building_controls(view, &building.name) {
         action = Some(control_action);
+    }
+    if action.is_none() && over_tower && was_clicked(viewport.x, viewport.y, viewport.w, viewport.h)
+    {
+        action = Some(UiAction::ClearSelection);
     }
     (action, next_scroll)
 }
@@ -552,43 +553,16 @@ fn draw_lobby_amenities(building: &Building, room: Rect) {
     }
 }
 
-fn draw_building_controls(view: Rect) -> Option<UiAction> {
-    let y = view.y + space::SM;
-    let width = (view.w - space::LG * 2.0 - space::SM).min(450.0);
-    let x = view.x + (view.w - width) / 2.0;
-    let lobby_w = width * 0.22;
-    if button_at(
-        Rect::new(x, y, lobby_w, 42.0),
-        "LOBBY",
+fn draw_building_controls(view: Rect, name: &str) -> Option<UiAction> {
+    let width = (view.w - 24.0).min(360.0);
+    let label = truncate_text_to_width(&format!("{} - Details", name), width - 24.0, scale::LABEL);
+    button_at(
+        Rect::new(view.x + (view.w - width) / 2.0, view.y + 6.0, width, 40.0),
+        &label,
         true,
         Tone::Secondary,
-    ) {
-        return Some(UiAction::SelectHallway);
-    }
-    let applications_x = x + lobby_w + space::SM;
-    let applications_w = width * 0.40;
-    if button_at(
-        Rect::new(applications_x, y, applications_w, 42.0),
-        "Applications",
-        true,
-        Tone::Primary,
-    ) {
-        return Some(UiAction::SelectApplications(None));
-    }
-    if button_at(
-        Rect::new(
-            applications_x + applications_w + space::SM,
-            y,
-            width - lobby_w - applications_w - space::SM * 2.0,
-            42.0,
-        ),
-        "Ownership",
-        true,
-        Tone::Secondary,
-    ) {
-        return Some(UiAction::SelectOwnership);
-    }
-    None
+    )
+    .then_some(UiAction::SelectBuilding)
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -610,12 +584,12 @@ fn cutaway_metrics(view: Rect, floors: usize, max_slots: usize) -> CutawayMetric
     let hallway_y = view.bottom() - hallway_h - space::MD;
     let units_top = view.y + 58.0;
     let vertical_room = (hallway_y - unit_gap - units_top).max(80.0);
-    let floor_step = (vertical_room / floors.max(1) as f32).min(layout::FLOOR_HEIGHT());
-    let unit_h = (floor_step - unit_gap).clamp(46.0, layout::UNIT_HEIGHT());
+    let floor_step = vertical_room / floors.max(1) as f32;
+    let unit_h = (floor_step - unit_gap).max(46.0);
     let horizontal_room = (view.w - edge * 2.0).max(120.0);
     let slots = max_slots.max(1) as f32;
-    let unit_w =
-        ((horizontal_room - unit_gap * (slots - 1.0)) / slots).clamp(80.0, layout::UNIT_WIDTH());
+    let unit_w = ((horizontal_room - unit_gap * (slots - 1.0)) / slots)
+        .clamp(68.0, (unit_h * 3.2).max(320.0));
     let units_width = unit_w * slots + unit_gap * (slots - 1.0);
     let units_left = view.x + (view.w - units_width) / 2.0;
     CutawayMetrics {

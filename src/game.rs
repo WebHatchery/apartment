@@ -74,6 +74,12 @@ impl Game {
             "showcase" | "showcase_compact" | "showcase_wide" | "showcase_tiny" => {
                 self.seed_gameplay_capture(true)
             }
+            "building_details" => {
+                self.seed_gameplay_capture(true);
+                if let GameState::Gameplay(state) = &mut self.state {
+                    state.selection = crate::ui::Selection::Building;
+                }
+            }
             "unit_showcase" | "unit_compact" | "unit_tiny" => {
                 self.seed_gameplay_capture(true);
                 if let GameState::Gameplay(state) = &mut self.state {

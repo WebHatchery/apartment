@@ -39,7 +39,7 @@ pub fn draw_notifications(
         colors::TEXT_DIM(),
     );
 
-    if let Some(event) = event_log.recent_events(1).first() {
+    if let Some(event) = event_log.recent_events(1).first().filter(|_| w >= 620.0) {
         let color = match event.severity() {
             EventSeverity::Positive => colors::POSITIVE(),
             EventSeverity::Info => colors::TEXT_DIM(),

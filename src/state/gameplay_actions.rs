@@ -26,6 +26,11 @@ impl GameplayState {
                 self.panel_scroll_offset = 0.0;
                 self.application_page = 0;
             }
+            UiAction::SelectBuilding => {
+                self.view_mode = ViewMode::Building;
+                self.selection = Selection::Building;
+                self.panel_scroll_offset = 0.0;
+            }
             UiAction::SelectHallway => {
                 self.selection = Selection::Hallway;
                 self.panel_scroll_offset = 0.0;

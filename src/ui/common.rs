@@ -22,9 +22,8 @@ pub fn archetype_color(archetype: &TenantArchetype) -> macroquad::prelude::Color
     }
 }
 
-/// Layout metrics, read from the active config's `layout` block. Functions
-/// keep the SCREAMING_CASE names call sites already use (they used to be
-/// consts); `non_snake_case` is allowed module-wide for that reason.
+/// Runtime adapters for responsive geometry and the configured unit gap.
+/// Uppercase wrappers retain existing call-site conventions.
 #[allow(non_snake_case)]
 pub mod layout {
     fn layout() -> crate::data::config::LayoutConfig {
@@ -32,40 +31,23 @@ pub mod layout {
     }
 
     pub fn HEADER_HEIGHT() -> f32 {
-        // 64 px status bar + 56 px primary navigation. Keeping this stable
-        // makes every workspace share one predictable management shell.
-        120.0
+        apartment::screen_layout::header_height(macroquad::prelude::screen_width())
     }
     pub fn FOOTER_HEIGHT() -> f32 {
-        // The old 100 px permanent event log starved short viewports. Events
-        // now live in a collapsible activity drawer with a compact handle.
         44.0
     }
-    pub fn PANEL_SPLIT() -> f32 {
-        match macroquad::prelude::screen_width() {
-            width if width >= 1180.0 => 0.70,
-            width if width >= 960.0 => 0.68,
-            _ => 0.62,
-        }
+    pub fn building(selected: bool) -> apartment::screen_layout::BuildingLayout {
+        apartment::screen_layout::BuildingLayout::new(
+            macroquad::prelude::screen_width(),
+            macroquad::prelude::screen_height(),
+            selected,
+        )
     }
-    pub fn PADDING() -> f32 {
-        if macroquad::prelude::screen_width() < 900.0 {
-            8.0
-        } else {
-            layout().padding
-        }
-    }
-    pub fn UNIT_WIDTH() -> f32 {
-        layout().unit_width
-    }
-    pub fn UNIT_HEIGHT() -> f32 {
-        layout().unit_height
+    pub fn context_panel() -> macroquad::prelude::Rect {
+        building(true).panel
     }
     pub fn UNIT_GAP() -> f32 {
         layout().unit_gap
-    }
-    pub fn FLOOR_HEIGHT() -> f32 {
-        layout().floor_height
     }
 }
 
