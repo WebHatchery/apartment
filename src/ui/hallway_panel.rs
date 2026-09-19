@@ -161,6 +161,7 @@ pub fn draw_hallway_panel(
         }
     }
 
+    y += 14.0;
     if y >= content_top && y + 14.0 <= content_bottom {
         draw_ui_text("STAFF", content_x, y, 14.0, colors::TEXT_DIM());
     }

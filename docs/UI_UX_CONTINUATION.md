@@ -36,7 +36,7 @@ The user authorized the first implementation slice and requested these instructi
 
 ## Next development steps
 
-1. Visual state: expand existing `src/ui/building_view/room_story.rs` condition and upgrade layers. Replace prominent red damage framing with environmental wear. Add shared-space condition variants. Make environmental issues open existing, accurately priced repair actions. Do not invent fixture-level gameplay if only hallway repair exists.
+1. Visual state: completed in the continuation slice below (the original brief calls this Phase 2; the continuation numbered it step 1).
 2. Tenant identity: extend `src/ui/resident_sprite.rs` with stable tenant-specific room dressing and a small ambient animation set. Keep decorative randomness separate from simulation RNG. Prefer existing identity/archetype/tenure data to new saved systems.
 3. Time progression: build a brief monthly summary around `src/state/gameplay_turn.rs`, using actual transactions and events. Protect against repeated End Month input and define ordering with mandatory event choices, tutorial messages, campaign completion, and demo endings. Add seasonal lighting/background variation.
 4. Polish: refine panel transitions, typography, spacing, colours, quiet notifications, environmental readability, touch targets, and reduced motion. Preserve consistent pixel rendering.
@@ -45,7 +45,7 @@ Continue in independently useful, validated commits. Preserve the distinction be
 
 ## Known follow-up details
 
-- Apartment art and tiny status bars are unchanged in this slice; visual-state simplification is the next phase.
+- Visual-state simplification is now implemented: cutaway meters are removed, while exact condition remains in contextual panels.
 - The old LayoutConfig fields for header, panel split, unit width/height and floor height remain for configuration compatibility, but the new responsive geometry no longer reads them. Unit gap is still read from configuration. Consolidate presentation tuning deliberately when expanding visual-state configuration; avoid adding another layout source.
 - Existing secondary management screens have their own layouts. This slice changes their shared header and preserves routes, but does not fully redesign every screen for phone portrait.
 - On a short bottom-panel workspace, the selected room can require Up/Down scrolling to bring back into view. Selection-aware camera positioning is a possible polish improvement.
@@ -73,3 +73,14 @@ Before committing, follow AGENTS.md and rust_management/docs/COMMIT_STYLE.md, en
 - `.\publish.ps1` without parameters: Windows and WebGL release builds and Preview file deployment succeeded. Project Roost tracking warned that http://127.0.0.1/project_roost/api/v1 was unavailable (connection refused on port 80). This did not stop packaging or Preview deployment.
 - Preview destination: `\\wsl.localhost\Ubuntu\home\kalai\dev\games\apartment`.
 - Screenshots are native rendered layout evidence, not a browser interaction or end-to-end campaign playtest. Browser release compilation was validated by publishing. The existing simulation, save, action, and geometry regression suites passed.
+
+## Visual-state continuation (2026-09-19)
+
+- Replaced red damage framing with deterministic stains, stepped cracks, scuffed flooring and debris. Wear progresses through the existing condition bands: below 25, below 45, below 75, and cared-for rooms at 75 or above. Repairing condition removes the corresponding layers; no new saved state or simulation RNG is involved.
+- Shared-space condition now controls visible wear, litter, lamp appearance, clean flooring and plants. The entire lobby remains the touch target for the existing hallway panel and its accurately priced repair. Lamps are presentation of shared condition, not independently repairable fixtures.
+- Existing kitchen, acoustic-panel and lighting upgrade layers render over the condition finish. Replaced the opaque-background decorative plant sprite with small pixel shapes.
+- Removed apartment and lobby condition bars from the cutaway. Numerical condition remains available after selection. Updated leak coaching to describe cracks and worn floors.
+- Apartment selection now exposes the existing repair action before the detailed stats, with the real amount, configured price and affordability check. Sold units retain their existing ownership panel. The original repair entry in the lower upgrades list remains available too.
+- Added deterministic `condition_worn` and `condition_repaired` capture scenes for comparisons with identical tenants and upgrades. Refreshed building, apartment and hallway captures at desktop, wide, short landscape and portrait sizes.
+- Base room textures still contain some baked-in wear and furniture; these overlays do not replace those assets. Tenant-specific dressing and ambient behavior remain the next step. No economy, ownership, campaign or save-format changes were made.
+- Validation: 160 tests passed with the existing balance-report test ignored; formatting, strict all-target/all-feature Clippy, diff whitespace and the 800-line source limit passed. Native captures were inspected at 1280x720, 1920x1080, 960x540 and 390x844. These are rendering checks, not a browser interaction playtest. Default `publish.ps1` built and deployed Windows/WebGL Preview; Project Roost tracking again warned that the local port-80 service was unavailable.

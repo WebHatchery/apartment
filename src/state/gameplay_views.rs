@@ -517,7 +517,7 @@ impl GameplayState {
             }
             TutorialMilestone::TheLeak => (
                 vec2(view_w / 2.0, crate::ui::layout::HEADER_HEIGHT() + 190.0),
-                "The damaged unit is marked in red. Tap it, then tap a repair.",
+                "Look for cracked walls and worn floors. Tap the damaged unit, then choose a repair.",
                 false,
             ),
             TutorialMilestone::Complete => return,

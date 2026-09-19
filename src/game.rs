@@ -74,6 +74,16 @@ impl Game {
             "showcase" | "showcase_compact" | "showcase_wide" | "showcase_tiny" => {
                 self.seed_gameplay_capture(true)
             }
+            "condition_worn" | "condition_repaired" => {
+                self.seed_gameplay_capture(true);
+                if let GameState::Gameplay(state) = &mut self.state {
+                    let condition = if scene == "condition_worn" { 18 } else { 90 };
+                    state.building.hallway_condition = condition;
+                    for unit in &mut state.building.apartments {
+                        unit.condition = condition;
+                    }
+                }
+            }
             "building_details" => {
                 self.seed_gameplay_capture(true);
                 if let GameState::Gameplay(state) = &mut self.state {

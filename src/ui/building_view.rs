@@ -1,4 +1,5 @@
 //! Scrollable tower cutaway and fixed building navigation.
+mod condition_art;
 mod room_story;
 
 use super::theme::{color, scale, space, Tone};
@@ -292,7 +293,7 @@ fn draw_apartment(
             },
         );
     }
-    room_story::draw_room_story(apartment, room, assets);
+    room_story::draw_room_story(apartment, room);
 
     if let Some(tenant_id) = apartment.tenant_id {
         if let Some(tenant) = tenants.iter().find(|tenant| tenant.id == tenant_id) {
@@ -381,21 +382,6 @@ fn draw_unit_plaque(apartment: &Apartment, room: Rect) {
         scale::CAPTION,
         color::TEXT_DIM(),
     );
-    let meter_x = room.right() - 48.0;
-    draw_rectangle(
-        meter_x,
-        room.y + 11.0,
-        39.0,
-        8.0,
-        Color::new(0.04, 0.04, 0.035, 0.72),
-    );
-    draw_rectangle(
-        meter_x + 1.0,
-        room.y + 12.0,
-        37.0 * apartment.condition.clamp(0, 100) as f32 / 100.0,
-        6.0,
-        condition_color(apartment.condition),
-    );
 }
 
 fn draw_vacancy(apartment: &Apartment, room: Rect, assets: &AssetManager) {
@@ -462,6 +448,7 @@ fn draw_lobby(
     } else {
         draw_rectangle(room.x, room.y, room.w, room.h, color::SURFACE_ALT());
     }
+    condition_art::draw_lobby_condition(room, building.hallway_condition);
     draw_lobby_amenities(building, room);
     let selected = matches!(selection, Selection::Hallway);
     draw_rectangle_lines(
@@ -485,21 +472,6 @@ fn draw_lobby(
         room.y + 25.0,
         scale::LABEL,
         color::TEXT_BRIGHT(),
-    );
-    let bar_w = 72.0;
-    draw_rectangle(
-        room.right() - bar_w - 12.0,
-        room.y + 15.0,
-        bar_w,
-        9.0,
-        Color::new(0.05, 0.05, 0.04, 0.75),
-    );
-    draw_rectangle(
-        room.right() - bar_w - 11.0,
-        room.y + 16.0,
-        (bar_w - 2.0) * building.hallway_condition as f32 / 100.0,
-        7.0,
-        condition_color(building.hallway_condition),
     );
     was_clicked(room.x, room.y, room.w, room.h).then_some(UiAction::SelectHallway)
 }

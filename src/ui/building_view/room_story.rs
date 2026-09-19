@@ -1,13 +1,10 @@
 //! Visual state layers for everything the player can change inside a unit.
 
-use crate::assets::AssetManager;
 use crate::building::Apartment;
 use macroquad::prelude::*;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct RoomFeatures {
-    damaged: bool,
-    severely_damaged: bool,
     cared_for: bool,
     soundproofed: bool,
     upgraded_lighting: bool,
@@ -16,8 +13,6 @@ struct RoomFeatures {
 
 fn room_features(apartment: &Apartment) -> RoomFeatures {
     RoomFeatures {
-        damaged: apartment.condition < 45,
-        severely_damaged: apartment.condition < 25,
         cared_for: apartment.condition >= 75,
         soundproofed: apartment.has_soundproofing,
         upgraded_lighting: apartment.flags.contains("has_better_lighting"),
@@ -26,8 +21,9 @@ fn room_features(apartment: &Apartment) -> RoomFeatures {
     }
 }
 
-pub(super) fn draw_room_story(apartment: &Apartment, room: Rect, assets: &AssetManager) {
+pub(super) fn draw_room_story(apartment: &Apartment, room: Rect) {
     let features = room_features(apartment);
+    super::condition_art::draw_condition(room, apartment.condition, apartment.id);
     if features.upgraded_lighting {
         draw_lighting(room);
     }
@@ -37,10 +33,8 @@ pub(super) fn draw_room_story(apartment: &Apartment, room: Rect, assets: &AssetM
     if features.renovated_kitchen {
         draw_kitchen(room, apartment.kitchen_level);
     }
-    if features.damaged {
-        draw_damage(room, apartment.id, features.severely_damaged);
-    } else if features.cared_for {
-        draw_plant(room, assets);
+    if features.cared_for {
+        super::condition_art::draw_plant(room);
     }
 }
 
@@ -115,94 +109,6 @@ fn draw_kitchen(room: Rect, level: i32) {
         y + 5.0,
         1.5,
         Color::new(0.93, 0.74, 0.36, 1.0),
-    );
-}
-
-fn draw_damage(room: Rect, apartment_id: u32, severe: bool) {
-    draw_rectangle(
-        room.x,
-        room.y,
-        room.w,
-        room.h,
-        Color::new(0.20, 0.16, 0.11, 0.18),
-    );
-    let marker = Color::new(0.93, 0.12, 0.10, 0.96);
-    let marker_w = (room.w * 0.34).max(38.0);
-    draw_rectangle_lines(
-        room.x + 2.0,
-        room.y + 2.0,
-        room.w - 4.0,
-        room.h - 4.0,
-        3.0,
-        marker,
-    );
-    draw_rectangle(room.x + 2.0, room.y + 2.0, marker_w, 5.0, marker);
-    draw_rectangle(
-        room.right() - marker_w - 2.0,
-        room.bottom() - 7.0,
-        marker_w,
-        5.0,
-        marker,
-    );
-    let base_x = room.x + room.w * (0.22 + (apartment_id % 4) as f32 * 0.11);
-    let base_y = room.y + room.h * 0.34;
-    let crack = Color::new(0.18, 0.12, 0.09, 0.8);
-    draw_line(base_x, base_y, base_x + 8.0, base_y + 12.0, 1.5, crack);
-    draw_line(
-        base_x + 8.0,
-        base_y + 12.0,
-        base_x + 2.0,
-        base_y + 23.0,
-        1.5,
-        crack,
-    );
-    draw_line(
-        base_x + 7.0,
-        base_y + 12.0,
-        base_x + 15.0,
-        base_y + 17.0,
-        1.0,
-        crack,
-    );
-    if severe {
-        let bag_y = room.bottom() - 7.0;
-        draw_circle(
-            room.x + room.w * 0.20,
-            bag_y,
-            7.0,
-            Color::new(0.16, 0.14, 0.11, 0.95),
-        );
-        draw_circle(
-            room.x + room.w * 0.25,
-            bag_y + 1.0,
-            5.0,
-            Color::new(0.22, 0.19, 0.14, 0.95),
-        );
-        draw_line(
-            room.x + room.w * 0.20,
-            bag_y - 7.0,
-            room.x + room.w * 0.20,
-            bag_y - 10.0,
-            2.0,
-            crack,
-        );
-    }
-}
-
-fn draw_plant(room: Rect, assets: &AssetManager) {
-    let Some(plant) = assets.get_texture("decoration_plant") else {
-        return;
-    };
-    let size = room.h.min(room.w) * 0.24;
-    draw_texture_ex(
-        plant,
-        room.right() - size - 5.0,
-        room.bottom() - size,
-        WHITE,
-        DrawTextureParams {
-            dest_size: Some(vec2(size, size)),
-            ..Default::default()
-        },
     );
 }
 

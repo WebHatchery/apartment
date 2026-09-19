@@ -65,6 +65,33 @@ pub fn draw_apartment_panel(
     let content_top = panel_y + 35.0;
     let content_bottom = panel_y + panel_h - 58.0;
 
+    // Keep the existing repair reachable immediately after tapping visible wear.
+    if let Some(repair) =
+        crate::building::upgrades::available_apartment_upgrades(apt, &config.upgrades)
+            .into_iter()
+            .find(|upgrade| {
+                matches!(
+                    upgrade,
+                    crate::building::UpgradeAction::RepairApartment { .. }
+                )
+            })
+    {
+        if let Some(cost) = repair.cost(building, &config.economy, &config.upgrades) {
+            let label = format!(
+                "{} (${})",
+                repair.label(building, &config.ui, &config.upgrades),
+                cost
+            );
+            if y >= content_top
+                && y + 40.0 <= content_bottom
+                && button(content_x, y, panel_w - 30.0, 40.0, &label, money >= cost)
+            {
+                action = Some(UiAction::UpgradeAction(repair));
+            }
+            y += 48.0;
+        }
+    }
+
     draw_apartment_stats(
         apt,
         building,

@@ -12,8 +12,6 @@ fn every_player_controlled_room_upgrade_has_a_visual_layer() {
     assert_eq!(
         room_features(&apartment),
         RoomFeatures {
-            damaged: true,
-            severely_damaged: true,
             cared_for: false,
             soundproofed: true,
             upgraded_lighting: true,
