@@ -244,6 +244,13 @@ impl Game {
                         Some("Friendly neighbors boost each other's happiness.".to_string());
                 }
             }
+            "tower_scrolled" => {
+                self.seed_gameplay_capture(false);
+                if let GameState::Gameplay(state) = &mut self.state {
+                    state.tutorial.pending_messages.clear();
+                    state.tower_scroll_offset = f32::MAX;
+                }
+            }
             "gameplay" => self.seed_gameplay_capture(false),
             _ => {
                 self.seed_gameplay_capture(false);

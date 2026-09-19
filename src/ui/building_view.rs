@@ -1,3 +1,4 @@
+//! Scrollable tower cutaway and fixed building navigation.
 mod room_story;
 
 use super::theme::{color, scale, space, Tone};
@@ -18,7 +19,8 @@ pub fn draw_building_view(
     tenants: &[Tenant],
     selection: &Selection,
     assets: &AssetManager,
-) -> Option<UiAction> {
+    scroll_offset: f32,
+) -> (Option<UiAction>, f32) {
     let view = Rect::new(
         0.0,
         layout::HEADER_HEIGHT(),
@@ -46,9 +48,67 @@ pub fn draw_building_view(
         })
         .max()
         .unwrap_or(1);
-    let metrics = cutaway_metrics(view, max_floor as usize, max_floor_slots);
-    draw_building_shell(view, metrics, max_floor);
+    // Keep rooms readable and scroll the tower when its natural height exceeds
+    // the workspace. The controls and inspector stay fixed.
+    let natural_height = 88.0 + max_floor as f32 * layout::FLOOR_HEIGHT() + 96.0 + space::MD;
+    let overflow = natural_height > view.h;
+    let viewport = Rect::new(
+        view.x,
+        view.y + 58.0,
+        view.w,
+        (view.h - 58.0 - if overflow { 54.0 } else { 0.0 }).max(1.0),
+    );
+    let content_height = natural_height.max(viewport.h + 58.0);
+    let max_scroll = (content_height - 58.0 - viewport.h).max(0.0);
+    let mouse = mouse_position();
+    let over_tower = viewport.contains(vec2(mouse.0, mouse.1));
+    let mut next_scroll = scroll_offset.clamp(0.0, max_scroll);
+    if over_tower {
+        next_scroll = (next_scroll - mouse_wheel().1 * 40.0).clamp(0.0, max_scroll);
+    }
+    let content = Rect::new(view.x, view.y - next_scroll, view.w, content_height);
+    let metrics = cutaway_metrics(content, max_floor as usize, max_floor_slots);
+    let ui = macroquad_toolkit::ui::VirtualUi::new(screen_width(), screen_height());
+    let mut action = ui
+        .with_clip(viewport, || {
+            draw_cutaway(content, metrics, building, tenants, selection, assets)
+        })
+        .filter(|_| over_tower);
+    if overflow {
+        next_scroll = super::widgets::scroll_controls(
+            Rect::new(
+                view.x + space::MD,
+                view.bottom() - 46.0,
+                view.w - space::MD * 2.0,
+                38.0,
+            ),
+            next_scroll,
+            max_scroll,
+            "Up",
+            "Down",
+        );
+    }
+    if let Some(control_action) = draw_building_controls(view) {
+        action = Some(control_action);
+    }
+    (action, next_scroll)
+}
 
+fn draw_cutaway(
+    content: Rect,
+    metrics: CutawayMetrics,
+    building: &Building,
+    tenants: &[Tenant],
+    selection: &Selection,
+    assets: &AssetManager,
+) -> Option<UiAction> {
+    let max_floor = building
+        .apartments
+        .iter()
+        .map(|unit| unit.floor)
+        .max()
+        .unwrap_or(1);
+    draw_building_shell(content, metrics, max_floor);
     let mut action = None;
     for floor in 1..=max_floor {
         let floor_y = metrics.hallway_y
@@ -84,9 +144,6 @@ pub fn draw_building_view(
 
     if let Some(hallway_action) = draw_lobby(building, metrics, selection, assets) {
         action = Some(hallway_action);
-    }
-    if let Some(control_action) = draw_building_controls(view) {
-        action = Some(control_action);
     }
     action
 }
@@ -497,11 +554,21 @@ fn draw_lobby_amenities(building: &Building, room: Rect) {
 
 fn draw_building_controls(view: Rect) -> Option<UiAction> {
     let y = view.y + space::SM;
-    let width = (view.w - space::LG * 2.0 - space::SM).min(330.0);
+    let width = (view.w - space::LG * 2.0 - space::SM).min(450.0);
     let x = view.x + (view.w - width) / 2.0;
-    let applications_w = width * 0.56;
+    let lobby_w = width * 0.22;
     if button_at(
-        Rect::new(x, y, applications_w, 42.0),
+        Rect::new(x, y, lobby_w, 42.0),
+        "LOBBY",
+        true,
+        Tone::Secondary,
+    ) {
+        return Some(UiAction::SelectHallway);
+    }
+    let applications_x = x + lobby_w + space::SM;
+    let applications_w = width * 0.40;
+    if button_at(
+        Rect::new(applications_x, y, applications_w, 42.0),
         "Applications",
         true,
         Tone::Primary,
@@ -510,9 +577,9 @@ fn draw_building_controls(view: Rect) -> Option<UiAction> {
     }
     if button_at(
         Rect::new(
-            x + applications_w + space::SM,
+            applications_x + applications_w + space::SM,
             y,
-            width - applications_w - space::SM,
+            width - lobby_w - applications_w - space::SM * 2.0,
             42.0,
         ),
         "Ownership",
@@ -539,7 +606,7 @@ struct CutawayMetrics {
 fn cutaway_metrics(view: Rect, floors: usize, max_slots: usize) -> CutawayMetrics {
     let edge = if view.w < 500.0 { space::SM } else { space::XL };
     let unit_gap = layout::UNIT_GAP().clamp(8.0, 12.0);
-    let hallway_h = if view.h < 430.0 { 42.0 } else { 54.0 };
+    let hallway_h = 96.0;
     let hallway_y = view.bottom() - hallway_h - space::MD;
     let units_top = view.y + 58.0;
     let vertical_room = (hallway_y - unit_gap - units_top).max(80.0);
@@ -564,4 +631,5 @@ fn cutaway_metrics(view: Rect, floors: usize, max_slots: usize) -> CutawayMetric
 }
 
 #[cfg(test)]
+#[path = "../../tests/ui/building_view.rs"]
 mod tests;

@@ -191,9 +191,15 @@ impl GameplayState {
             .collect();
 
         // Draw Building View
-        if let Some(action) =
-            draw_building_view(&self.building, &active_tenants, &self.selection, assets)
-        {
+        let (tower_action, tower_scroll) = draw_building_view(
+            &self.building,
+            &active_tenants,
+            &self.selection,
+            assets,
+            self.tower_scroll_offset,
+        );
+        self.tower_scroll_offset = tower_scroll;
+        if let Some(action) = tower_action {
             self.pending_actions.push(action);
         }
 
@@ -452,9 +458,12 @@ impl GameplayState {
         let footer_y = screen_height() - crate::ui::layout::FOOTER_HEIGHT();
         let (anchor, message, place_above) = match milestone {
             TutorialMilestone::InheritedMess => (
-                vec2(view_w / 2.0, footer_y - 30.0),
+                vec2(
+                    view_w / 2.0 - (view_w - space::LG * 2.0 - space::SM).min(450.0) * 0.39,
+                    crate::ui::layout::HEADER_HEIGHT() + 50.0,
+                ),
                 "Tap the LOBBY, then tap a repair until its condition reaches 80%.",
-                true,
+                false,
             ),
             TutorialMilestone::FirstResident => {
                 let listed = self
