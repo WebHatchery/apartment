@@ -137,11 +137,21 @@ impl GameplayState {
             .find(|e| !e.read && e.requires_response);
 
         if let Some(event) = blocking_event {
-            if let Some(action) = crate::ui::event_modal::draw_event_modal(event, assets) {
+            if self.event_scroll_event_id != Some(event.id) {
+                self.event_scroll_event_id = Some(event.id);
+                self.event_scroll_offset = 0.0;
+            }
+            let (action, scroll_offset) =
+                crate::ui::event_modal::draw_event_modal(event, assets, self.event_scroll_offset);
+            self.event_scroll_offset = scroll_offset;
+            if let Some(action) = action {
                 self.pending_actions.push(action);
             }
             self.pending_actions
                 .retain(|action| matches!(action, crate::ui::UiAction::ResolveEventChoice { .. }));
+        } else {
+            self.event_scroll_event_id = None;
+            self.event_scroll_offset = 0.0;
         }
 
         // Compact activity handle and optional history drawer.

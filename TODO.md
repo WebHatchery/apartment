@@ -50,25 +50,6 @@ portrait candidate until task UI-01 records a validated support contract.
 
 ### Verified findings and merged implementation tasks
 
-- [ ] **UI-02 — Keep mandatory choices and tutorial continuation inside small canvases.**
-  **Scope:** `src/ui/event_modal.rs::draw_event_modal`, toast layout in
-  `src/ui/widgets.rs`, `src/state/gameplay_views.rs`, and
-  `src/state/gameplay_input.rs`. Depends on UI-01's viewport contract.
-  **Evidence: code.** Event dialogs clamp to at least 480px wide and toasts to
-  420px, exceeding a 390px canvas. Their measured height has no scrollable
-  viewport cap; long text/choices can push required controls beyond short screens.
-  **Change:** bound overlays to canvas margins, move/shrink decorative portraits
-  before shrinking text, wrap full consequences, and scroll lengthy bodies or
-  choices with visible touch controls. Keep required confirmation reachable.
-  Give the active blocking decision exclusive input and emphasis; preserve all
-  choices without inventing a preferred answer from reputation color alone.
-  **Accept:** the player can read every consequence and resolve every supported
-  event/tutorial on the smallest supported canvas, without hidden keyboard or
-  hover requirements, obscured actions, or activating the building behind it.
-  **Verify:** native and browser at 390x844, 640x480, and 1280x720, including
-  longest supported event text, multiple choices, portrait intro, notification,
-  and pause stacking; tap body scroll, each choice, Continue, and recovery.
-
 - [ ] **UI-03 — Recompose Finances around the monthly decision and preserve all prices.**
   **Scope:** `src/ui/workspace_views.rs::{draw_finances_view,draw_ledger,draw_policies}`.
   Depends on UI-01. **Evidence: code; historical visual corroboration.** The

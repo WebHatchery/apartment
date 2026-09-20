@@ -244,9 +244,18 @@ fn draw_toast_content(
     action_label: &str,
 ) -> bool {
     let accent = kind.accent();
-    let panel_w = (screen_width() * 0.6).clamp(420.0, 680.0);
-    let text_x_pad = if portrait.is_some() {
-        116.0
+    let panel_w = (screen_width() - space::MD * 2.0).min(680.0);
+    let portrait_size = portrait.map(|_| {
+        if panel_w >= 500.0 {
+            88.0
+        } else if panel_w >= 420.0 {
+            72.0
+        } else {
+            56.0
+        }
+    });
+    let text_x_pad = if let Some(size) = portrait_size {
+        size + space::MD * 2.0
     } else if icon.is_empty() {
         space::LG
     } else {
@@ -262,10 +271,13 @@ fn draw_toast_content(
     let body_lines = wrap(body, content_w, scale::BODY);
     lines += body_lines.len();
     let text_h = lines as f32 * line_height(scale::BODY) + space::SM;
-    let panel_h = (text_h + space::LG * 2.0 + 44.0).max(120.0);
+    let footer_y = screen_height() - crate::ui::layout::FOOTER_HEIGHT();
+    let max_panel_h = (footer_y - crate::ui::layout::HEADER_HEIGHT() - space::MD * 2.0).max(120.0);
+    let panel_h = (text_h + space::LG * 2.0 + 44.0)
+        .max(120.0)
+        .min(max_panel_h);
 
     let panel_x = (screen_width() - panel_w) / 2.0;
-    let footer_y = screen_height() - crate::ui::layout::FOOTER_HEIGHT();
     let panel_y =
         (footer_y - panel_h - space::SM).max(crate::ui::layout::HEADER_HEIGHT() + space::SM);
 
@@ -276,7 +288,7 @@ fn draw_toast_content(
     draw_surface(Rect::new(panel_x, panel_y, panel_w, panel_h), &style);
 
     if let Some(texture) = portrait {
-        let portrait_size = (panel_h - space::LG * 2.0).min(88.0);
+        let portrait_size = portrait_size.unwrap_or(56.0).min(panel_h - space::LG * 2.0);
         let portrait_y = panel_y + (panel_h - portrait_size) / 2.0;
         draw_texture_ex(
             texture,
