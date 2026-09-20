@@ -2,7 +2,7 @@
 use macroquad::prelude::Rect;
 
 pub fn status_height(width: f32) -> f32 {
-    if width < 620.0 {
+    if width < 760.0 {
         100.0
     } else {
         56.0

@@ -86,7 +86,7 @@ pub fn draw_workspace_nav(
         };
         let base_label = if screen_width() < 700.0 {
             match tab {
-                WorkspaceTab::Building => "Build",
+                WorkspaceTab::Building => "Building",
                 WorkspaceTab::Tenants => "People",
                 WorkspaceTab::Finances => "Money",
                 WorkspaceTab::City => "City",
@@ -101,18 +101,36 @@ pub fn draw_workspace_nav(
         } else {
             base_label.to_string()
         };
-        let tone = if tab == active || (tab == WorkspaceTab::Inbox && active == WorkspaceTab::Tasks)
-        {
-            Tone::Primary
-        } else {
-            Tone::Secondary
-        };
+        // Navigation identifies the current destination quietly. The orange
+        // primary treatment belongs to the action that advances time.
+        let tone = Tone::Secondary;
         let rect = Rect::new(x, y + (h - button_h) / 2.0, button_w, button_h);
         if button_at(rect, "", true, tone) {
             action = Some(intent);
         }
-        draw_nav_content(rect, &label, icon_id, assets, tab == active);
+        let is_active =
+            tab == active || (tab == WorkspaceTab::Inbox && active == WorkspaceTab::Tasks);
+        draw_nav_content(rect, &label, icon_id, assets, is_active);
         x += button_w + gap;
+    }
+    if screen_width() >= 760.0 {
+        let menu_rect = Rect::new(
+            screen_width() - 68.0,
+            y + (h - button_h) / 2.0,
+            60.0,
+            button_h,
+        );
+        draw_line(
+            menu_rect.x - space::SM,
+            menu_rect.y + 4.0,
+            menu_rect.x - space::SM,
+            menu_rect.bottom() - 4.0,
+            1.0,
+            color::BORDER(),
+        );
+        if button_at(menu_rect, "Menu", true, Tone::Secondary) {
+            action = Some(UiAction::OpenPauseMenu);
+        }
     }
     action
 }
@@ -151,11 +169,21 @@ fn draw_nav_content(rect: Rect, label: &str, icon_id: &str, assets: &AssetManage
         rect.y + rect.h / 2.0 + font_size / 2.0 - 1.0,
         font_size,
         if active {
-            Color::new(0.10, 0.08, 0.04, 1.0)
+            color::TEXT_BRIGHT()
         } else {
             color::TEXT()
         },
     );
+    if active {
+        draw_line(
+            rect.x + space::SM,
+            rect.bottom() - 3.0,
+            rect.right() - space::SM,
+            rect.bottom() - 3.0,
+            2.0,
+            color::ACCENT(),
+        );
+    }
 }
 
 fn workspace_icon_tile(id: &str) -> Option<(f32, f32)> {

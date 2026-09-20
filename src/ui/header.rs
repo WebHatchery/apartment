@@ -28,20 +28,27 @@ pub fn draw_header(
         color::BORDER(),
     );
     let mut action = None;
+    let end_month_x = if width >= 1180.0 {
+        width - 198.0
+    } else {
+        width - 182.0
+    };
     if button_at(
-        Rect::new(width - 182.0, 8.0, 108.0, 40.0),
+        Rect::new(end_month_x, 8.0, 108.0, 40.0),
         "End Month",
         true,
         Tone::Primary,
     ) {
         action = Some(UiAction::EndTurn);
     }
-    if button_at(
-        Rect::new(width - 68.0, 8.0, 60.0, 40.0),
-        "Menu",
-        true,
-        Tone::Secondary,
-    ) {
+    if width < 760.0
+        && button_at(
+            Rect::new(width - 68.0, 52.0, 60.0, 40.0),
+            "Menu",
+            true,
+            Tone::Secondary,
+        )
+    {
         action = Some(UiAction::OpenPauseMenu);
     }
     let label = format!(
@@ -51,8 +58,10 @@ pub fn draw_header(
         occupancy,
         total_units
     );
-    let (x, y, available) = if width < 620.0 {
-        (12.0, 79.0, width - 24.0)
+    let (x, y, available) = if width < 760.0 {
+        // Portrait status uses three quiet rows: title, time control, and
+        // compact operating status. Menu is placed in its own utility row.
+        (12.0, 92.0, width - 24.0)
     } else {
         ((width - 510.0).max(12.0), 34.0, 312.0)
     };
@@ -67,7 +76,7 @@ pub fn draw_header(
             color::TEXT()
         },
     );
-    if width < 620.0 || (800.0..1180.0).contains(&width) {
+    if width < 800.0 || (800.0..1180.0).contains(&width) {
         draw_ui_text("Second Story", 12.0, 34.0, 22.0, color::TEXT_BRIGHT());
     }
     action

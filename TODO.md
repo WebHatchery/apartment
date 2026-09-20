@@ -50,28 +50,6 @@ portrait candidate until task UI-01 records a validated support contract.
 
 ### Verified findings and merged implementation tasks
 
-- [ ] **UI-01 — Define each screen's decision and separate the gameplay shell from utilities.**
-  **Scope:** `README.md`, `src/ui/header.rs::draw_header`,
-  `src/ui/workspace_nav.rs::draw_workspace_nav`, `src/screen_layout.rs`, and
-  `src/state/gameplay_views.rs::draw`. **Evidence: visual + code.** End Month
-  and Menu are adjacent controls in the same strip, while the active destination
-  receives the same orange emphasis as End Month. Portrait uses three header
-  rows plus a broad Details control. The shell competes with contextual actions;
-  the README lacks the required screen briefs and viewport contract.
-  **Change:** record UI_STYLE §1 briefs for Building/selection, People,
-  Finances, City/Market, Inbox/Tasks, and blocking/ending states. Give normal
-  Building play the dominant world, one contextual decision area, and quiet
-  utilities. Visually separate Menu/save/exit from End Month with a distinct
-  utility location/group, quiet active-tab styling, and compact status. Keep
-  cash/month readable; avoid adding new permanent dashboard cards. Use a clear
-  Building label or equally unambiguous compact label instead of the verb Build.
-  **Accept:** players locate the current decision within a second; at most
-  2–3 regions demand strong attention. End Month leads normal time progression;
-  selection/event decisions lead while active, and Menu remains discoverable.
-  **Verify:** compare default, selected, and urgent screenshots at every review
-  size; tap all five destinations, End Month, Menu, Resume, save and quit paths.
-  Declare actual browser canvas sizes, not just window sizes, in README.
-
 - [ ] **UI-02 — Keep mandatory choices and tutorial continuation inside small canvases.**
   **Scope:** `src/ui/event_modal.rs::draw_event_modal`, toast layout in
   `src/ui/widgets.rs`, `src/state/gameplay_views.rs`, and
