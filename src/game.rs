@@ -158,6 +158,12 @@ impl Game {
             "finances_showcase" | "finances_compact" | "finances_wide" | "finances_tiny" => {
                 self.seed_workspace_capture(ViewMode::Finances);
             }
+            "finances_scrolled_tiny" => {
+                self.seed_workspace_capture(ViewMode::Finances);
+                if let GameState::Gameplay(state) = &mut self.state {
+                    state.finance_scroll_offset = 120.0;
+                }
+            }
             "city_showcase" | "city_compact" | "city_wide" | "city_tiny" => {
                 self.seed_workspace_capture(ViewMode::CityMap);
             }

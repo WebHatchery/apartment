@@ -50,25 +50,6 @@ portrait candidate until task UI-01 records a validated support contract.
 
 ### Verified findings and merged implementation tasks
 
-- [ ] **UI-03 — Recompose Finances around the monthly decision and preserve all prices.**
-  **Scope:** `src/ui/workspace_views.rs::{draw_finances_view,draw_ledger,draw_policies}`.
-  Depends on UI-01. **Evidence: code; historical visual corroboration.** The
-  ledger reserves at least 330px, leaving only 12px for the policy rectangle
-  on a 390px canvas before its inner padding. Dense policies show utilities
-  and insurance as on/off buttons without recurring prices. Lifetime totals,
-  recent months and transactions compete with the actual operating decision.
-  **Change:** use a single-column or visibly switched ledger/operations view
-  on narrow screens, with bounded scrolling. Lead with current monthly income,
-  outgoings and net; defer lifetime totals, chart and transaction detail behind
-  labelled disclosure. Retain the full price and relevant effect beside each
-  marketing/policy/open-house action at every size, including disabled reasons.
-  Remove the permanent explanatory subtitle and redundant panel framing.
-  **Accept:** players can understand and compare recurring commitments before
-  changing them; no content is squeezed into residual width or under the footer.
-  **Verify:** all review sizes with large balances, losses, four monthly reports,
-  long transactions and every policy state; touch ledger detail, operations,
-  each policy and return navigation. Verify charged prices match displayed ones.
-
 - [ ] **UI-04 — Reflow People, Inbox and Tasks into readable decision views.**
   **Scope:** `src/ui/workspace_views.rs::draw_tenants_view`,
   `src/ui/workspace_inbox.rs::{draw_inbox_view,draw_selected_mail,draw_dialogue}`,

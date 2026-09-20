@@ -111,6 +111,8 @@ pub struct GameplayState {
     #[serde(skip)]
     pub tower_scroll_offset: f32,
     #[serde(skip)]
+    pub finance_scroll_offset: f32,
+    #[serde(skip)]
     pub event_scroll_offset: f32,
     #[serde(skip)]
     pub event_scroll_event_id: Option<u32>,
@@ -292,6 +294,7 @@ impl GameplayState {
             floating_texts: default_floating_text_layer(),
             panel_scroll_offset: 0.0,
             tower_scroll_offset: 0.0,
+            finance_scroll_offset: 0.0,
             event_scroll_offset: 0.0,
             event_scroll_event_id: None,
             selected_mail_id: None,
