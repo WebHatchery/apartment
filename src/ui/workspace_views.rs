@@ -1,5 +1,4 @@
 //! Portfolio management workspaces for tenants, finances, and the inbox.
-
 use macroquad::prelude::*;
 use macroquad_toolkit::ui::{draw_ui_text, format_money, truncate_text_to_width};
 
@@ -69,6 +68,17 @@ pub fn draw_tenants_view(state: &GameplayState, assets: &AssetManager) -> Option
     } else {
         tenants.iter().map(|tenant| tenant.happiness).sum::<i32>() / tenants.len() as i32
     };
+    if rect.w < 760.0 {
+        return super::tenants_view::draw_tenants_narrow(
+            state,
+            assets,
+            rect,
+            tenants,
+            applications,
+            pending_requests,
+            average,
+        );
+    }
     let body_y = draw_title(
         rect,
         "Tenants",
@@ -752,7 +762,6 @@ fn draw_policies(state: &GameplayState, rect: Rect) -> Option<UiAction> {
     );
     action
 }
-
 fn policy_preview(
     building: &crate::building::Building,
     utilities: bool,
@@ -763,7 +772,6 @@ fn policy_preview(
     preview.insurance_active = insurance;
     preview
 }
-
 fn on_off(value: bool) -> &'static str {
     if value {
         "On"
@@ -771,7 +779,6 @@ fn on_off(value: bool) -> &'static str {
         "Off"
     }
 }
-
 fn transaction_type_name(kind: &TransactionType) -> &'static str {
     match kind {
         TransactionType::RentIncome => "Rent",

@@ -26,6 +26,7 @@ mod notifications;
 pub mod ownership_panel; // Phase 3 ownership
 mod resident_sprite;
 mod tenant_panel;
+mod tenants_view;
 pub mod workspace_inbox;
 pub mod workspace_nav;
 pub mod workspace_tasks;
@@ -64,6 +65,9 @@ use crate::building::UpgradeAction;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum UiAction {
     SelectApartment(u32),
+    OpenTenantUnit(u32),
+    SelectTenant(u32),
+    ClearTenantSelection,
     SelectApplications(Option<u32>),
     SelectHallway,
     SelectBuilding,
@@ -102,6 +106,7 @@ pub enum UiAction {
     OpenMailItem {
         mail_id: u32,
     },
+    ClearSelectedMail,
     SetInboxPage {
         page: usize,
     },

@@ -113,11 +113,15 @@ pub struct GameplayState {
     #[serde(skip)]
     pub finance_scroll_offset: f32,
     #[serde(skip)]
+    pub tasks_scroll_offset: f32,
+    #[serde(skip)]
     pub event_scroll_offset: f32,
     #[serde(skip)]
     pub event_scroll_event_id: Option<u32>,
     #[serde(skip)]
     pub selected_mail_id: Option<u32>,
+    #[serde(skip)]
+    pub selected_tenant_id: Option<u32>,
     #[serde(skip)]
     pub inbox_page: usize,
     #[serde(skip)]
@@ -295,9 +299,11 @@ impl GameplayState {
             panel_scroll_offset: 0.0,
             tower_scroll_offset: 0.0,
             finance_scroll_offset: 0.0,
+            tasks_scroll_offset: 0.0,
             event_scroll_offset: 0.0,
             event_scroll_event_id: None,
             selected_mail_id: None,
+            selected_tenant_id: None,
             inbox_page: 0,
             tasks_page: 0,
             city_page: 0,

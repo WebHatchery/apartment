@@ -20,6 +20,17 @@ impl GameplayState {
                 self.selection = Selection::Apartment(id);
                 self.panel_scroll_offset = 0.0;
             }
+            UiAction::OpenTenantUnit(id) => {
+                self.view_mode = ViewMode::Building;
+                self.selection = Selection::Apartment(id);
+                self.panel_scroll_offset = 0.0;
+            }
+            UiAction::SelectTenant(id) => {
+                self.selected_tenant_id = Some(id);
+            }
+            UiAction::ClearTenantSelection => {
+                self.selected_tenant_id = None;
+            }
             UiAction::SelectApplications(filter) => {
                 self.view_mode = ViewMode::Building;
                 self.selection = Selection::Applications(filter);
@@ -325,6 +336,9 @@ impl GameplayState {
                 if self.mailbox.mark_read(mail_id) {
                     self.selected_mail_id = Some(mail_id);
                 }
+            }
+            UiAction::ClearSelectedMail => {
+                self.selected_mail_id = None;
             }
             UiAction::SetInboxPage { page } => {
                 self.inbox_page = page;

@@ -149,6 +149,12 @@ impl Game {
             "tenants_showcase" | "tenants_compact" | "tenants_tiny" => {
                 self.seed_workspace_capture(ViewMode::Tenants);
             }
+            "tenants_detail_tiny" => {
+                self.seed_workspace_capture(ViewMode::Tenants);
+                if let GameState::Gameplay(state) = &mut self.state {
+                    state.selected_tenant_id = state.tenants.first().map(|tenant| tenant.id);
+                }
+            }
             "tenants_more_showcase" | "tenants_more_tiny" => {
                 self.seed_workspace_capture(ViewMode::Tenants);
                 if let GameState::Gameplay(state) = &mut self.state {
@@ -196,8 +202,20 @@ impl Game {
             "inbox_showcase" | "inbox_compact" | "inbox_tiny" => {
                 self.seed_workspace_capture(ViewMode::Mail);
             }
+            "inbox_list_tiny" => {
+                self.seed_workspace_capture(ViewMode::Mail);
+                if let GameState::Gameplay(state) = &mut self.state {
+                    state.selected_mail_id = None;
+                }
+            }
             "tasks_showcase" | "tasks_compact" | "tasks_tiny" => {
                 self.seed_workspace_capture(ViewMode::Tasks);
+            }
+            "tasks_scrolled_tiny" => {
+                self.seed_workspace_capture(ViewMode::Tasks);
+                if let GameState::Gameplay(state) = &mut self.state {
+                    state.tasks_scroll_offset = 360.0;
+                }
             }
             "requests_more_showcase" | "requests_more_tiny" => {
                 self.seed_workspace_capture(ViewMode::Tasks);

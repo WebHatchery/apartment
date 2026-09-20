@@ -50,29 +50,6 @@ portrait candidate until task UI-01 records a validated support contract.
 
 ### Verified findings and merged implementation tasks
 
-- [ ] **UI-04 — Reflow People, Inbox and Tasks into readable decision views.**
-  **Scope:** `src/ui/workspace_views.rs::draw_tenants_view`,
-  `src/ui/workspace_inbox.rs::{draw_inbox_view,draw_selected_mail,draw_dialogue}`,
-  and `src/ui/workspace_tasks.rs::draw_tasks_view`. Depends on UI-01; share the
-  responsive approach established in UI-03 without forcing identical screens.
-  **Evidence: code + historical visuals; current Inbox compact visual.** People
-  reserves a 220px side area and Inbox a 260px list even in portrait; Tasks keeps
-  a 62/38 split. Small columns truncate identity, request outcomes and content.
-  Inbox also places the first pending conversation beneath independently selected
-  mail, making unrelated messages compete for the same reading area.
-  **Change:** make roster/mail/request lists the initial focus with a labelled
-  detail/back path on small screens. Show one selected message or conversation
-  at a time; keep unresolved conversations explicitly discoverable. Defer People
-  aggregate statistics; let missions and resident requests switch or stack with
-  deliberate scrolling. Remove redundant headings/cards and static instruction
-  subtitles. Reveal full names, request costs/rewards/deadlines and consequences
-  before committing; preserve Tasks & requests through Inbox and its attention cue.
-  **Accept:** one comparison or decision dominates; truncation never conceals an
-  action's consequences, and returning restores selection/page context.
-  **Verify:** all review sizes with empty and multiple-page lists, long names,
-  letters plus unrelated dialogue, multiple requests and missions. Touch Inbox →
-  Tasks → request → decision → back; People → resident → unit; every pager.
-
 - [ ] **UI-05 — Keep selected rooms visible and put their immediate decisions first.**
   **Scope:** `src/screen_layout.rs::BuildingLayout::new`,
   `src/ui/building_view.rs::{draw_building_view,cutaway_metrics}`,

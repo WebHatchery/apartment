@@ -25,6 +25,10 @@ fn content_rect() -> Rect {
 
 pub fn draw_inbox_view(state: &GameplayState, assets: &AssetManager) -> Option<UiAction> {
     let rect = content_rect();
+    let pending_dialogues = state.dialogue_system.pending_dialogues();
+    if rect.w < 760.0 {
+        return draw_inbox_narrow(state, assets, rect, pending_dialogues.len());
+    }
     if button_at(
         Rect::new(rect.right() - 130.0, rect.y, 130.0, 40.0),
         "Tasks & requests",
@@ -33,7 +37,6 @@ pub fn draw_inbox_view(state: &GameplayState, assets: &AssetManager) -> Option<U
     ) {
         return Some(UiAction::OpenTasks);
     }
-    let pending_dialogues = state.dialogue_system.pending_dialogues();
     let body_y = draw_title(
         rect,
         &format!(
@@ -72,6 +75,66 @@ pub fn draw_inbox_view(state: &GameplayState, assets: &AssetManager) -> Option<U
         return draw_dialogue(state, assets, detail, mail_h, dialogue);
     }
     None
+}
+
+fn draw_inbox_narrow(
+    state: &GameplayState,
+    assets: &AssetManager,
+    rect: Rect,
+    pending_count: usize,
+) -> Option<UiAction> {
+    let subtitle = format!(
+        "{} unread letters · {} conversations waiting",
+        state.mailbox.unread_count(),
+        pending_count
+    );
+    let mut body_y = draw_title(rect, &subtitle);
+    if rect.w < 480.0 {
+        let tasks_y = body_y;
+        if button_at(
+            Rect::new(rect.right() - 180.0, tasks_y, 180.0, 40.0),
+            "Tasks & requests",
+            true,
+            Tone::Secondary,
+        ) {
+            return Some(UiAction::OpenTasks);
+        }
+        body_y = tasks_y + 40.0 + space::SM;
+    } else if button_at(
+        Rect::new(rect.right() - 180.0, rect.y, 180.0, 40.0),
+        "Tasks & requests",
+        true,
+        Tone::Secondary,
+    ) {
+        return Some(UiAction::OpenTasks);
+    }
+
+    if let Some(selected_id) = state.selected_mail_id {
+        let panel = Rect::new(rect.x, body_y, rect.w, rect.bottom() - body_y);
+        let title = if pending_count > 0 {
+            "Selected letter · conversation waiting"
+        } else {
+            "Selected letter"
+        };
+        let inner = draw_panel(panel, title);
+        draw_selected_mail(state, inner, Some(selected_id), inner.h - 48.0);
+        let y = inner.bottom() - 40.0;
+        if button_at(
+            Rect::new(inner.x, y, inner.w, 40.0),
+            "Back to letters",
+            true,
+            Tone::Secondary,
+        ) {
+            return Some(UiAction::ClearSelectedMail);
+        }
+        return None;
+    }
+
+    let list = draw_panel(
+        Rect::new(rect.x, body_y, rect.w, rect.bottom() - body_y),
+        "Letters · tap one to read",
+    );
+    draw_mail_list(state, list, None, assets)
 }
 
 fn draw_title(rect: Rect, subtitle: &str) -> f32 {
