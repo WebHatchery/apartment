@@ -252,9 +252,11 @@ Every game must have these files for deployment:
 - `catalog_thumbnail.png` – Root-level catalog image
 
 ### 8.2 Build Targets
+Use the shared `..\rust_management\cargo.ps1` launcher for concurrent local builds, checks, tests and Clippy. It leases a bounded shared build slot and uses sccache when installed; it does not copy source or change workspace membership. Publishing and capture integrate it automatically. See `rust_management/docs/CARGO_WORKSPACE.md`.
+
 The game must build for:
-- **Windows**: `cargo build --release`
-- **Web/WASM**: `cargo build --release --target wasm32-unknown-unknown`
+- **Windows**: `..\rust_management\cargo.ps1 build --release`
+- **Web/WASM**: `..\rust_management\cargo.ps1 build --release --target wasm32-unknown-unknown`
 
 ### 8.3 Validation
 After meaningful game changes, run `.\publish.ps1` with no parameters from the affected project directory and report the result. If the script is missing, blocked, or fails for an unrelated environment reason, report that limitation. A local instance or dev server is not a substitute unless the user requests it.
