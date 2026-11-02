@@ -57,14 +57,7 @@ fn inactive_building_tenant_is_not_advanced() {
     let mut result = empty_result();
     let config = GameConfig::default();
 
-    GameTick::update_tenants(
-        0,
-        &building,
-        &mut tenants,
-        &mut result,
-        &config.happiness,
-        &config.staff_effects,
-    );
+    GameTick::update_tenants(0, &building, &mut tenants, &mut result, &config);
 
     assert_eq!(tenants[0].happiness, 41);
     assert_eq!(tenants[0].months_residing, 0);

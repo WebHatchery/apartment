@@ -112,8 +112,10 @@ impl GameplayState {
     /// too hard on an unhappy building — previously the council was cosmetic.
     fn apply_council_collective_action(&mut self) {
         let rollback = self.config.gentrification.council_rent_rollback;
-        self.building.rent_multiplier =
-            (self.building.rent_multiplier * (1.0 - rollback)).clamp(0.5, 2.0);
+        self.building.rent_multiplier = self
+            .config
+            .turn_effects
+            .clamp_rent_multiplier(self.building.rent_multiplier * (1.0 - rollback));
 
         let bump = self.config.gentrification.council_solidarity_happiness;
         let building_id = self.active_building_id();

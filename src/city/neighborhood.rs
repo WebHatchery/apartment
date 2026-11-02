@@ -116,7 +116,11 @@ impl NeighborhoodStats {
     }
 
     /// Apply monthly changes to neighborhood (gentrification, crime changes, etc.)
-    pub fn tick(&mut self, neighborhood_type: &NeighborhoodType) {
+    pub fn tick(
+        &mut self,
+        neighborhood_type: &NeighborhoodType,
+        effects: &crate::data::config::TurnEffectsConfig,
+    ) {
         // Gentrification slowly increases in industrial areas
         if matches!(neighborhood_type, NeighborhoodType::Industrial)
             && self.gentrification < 100
@@ -124,7 +128,7 @@ impl NeighborhoodStats {
         {
             self.gentrification = (self.gentrification + 1).min(100);
             // Gentrification increases rent demand but pushes out long-term residents
-            self.rent_demand = (self.rent_demand + 0.01).min(1.5);
+            self.rent_demand = effects.clamp_rent_demand(self.rent_demand + 0.01);
         }
 
         // Crime fluctuates slightly
@@ -133,7 +137,7 @@ impl NeighborhoodStats {
 
         // Rent demand fluctuates
         let demand_change = rng::gen_range(-5, 6) as f32 / 100.0;
-        self.rent_demand = (self.rent_demand + demand_change).clamp(0.5, 2.0);
+        self.rent_demand = effects.clamp_rent_demand(self.rent_demand + demand_change);
     }
 }
 
@@ -184,8 +188,8 @@ impl Neighborhood {
     }
 
     /// Apply monthly tick
-    pub fn tick(&mut self) {
-        self.stats.tick(&self.neighborhood_type);
+    pub fn tick(&mut self, effects: &crate::data::config::TurnEffectsConfig) {
+        self.stats.tick(&self.neighborhood_type, effects);
     }
 }
 

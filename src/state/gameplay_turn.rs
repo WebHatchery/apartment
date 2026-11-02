@@ -171,24 +171,28 @@ impl GameplayState {
             event.tick();
         }
 
+        let effects = &self.config.turn_effects;
         if heatwave_active {
             let building_id = self.active_building_id();
             for tenant in &mut self.tenants {
                 if tenant.building_id == building_id {
-                    tenant.happiness = (tenant.happiness - 3).max(0);
+                    tenant.happiness =
+                        (tenant.happiness - effects.heatwave_happiness_penalty).max(0);
                 }
             }
         }
 
         if gentrification_active {
             self.gentrification.gentrification_score = (self.gentrification.gentrification_score
-                + 1)
-            .min(self.config.gentrification.max_gentrification_score);
+                + effects.gentrification_score_per_month)
+                .min(self.config.gentrification.max_gentrification_score);
 
             for neighborhood in &mut self.city.neighborhoods {
                 neighborhood.stats.gentrification =
                     (neighborhood.stats.gentrification + 1).min(100);
-                neighborhood.stats.rent_demand = (neighborhood.stats.rent_demand + 0.02).min(2.0);
+                neighborhood.stats.rent_demand = effects.clamp_rent_demand(
+                    neighborhood.stats.rent_demand + effects.gentrification_rent_demand_per_month,
+                );
             }
         }
 
@@ -198,7 +202,7 @@ impl GameplayState {
 
     fn update_city_systems(&mut self) {
         self.save_building_to_city();
-        self.city.tick();
+        self.city.tick(&self.config.turn_effects);
 
         let active_tenants = self.active_tenants_cloned();
         let (rel_changes, rel_events) = self.tenant_network.tick(
@@ -322,7 +326,12 @@ impl GameplayState {
                 &self.tenant_network,
                 &self.config.relationships,
             );
-            let cohesion_bonus = if cohesion > 20 { 1 } else { 0 };
+            let effects = &self.config.turn_effects;
+            let cohesion_bonus = if cohesion > effects.cohesion_bonus_threshold {
+                effects.cohesion_happiness_bonus
+            } else {
+                0
+            };
             tenant.happiness =
                 (tenant.happiness + relationship_bonus + cohesion_bonus).clamp(0, 100);
         }

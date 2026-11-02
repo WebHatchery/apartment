@@ -1,4 +1,5 @@
 use crate::building::Building;
+use crate::data::config::TurnEffectsConfig;
 use crate::economy::{PlayerFunds, Transaction, TransactionType};
 use crate::simulation::events::GameEvent;
 use macroquad_toolkit::rng;
@@ -10,21 +11,24 @@ pub fn roll_random_events(
     building: &mut Building,
     funds: &mut PlayerFunds,
     current_tick: u32,
+    effects: &TurnEffectsConfig,
 ) -> Vec<GameEvent> {
     let mut events = Vec::new();
 
-    // 1. Heatwave (2% chance)
-    if rng::gen_range(0, 100) < 2 {
-        events.push(GameEvent::Heatwave { tick_duration: 3 });
+    // 1. Heatwave
+    if rng::gen_range(0, 100) < effects.heatwave_chance_percent {
+        events.push(GameEvent::Heatwave {
+            tick_duration: effects.heatwave_duration_months,
+        });
     }
 
-    // 2. Pipe Burst (3% chance per tick to happen in ONE apartment)
-    if rng::gen_range(0, 100) < 3 {
+    // 2. Pipe burst in ONE apartment
+    if rng::gen_range(0, 100) < effects.pipe_burst_chance_percent {
         let num_apts = building.apartments.len();
         if num_apts > 0 {
             let idx = rng::gen_range(0, num_apts);
             if let Some(apt) = building.apartments.get_mut(idx) {
-                let damage = 30;
+                let damage = effects.pipe_burst_damage;
                 let old_condition = apt.condition;
                 apt.condition = (apt.condition - damage).max(0);
 
@@ -39,22 +43,30 @@ pub fn roll_random_events(
         }
     }
 
-    // 3. Gentrification (Very rare, 0.5% chance)
-    if rng::gen_range(0, 1000) < 5 {
+    // 3. Gentrification (very rare)
+    if rng::gen_range(0, 1000) < effects.gentrification_chance_per_1000 {
         events.push(GameEvent::Gentrification {
-            tick_duration: 6,
+            tick_duration: effects.gentrification_duration_months,
             effect_desc: "Rent tolerance +20%".to_string(),
         });
     }
 
-    // 4. Inspection (5% chance if avg condition is low)
-    let avg_condition = building.building_appeal(); // This includes hallway, roughly maps to condition
-                                                    // If appeal is low (< 40), higher chance of inspection stuff
-    let inspection_chance = if avg_condition < 40 { 5 } else { 1 };
+    // 4. Spot inspection, likelier (and failed) when building appeal is low.
+    let appeal = building.building_appeal();
+    let threshold = effects.spot_inspection_appeal_threshold;
+    let inspection_chance = if appeal < threshold {
+        effects.spot_inspection_low_appeal_chance_percent
+    } else {
+        effects.spot_inspection_chance_percent
+    };
 
     if rng::gen_range(0, 100) < inspection_chance {
-        let passed = avg_condition >= 40;
-        let fine = if passed { 0 } else { 500 };
+        let passed = appeal >= threshold;
+        let fine = if passed {
+            0
+        } else {
+            effects.spot_inspection_fine
+        };
 
         if fine > 0 {
             // Deduct fine
@@ -70,7 +82,7 @@ pub fn roll_random_events(
             result: if passed {
                 "Passed".to_string()
             } else {
-                "Failed (Building Appeal < 40)".to_string()
+                format!("Failed (Building Appeal < {threshold})")
             },
             fine,
         });

@@ -41,6 +41,7 @@ impl Default for GameConfig {
             life_events: LifeEventsConfig::default(),
             critical_failures: CriticalFailureConfig::default(),
             portfolio: PortfolioConfig::default(),
+            turn_effects: TurnEffectsConfig::default(),
             difficulty: default_difficulty_modifiers(),
             theme: ThemeConfig::default(),
             layout: LayoutConfig::default(),

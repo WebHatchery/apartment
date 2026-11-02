@@ -86,6 +86,7 @@ impl GameTick {
             building,
             funds,
             current_tick,
+            &config.turn_effects,
         ));
 
         // 4. Decay & Ownership
@@ -98,14 +99,7 @@ impl GameTick {
         Self::process_tenant_risk(building_id, building, tenants, config, &mut result);
 
         // 5. Tenant Happiness & Updates
-        Self::update_tenants(
-            building_id,
-            building,
-            tenants,
-            &mut result,
-            &config.happiness,
-            &config.staff_effects,
-        );
+        Self::update_tenants(building_id, building, tenants, &mut result, config);
 
         // 6. Move-outs
         let departure_notices =
@@ -398,9 +392,10 @@ impl GameTick {
                     tenant_name: "ALL TENANTS".to_string(),
                     happiness: 0,
                 });
+                let penalty = config.turn_effects.unpaid_boiler_happiness_penalty;
                 for t in tenants.iter_mut() {
                     if t.building_id == building_id {
-                        t.happiness = (t.happiness - 30).max(0);
+                        t.happiness = (t.happiness - penalty).max(0);
                     }
                 }
                 result.events.push(GameEvent::InsufficientFunds {
@@ -426,7 +421,9 @@ impl GameTick {
                     description: "Foundation Crack".to_string(),
                 });
             } else {
-                building.hallway_condition = (building.hallway_condition - 20).max(0);
+                building.hallway_condition = (building.hallway_condition
+                    - config.turn_effects.unpaid_structural_hallway_damage)
+                    .max(0);
                 result.events.push(GameEvent::HallwayDeteriorating {
                     condition: building.hallway_condition,
                 });
@@ -491,33 +488,40 @@ impl GameTick {
         building: &Building,
         tenants: &mut [Tenant],
         result: &mut TickResult,
-        config: &crate::data::config::HappinessConfig,
-        staff: &crate::data::config::StaffEffectsConfig,
+        config: &crate::data::config::GameConfig,
     ) {
+        let effects = &config.turn_effects;
+        let unhappy = config.happiness.unhappy_threshold;
         for tenant in tenants.iter_mut() {
             if tenant.building_id != building_id {
                 continue;
             }
             if let Some(apt_id) = tenant.apartment_id {
                 if let Some(apartment) = building.get_apartment(apt_id) {
-                    let factors = calculate_happiness(tenant, apartment, building, config, staff);
+                    let factors = calculate_happiness(
+                        tenant,
+                        apartment,
+                        building,
+                        &config.happiness,
+                        &config.staff_effects,
+                    );
                     let old_happiness = tenant.happiness;
                     let new_happiness = factors.total();
                     tenant.set_happiness(new_happiness);
 
-                    if new_happiness < 30 && old_happiness >= 30 {
+                    if new_happiness < unhappy && old_happiness >= unhappy {
                         result.events.push(GameEvent::TenantUnhappy {
                             tenant_name: tenant.name.clone(),
                             happiness: new_happiness,
                         });
                     }
 
-                    if factors.noise_factor < -10 {
+                    if factors.noise_factor < effects.noise_complaint_factor {
                         result.events.push(GameEvent::NoiseComplaint {
                             tenant_name: tenant.name.clone(),
                         });
                     }
-                    if factors.condition_factor < -15 {
+                    if factors.condition_factor < effects.condition_complaint_factor {
                         result.events.push(GameEvent::ConditionComplaint {
                             tenant_name: tenant.name.clone(),
                             apartment_unit: apartment.unit_number.clone(),

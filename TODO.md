@@ -291,7 +291,7 @@ engineering backlog. Findings below were traced in code, not reproduced in play.
   events free functions, or keep the struct only if real state arrives.
   Delete `log_monthly_status` (or route anything useful into the event log).
 
-- [ ] **CR-06 — Move remaining hardcoded turn tuning into `assets/config.json`.**
+- [x] **CR-06 — Move remaining hardcoded turn tuning into `assets/config.json`.**
   **Evidence:** the heatwave (−3 happiness/month), gentrification
   (+1 score, +0.02 demand), boiler-unaffordable (−30 happiness),
   structural-unaffordable (−20 hallway), the cohesion bonus threshold (`> 20`),

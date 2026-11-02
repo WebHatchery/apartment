@@ -15,6 +15,7 @@ mod presentation;
 mod rules;
 mod social;
 mod tenants;
+mod turn_effects;
 mod upgrades;
 
 pub use apartment::ApartmentPropertiesConfig;
@@ -32,6 +33,7 @@ pub use tenants::{
     LeaseAcceptanceConfig, LeaseDefaultsConfig, LifeEventsConfig, MarketingConfig, MatchingConfig,
     StaffEffectsConfig, TenantRiskConfig, VettingConfig,
 };
+pub use turn_effects::TurnEffectsConfig;
 pub use upgrades::{UiConfig, UpgradeDefinition, UpgradeEffect, UpgradeRequirement, UpgradeTarget};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -74,6 +76,8 @@ pub struct GameConfig {
     pub critical_failures: CriticalFailureConfig,
     #[serde(default)]
     pub portfolio: PortfolioConfig,
+    #[serde(default)]
+    pub turn_effects: TurnEffectsConfig,
     /// Per-difficulty rule modifiers, keyed by the building template's
     /// `difficulty` ("Easy"/"Medium"/"Hard"). Empty map → no adjustment.
     #[serde(default)]
@@ -133,6 +137,11 @@ pub fn load_config() -> GameConfig {
 
     if let Ok(upgrades) = upgrades_json_result {
         config.upgrades = upgrades;
+    }
+
+    if let Err(error) = config.turn_effects.validate() {
+        eprintln!("Invalid config.json: {error}; using default turn effects");
+        config.turn_effects = TurnEffectsConfig::default();
     }
 
     set_active(&config);

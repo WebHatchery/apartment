@@ -131,12 +131,12 @@ impl City {
     }
 
     /// Monthly tick for all city systems
-    pub fn tick(&mut self) {
+    pub fn tick(&mut self, effects: &crate::data::config::TurnEffectsConfig) {
         self.total_months += 1;
 
         // Update neighborhoods
         for neighborhood in &mut self.neighborhoods {
-            neighborhood.tick();
+            neighborhood.tick(effects);
         }
 
         // Refresh market listings periodically

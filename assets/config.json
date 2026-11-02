@@ -233,6 +233,31 @@
     "passive_occupancy": 0.8,
     "passive_cost_per_unit": 190
   },
+  "turn_effects": {
+    "heatwave_chance_percent": 2,
+    "heatwave_duration_months": 3,
+    "heatwave_happiness_penalty": 3,
+    "pipe_burst_chance_percent": 3,
+    "pipe_burst_damage": 30,
+    "gentrification_chance_per_1000": 5,
+    "gentrification_duration_months": 6,
+    "gentrification_score_per_month": 1,
+    "gentrification_rent_demand_per_month": 0.02,
+    "spot_inspection_appeal_threshold": 40,
+    "spot_inspection_low_appeal_chance_percent": 5,
+    "spot_inspection_chance_percent": 1,
+    "spot_inspection_fine": 500,
+    "unpaid_boiler_happiness_penalty": 30,
+    "unpaid_structural_hallway_damage": 20,
+    "cohesion_bonus_threshold": 20,
+    "cohesion_happiness_bonus": 1,
+    "noise_complaint_factor": -10,
+    "condition_complaint_factor": -15,
+    "rent_multiplier_min": 0.5,
+    "rent_multiplier_max": 2.0,
+    "rent_demand_min": 0.5,
+    "rent_demand_max": 2.0
+  },
   "difficulty": {
     "Easy": {
       "starting_funds": 10000,

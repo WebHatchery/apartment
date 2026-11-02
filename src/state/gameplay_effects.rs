@@ -100,8 +100,10 @@ impl GameplayState {
                     .iter_mut()
                     .find(|n| n.id == *neighborhood_id)
                 {
-                    neighborhood.stats.rent_demand =
-                        (neighborhood.stats.rent_demand + change).clamp(0.5, 2.0);
+                    neighborhood.stats.rent_demand = self
+                        .config
+                        .turn_effects
+                        .clamp_rent_demand(neighborhood.stats.rent_demand + change);
                 }
             }
             NarrativeEffect::TriggerInspection { building_id } => {
@@ -120,11 +122,16 @@ impl GameplayState {
                 // less) rent.
                 let factor = 1.0 + change_percent / 100.0;
                 if *building_id == self.active_building_id() {
-                    self.building.rent_multiplier =
-                        (self.building.rent_multiplier * factor).clamp(0.5, 2.0);
+                    self.building.rent_multiplier = self
+                        .config
+                        .turn_effects
+                        .clamp_rent_multiplier(self.building.rent_multiplier * factor);
                     self.save_building_to_city();
                 } else if let Some(building) = self.city.buildings.get_mut(*building_id as usize) {
-                    building.rent_multiplier = (building.rent_multiplier * factor).clamp(0.5, 2.0);
+                    building.rent_multiplier = self
+                        .config
+                        .turn_effects
+                        .clamp_rent_multiplier(building.rent_multiplier * factor);
                 }
             }
         }

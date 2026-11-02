@@ -606,7 +606,7 @@ impl Sim {
             // Apply the regulatory teeth that live outside advance_tick so the
             // report reflects the real cost of neglect.
             self.run_inspections_and_fines();
-            self.city.tick();
+            self.city.tick(&self.config.turn_effects);
             self.collect_portfolio_income();
             self.update_missions(&result);
 
