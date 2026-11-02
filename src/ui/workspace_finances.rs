@@ -96,8 +96,8 @@ fn draw_monthly_summary(state: &GameplayState, rect: Rect) {
         color::TEXT_DIM(),
     );
     let report = state.ledger.reports.last();
-    let income = report.map_or(0, |report| report.rent_income);
-    let outgoings = report.map_or(0, |report| report.repair_costs + report.upgrade_costs);
+    let income = report.map_or(0, |report| report.income());
+    let outgoings = report.map_or(0, |report| report.costs());
     let net = report.map_or(0, |report| report.net);
     let values = [
         ("Income", income, color::POSITIVE()),
@@ -198,8 +198,8 @@ fn draw_ledger(state: &GameplayState, rect: Rect) {
         let text = format!(
             "Month {}   income {}   costs {}   net {:+}",
             report.tick,
-            format_money(report.rent_income as i64),
-            format_money((report.repair_costs + report.upgrade_costs) as i64),
+            format_money(report.income() as i64),
+            format_money(report.costs() as i64),
             report.net
         );
         draw_ui_text(
@@ -252,12 +252,7 @@ fn draw_finance_trend(reports: &[crate::economy::MonthlyReport], rect: Rect) {
     let recent: Vec<_> = reports.iter().rev().take(6).collect();
     let max_value = recent
         .iter()
-        .map(|report| {
-            report
-                .rent_income
-                .max(report.repair_costs + report.upgrade_costs)
-                .max(report.net.abs())
-        })
+        .map(|report| report.income().max(report.costs()).max(report.net.abs()))
         .max()
         .unwrap_or(1)
         .max(1) as f32;
@@ -275,8 +270,8 @@ fn draw_finance_trend(reports: &[crate::economy::MonthlyReport], rect: Rect) {
         let x = rect.x + index as f32 * group_w + group_w * 0.18;
         let bar_w = (group_w * 0.24).max(3.0);
         let chart_h = rect.h - 25.0;
-        let income_h = chart_h * report.rent_income as f32 / max_value;
-        let costs = report.repair_costs + report.upgrade_costs;
+        let income_h = chart_h * report.income() as f32 / max_value;
+        let costs = report.costs();
         let cost_h = chart_h * costs as f32 / max_value;
         draw_rectangle(
             x,

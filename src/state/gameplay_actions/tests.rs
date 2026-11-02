@@ -73,3 +73,19 @@ fn dialogue_money_cost_records_expense_transaction() {
             && transaction.tick == 8
     }));
 }
+
+#[test]
+fn repeated_end_month_taps_advance_exactly_one_month() {
+    let mut state = GameplayState::new();
+    state.autosave_enabled = false;
+    let start = state.current_tick;
+
+    state.process_action(UiAction::EndTurn);
+    state.process_action(UiAction::EndTurn);
+    assert_eq!(state.current_tick, start + 1);
+    assert!(state.month_summary_open);
+
+    state.process_action(UiAction::DismissMonthSummary);
+    state.process_action(UiAction::EndTurn);
+    assert_eq!(state.current_tick, start + 2);
+}

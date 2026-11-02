@@ -72,6 +72,12 @@ fn open_all_sections(state: &mut GameplayState) {
     }
 }
 
+/// Play one real month without writing a save.
+fn close_month(state: &mut GameplayState) {
+    state.autosave_enabled = false;
+    state.end_turn();
+}
+
 /// The id of the showcase unit at `index` in building order.
 fn unit_id(state: &GameplayState, index: usize) -> u32 {
     state.building.apartments[index].id
@@ -192,7 +198,15 @@ fn adjust_scene(key: &str, state: &mut GameplayState) {
         }
         "history" => {
             seed_showcase_activity(state);
+            close_month(state);
+            state.month_summary_open = false;
             state.activity_drawer_open = true;
+        }
+        "month_summary" => close_month(state),
+        // Month 36: the summary is shown before the campaign outcome.
+        "month_final" => {
+            state.current_tick = 35;
+            close_month(state);
         }
         "career" => seed_showcase_career(state),
         "career_more" => {

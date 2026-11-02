@@ -22,7 +22,8 @@ pub mod event_modal; // Phase 4 event modal
 mod hallway_panel;
 mod header;
 mod inspector_summary;
-mod notifications;
+pub mod month_summary;
+pub mod notifications;
 pub mod ownership_panel; // Phase 3 ownership
 mod panel_flow;
 mod resident_sprite;
@@ -112,6 +113,7 @@ pub enum UiAction {
     SelectOwnership,
     ClearSelection,
     ToggleActivityDrawer,
+    DismissMonthSummary,
     ToggleDisclosure(Disclosure),
 
     // Generic Upgrade Action

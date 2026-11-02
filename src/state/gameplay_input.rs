@@ -40,8 +40,9 @@ impl GameplayState {
         // A modal is drawn over the base view, so base-view clicks from that
         // same frame must not leak through. Its own response remains allowed.
         let paused_on_entry = was_paused || self.show_pause_menu;
-        let blocked_on_entry =
-            self.has_blocking_narrative_event() || self.has_blocking_tutorial_message();
+        let blocked_on_entry = self.month_summary_open
+            || self.has_blocking_narrative_event()
+            || self.has_blocking_tutorial_message();
         let actions = std::mem::take(&mut self.pending_actions);
         for action in actions {
             if action_allowed_while_blocked(paused_on_entry, blocked_on_entry, &action) {
@@ -53,7 +54,13 @@ impl GameplayState {
         self.floating_texts.update(dt);
         self.dialogue_system.tick(self.current_tick);
 
-        if self.game_outcome.is_some() && self.view_mode != ViewMode::CareerSummary {
+        // The campaign outcome waits for the month's summary and any choice
+        // the month raised, so the last month is reviewed like any other.
+        if self.game_outcome.is_some()
+            && self.view_mode != ViewMode::CareerSummary
+            && !self.month_summary_open
+            && !self.has_blocking_narrative_event()
+        {
             self.view_mode = ViewMode::CareerSummary;
             let new_unlocks = self.achievements.check_new_unlocks(
                 &self.city,
@@ -84,6 +91,7 @@ impl GameplayState {
         // Space advances only when no modal owns input. Processing Escape first
         // also prevents a simultaneous pause keypress from advancing a month.
         if !escape_pressed
+            && !self.month_summary_open
             && !self.has_blocking_narrative_event()
             && !self.has_blocking_tutorial_message()
             && is_key_pressed(KeyCode::Space)
@@ -108,7 +116,9 @@ fn action_allowed_while_blocked(paused: bool, blocked: bool, action: &UiAction) 
         && (!blocked
             || matches!(
                 action,
-                UiAction::ResolveEventChoice { .. } | UiAction::OpenPauseMenu
+                UiAction::ResolveEventChoice { .. }
+                    | UiAction::DismissMonthSummary
+                    | UiAction::OpenPauseMenu
             ))
 }
 

@@ -13,6 +13,7 @@ mod gameplay_input; // Input dispatch, pause, and modal ownership
 mod gameplay_inspections; // Building inspections and regulatory fines
 mod gameplay_life_events; // Emergent tenant life events
 mod gameplay_load; // Post-load save repair
+mod gameplay_month; // Closed-month summary and current issues
 mod gameplay_narrative_turn; // Monthly narrative, mail, dialogue, requests
 mod gameplay_neighborhood; // Neighborhood reputation and market conditions
 mod gameplay_ownership; // Safe condo sale and buyback transactions
@@ -27,6 +28,7 @@ pub mod tutorial_system; // Tutorial logic // Mission logic
 
 pub use gameplay::GameplayState;
 pub(crate) use gameplay::ViewMode;
+pub use gameplay_month::{MonthSummary, SummaryLine};
 pub use menu::MenuState;
 pub(crate) use settings_screen::{centered_top as centered_settings_top, SettingsScreen};
 

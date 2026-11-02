@@ -362,6 +362,14 @@ impl EventLog {
         self.events.push((tick, event));
     }
 
+    /// Everything logged for one month, oldest first.
+    pub fn events_at(&self, tick: u32) -> impl Iterator<Item = &GameEvent> {
+        self.events
+            .iter()
+            .filter(move |(at, _)| *at == tick)
+            .map(|(_, event)| event)
+    }
+
     pub fn recent_events(&self, count: usize) -> Vec<&GameEvent> {
         self.events
             .iter()

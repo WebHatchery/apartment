@@ -8,29 +8,6 @@ with the `APARTMENT_CAPTURE_MANIFEST` harness (scenes in `src/game.rs`).
 
 ## UI tasks
 
-- [ ] **UI-07 — Merge monthly progression and activity into one brief, retrievable result.**
-  **Scope:** `src/state/gameplay_turn.rs::{end_turn,spawn_tick_feedback}`,
-  `src/state/gameplay_input.rs`, `src/state/gameplay_views.rs`,
-  `src/ui/notifications.rs::{draw_notifications,draw_activity_drawer}`, and
-  `src/economy/ledger.rs`.
-  **Problem:** each rent event emits floating text around screen center; the
-  footer keeps the latest event indefinitely on wider canvases; history shows
-  at most five truncated events. There is no dedicated month-result view.
-  **Change:** gather the closed month's ledger report and meaningful tenant/
-  building events into a brief, dismissible summary; use the ledger's monthly
-  report rather than computing separate totals. Replace per-rent center bursts
-  and stale footer prose with temporary localized/aggregate feedback. Keep a
-  quiet history control with readable detail after feedback ends. Persistent
-  warnings describe unresolved current issues, not old events. Explicitly order
-  summary, mandatory choices, tutorials, campaign outcome and demo ending, and
-  guard End Month against repeated input during the sequence.
-  **Accept:** a player understands what changed in seconds, can inspect it later,
-  and advances exactly one intended month; calm play returns to the building.
-  **Verify:** at all review sizes exercise rapid repeated taps, rent/missed rent,
-  repairs/upgrades, arrivals/departures, portfolio income, mandatory event plus
-  tutorial, loss, month 36 and demo completion. Check totals against the ledger
-  and history after dismissal.
-
 - [ ] **UI-08 — Make coaching accurate, dismissible and reopenable.**
   **Scope:** `src/state/gameplay_views.rs::draw_tutorial_coach`,
   `src/state/gameplay_pause.rs` (pause menu), `src/state/tutorial_system.rs`,
@@ -55,7 +32,7 @@ with the `APARTMENT_CAPTURE_MANIFEST` harness (scenes in `src/game.rs`).
   **Scope:** `src/ui/resident_sprite.rs::{style_for,animated_pose}`,
   `src/ui/building_view/room_story.rs`, `src/ui/building_view.rs::draw_sunset_backdrop`,
   `src/ui/building_view/condition_art.rs`, assets and presentation configuration.
-  After UI-07.
+   
   **Problem:** resident styling and pose cycling exist, but same-design rooms
   repeat their furnishings, room-story inputs are only apartment features, and
   the exterior uses a fixed sunset. (Residents, wear and upgrade art are done —
@@ -78,7 +55,7 @@ with the `APARTMENT_CAPTURE_MANIFEST` harness (scenes in `src/game.rs`).
 - [ ] **UI-10 — Finish shared readability, touch feedback and restrained motion.**
   **Scope:** `src/ui/theme.rs`, `src/ui/widgets.rs`, `src/ui/common.rs`, panel
   drawing/input in `src/state/gameplay_views.rs`, and the screens above.
-  After UI-07–UI-09; polish, not another redesign.
+  After UI-08 and UI-09; polish, not another redesign.
   **Problem:** bordered buttons, panel headings, stat labels and orange
   scrolling/navigation controls compete with decisions in selected views. The
   selection Close button is 34px high while most actions are 40px; real touch

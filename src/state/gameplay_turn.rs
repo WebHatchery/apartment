@@ -1,4 +1,3 @@
-use macroquad_toolkit::rng;
 // Monthly turn advancement for gameplay state. The narrative, inspection,
 // neighborhood, and awards halves of the turn live in sibling modules.
 
@@ -41,7 +40,6 @@ impl GameplayState {
         );
 
         self.game_outcome = result.outcome.clone();
-        self.spawn_tick_feedback(&result.events);
         self.register_active_world_events(&result.events);
         self.apply_active_world_events();
         self.apply_active_tax_breaks();
@@ -76,35 +74,13 @@ impl GameplayState {
         self.event_log.log(
             GameEvent::MonthEnd {
                 tick: report.tick,
-                income: report.rent_income,
-                expenses: report.repair_costs + report.upgrade_costs,
+                income: report.income(),
+                expenses: report.costs(),
                 balance: report.ending_balance,
             },
             self.current_tick,
         );
-    }
-
-    fn spawn_tick_feedback(&mut self, events: &[GameEvent]) {
-        for event in events {
-            match event {
-                GameEvent::RentPaid { amount, .. } => self.spawn_center_text(
-                    &format!("+${}", amount),
-                    rng::gen_range(-50.0, 50.0),
-                    rng::gen_range(-50.0, 50.0),
-                    colors::POSITIVE(),
-                ),
-                GameEvent::RentMissed { .. } => {
-                    self.spawn_center_text("Missed Rent!", 0.0, 0.0, colors::NEGATIVE());
-                }
-                GameEvent::TenantUnhappy { .. } => self.spawn_center_text(
-                    "Unhappy!",
-                    rng::gen_range(-50.0, 50.0),
-                    rng::gen_range(-50.0, 50.0),
-                    colors::WARNING(),
-                ),
-                _ => {}
-            }
-        }
+        self.open_month_summary(report);
     }
 
     pub(super) fn spawn_center_text(

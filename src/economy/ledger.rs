@@ -1,15 +1,36 @@
 use super::{PlayerFunds, Transaction, TransactionType};
 use serde::{Deserialize, Serialize};
 
-/// Monthly financial summary
+/// Monthly financial summary. Each transaction type lands in exactly one
+/// bucket, so `net` equals the month's change in balance.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MonthlyReport {
     pub tick: u32,
+    /// Rent actually paid by residents (including portfolio buildings).
     pub rent_income: i32,
+    /// Repairs to units and the lobby.
     pub repair_costs: i32,
+    /// Capital spending: upgrades and property purchases.
     pub upgrade_costs: i32,
+    /// Grants and condo sales.
+    #[serde(default)]
+    pub other_income: i32,
+    /// Running costs: tax, overhead, utilities, insurance, staff, marketing,
+    /// vetting, fines and emergencies.
+    #[serde(default)]
+    pub operating_costs: i32,
     pub net: i32,
     pub ending_balance: i32,
+}
+
+impl MonthlyReport {
+    pub fn income(&self) -> i32 {
+        self.rent_income + self.other_income
+    }
+
+    pub fn costs(&self) -> i32 {
+        self.repair_costs + self.upgrade_costs + self.operating_costs
+    }
 }
 
 /// Financial tracking across the game
@@ -71,21 +92,27 @@ impl FinancialLedger {
         transactions: &[&Transaction],
         ending_balance: i32,
     ) -> MonthlyReport {
-        let mut rent_income = 0;
-        let mut repair_costs = 0;
-        let mut upgrade_costs = 0;
-
+        let mut report = MonthlyReport {
+            tick,
+            rent_income: 0,
+            repair_costs: 0,
+            upgrade_costs: 0,
+            other_income: 0,
+            operating_costs: 0,
+            net: 0,
+            ending_balance,
+        };
         for t in transactions {
-            match t.transaction_type {
-                TransactionType::RentIncome | TransactionType::Grant => {
-                    rent_income += t.amount.abs()
-                }
+            let amount = t.amount.abs();
+            let bucket = match t.transaction_type {
+                TransactionType::RentIncome => &mut report.rent_income,
+                TransactionType::Grant | TransactionType::AssetSale => &mut report.other_income,
                 TransactionType::RepairCost | TransactionType::HallwayRepair => {
-                    repair_costs += t.amount.abs();
+                    &mut report.repair_costs
                 }
-                TransactionType::UpgradeCost => upgrade_costs += t.amount.abs(),
-                TransactionType::BuildingPurchase => upgrade_costs += t.amount.abs(), // Count as capital upgrade for now
-                TransactionType::AssetSale => rent_income += t.amount.abs(), // Count condo sales as income
+                TransactionType::UpgradeCost | TransactionType::BuildingPurchase => {
+                    &mut report.upgrade_costs
+                }
                 TransactionType::PropertyTax
                 | TransactionType::Mortgage
                 | TransactionType::Utilities
@@ -94,21 +121,11 @@ impl FinancialLedger {
                 | TransactionType::CriticalFailure
                 | TransactionType::Marketing
                 | TransactionType::Vetting
-                | TransactionType::InspectionFine => {
-                    // These are all operating expenses, count them in repair_costs for simplicity
-                    repair_costs += t.amount.abs();
-                }
-            }
+                | TransactionType::InspectionFine => &mut report.operating_costs,
+            };
+            *bucket += amount;
         }
-
-        let report = MonthlyReport {
-            tick,
-            rent_income,
-            repair_costs,
-            upgrade_costs,
-            net: rent_income - repair_costs - upgrade_costs,
-            ending_balance,
-        };
+        report.net = report.income() - report.costs();
 
         self.reports.push(report.clone());
         report

@@ -160,6 +160,12 @@ pub struct GameplayState {
     pub show_pause_menu: bool,
     #[serde(skip)]
     pub activity_drawer_open: bool,
+    /// The last closed month, kept for the history drawer.
+    #[serde(skip)]
+    pub latest_month: Option<super::MonthSummary>,
+    /// The month summary card owns input until dismissed.
+    #[serde(skip)]
+    pub month_summary_open: bool,
     /// Player preference from settings; applied on entering gameplay.
     #[serde(skip, default = "default_autosave_enabled")]
     pub autosave_enabled: bool,
@@ -339,6 +345,8 @@ impl GameplayState {
             career_badges_page: 0,
             show_pause_menu: false,
             activity_drawer_open: false,
+            latest_month: None,
+            month_summary_open: false,
             autosave_enabled: true,
             pending_quit_to_menu: false,
             pending_load_game: false,

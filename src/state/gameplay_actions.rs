@@ -110,9 +110,10 @@ impl GameplayState {
             UiAction::BackgroundCheck { application_index } => {
                 self.run_vetting_check(application_index, VettingCheck::Background);
             }
-            UiAction::EndTurn => {
-                self.end_turn();
-            }
+            // One month per decision: further End Month taps while the
+            // closed month is still being reviewed are ignored.
+            UiAction::EndTurn if !self.month_summary_open => self.end_turn(),
+            UiAction::EndTurn => {}
             UiAction::AcceptMission { mission_id } => {
                 if !self.missions.accept_mission(mission_id, self.current_tick) {
                     self.report_action_failure("That task is no longer available");

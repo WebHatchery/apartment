@@ -114,11 +114,16 @@ impl GameplayState {
         // The history drawer owns clicks in its covered area.
         if self.activity_drawer_open {
             let footer_y = screen_height() - crate::ui::layout::FOOTER_HEIGHT();
-            let drawer_h = 168.0_f32.min(footer_y - crate::ui::layout::HEADER_HEIGHT() - 8.0);
-            if mouse_position().1 >= footer_y - drawer_h {
+            if mouse_position().1 >= footer_y - crate::ui::notifications::drawer_height() {
                 self.pending_actions.clear();
             }
         }
+
+        let blocking_event_open = self
+            .narrative_events
+            .events
+            .iter()
+            .any(|e| !e.read && e.requires_response);
 
         // Draw blocking narrative event modal (Phase 4)
         // Find first unread event that requires response
@@ -128,7 +133,15 @@ impl GameplayState {
             .iter()
             .find(|e| !e.read && e.requires_response);
 
-        if let Some(event) = blocking_event {
+        if self.month_summary_open {
+            // The closed month comes first; choices and coaching follow.
+            if let Some(summary) = &self.latest_month {
+                let action = crate::ui::month_summary::draw_month_summary(summary);
+                self.pending_actions
+                    .retain(|action| matches!(action, crate::ui::UiAction::OpenPauseMenu));
+                self.pending_actions.extend(action);
+            }
+        } else if let Some(event) = blocking_event {
             if self.event_scroll_event_id != Some(event.id) {
                 self.event_scroll_event_id = Some(event.id);
                 self.event_scroll_offset = 0.0;
@@ -153,9 +166,11 @@ impl GameplayState {
 
         // Compact activity handle and optional history drawer.
         if self.view_mode != ViewMode::CareerSummary {
+            let issue = self.current_issue();
             if let Some(action) = draw_notifications(
                 &self.event_log,
-                self.current_tick,
+                issue.as_ref(),
+                self.latest_month.as_ref(),
                 assets,
                 self.activity_drawer_open,
             ) {
@@ -179,13 +194,16 @@ impl GameplayState {
         // pause menu owns input. Opening the pause menu is always allowed.
         if !self.show_pause_menu {
             // Tutorial overlay (takes precedence)
-            if self.tutorial.active && !self.tutorial.pending_messages.is_empty() {
+            if self.month_summary_open || blocking_event_open {
+                // Coaching and toasts wait for the summary and any choice.
+            } else if self.tutorial.active && !self.tutorial.pending_messages.is_empty() {
                 self.draw_tutorial_overlay(assets);
                 self.pending_actions
                     .retain(|action| matches!(action, crate::ui::UiAction::OpenPauseMenu));
             }
-            // Notification overlay (shows when tutorial is done/empty)
-            else if self.notifications.has_pending() {
+            // Notification overlay (shows when tutorial is done/empty); the
+            // open history drawer owns that area, so toasts wait for it.
+            else if self.notifications.has_pending() && !self.activity_drawer_open {
                 self.draw_notification_overlay();
             }
         }

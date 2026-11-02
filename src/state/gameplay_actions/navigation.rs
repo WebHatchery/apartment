@@ -43,6 +43,7 @@ impl GameplayState {
                 self.tower_focus_pending = true;
             }
             UiAction::ToggleDisclosure(section) => self.panel_disclosure.toggle(section),
+            UiAction::DismissMonthSummary => self.month_summary_open = false,
             UiAction::ClearSelection => {
                 self.selection = Selection::None;
             }
