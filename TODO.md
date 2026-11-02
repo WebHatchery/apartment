@@ -214,6 +214,96 @@ portrait candidate until task UI-01 records a validated support contract.
   result/blocker and commit each independently useful slice. This planning-only
   audit does not itself change game behavior or require publishing.
 
+## Code review — 2026-11-03
+
+Source review of the turn loop, simulation tick, economy/ledger, applications,
+win conditions, and save/progress code. Baseline at review time:
+`cargo fmt -- --check` clean, strict all-target/all-feature Clippy clean, 160
+tests passing (one ignored). `src/ui/workspace_views.rs` sits at exactly 800
+lines, so any edit there must start with the split already listed in the
+engineering backlog. Findings below were traced in code, not reproduced in play.
+
+- [ ] **CR-01 — A full 36-month victory never unlocks the next property.**
+  **Evidence:** `simulation/win_condition.rs::check_win_condition` already
+  returns `Victory` once `current_tick >= game_duration_ticks`, so
+  `end_turn` stores it and `gameplay_turn.rs::check_game_completion` returns
+  early on `game_outcome.is_some()`. Its `unlock_next_building()` (mark
+  completed + unlock next `unlock_order`) only runs on that fallback path,
+  which a normal run never reaches. Only mission rewards
+  (`mission_system.rs` → `unlock_building_by_order`) unlock anything.
+  **Change:** run victory side effects exactly once whenever the outcome
+  becomes a qualifying `Victory`, whatever produced it. Remove the dead
+  `score: 0` fallback, and merge `check_final_achievements` with the identical
+  check in `gameplay_input.rs::update`. Keep losses and the sold-everything
+  victory path (`gameplay_effects.rs`) deliberate about whether they unlock.
+  Respect demo limits.
+  **Accept:** finishing month 36 marks the building completed in
+  `player_progress.json` and the next property appears unlocked in the menu.
+
+- [ ] **CR-02 — "Last closed month" figures leave out the player's own spending.**
+  **Evidence:** player actions (repairs, upgrades, vetting) are tagged with the
+  pre-increment `current_tick`, but `advance_tick` increments first and reports
+  only `transactions_for_tick(new_tick)`. Spending made during a month therefore
+  never appears in any `MonthlyReport`. Transactions added later in `end_turn`
+  (world events, inspections and fines, narrative money effects, tax-break
+  refunds, portfolio income/upkeep) are tagged with the new tick but come after
+  the report is generated, so they are also missing. `workspace_views.rs`
+  ("LAST CLOSED MONTH"), the building summary's `monthly_net`, and
+  `generate_mail`'s expenses (which *does* include the late items) disagree.
+  **Change:** settle one rule for which month a transaction belongs to, then
+  generate the report once all of `end_turn` has run, covering the whole closed
+  month. Have mail and summaries read that report. Optionally split operating
+  costs from `repair_costs` (it currently holds every opex type). UI-07's month
+  summary should use this report rather than computing its own totals.
+  **Accept:** a month's report income/outgoings/net equals the balance change
+  across that month (start of month to after End Month).
+
+- [ ] **CR-03 — Filling a unit leaves its other applicants actionable.**
+  **Evidence:** `gameplay_actions.rs` `AcceptApplication` removes only the
+  accepted application. The others for that apartment stay until expiry: they
+  still show in the inbox and applications panel, still charge for credit and
+  background checks, and only fail with "unit is unavailable" when accepted.
+  `gameplay_ownership.rs` already prunes applications when a unit is sold.
+  **Change:** on move-in, prune (or clearly mark closed) the remaining
+  applications for that apartment, reusing the ownership pruning approach.
+  **Accept:** after one approval, no paid vetting or accept control remains for
+  that unit.
+
+- [ ] **CR-04 — Unreadable player progress is silently reset, then overwritten.**
+  **Evidence:** `save/manager.rs::load_player_progress` turns every load error
+  into `PlayerProgress::new()`. The next `unlock_next_building`,
+  `unlock_building_by_order`, or achievement save then writes that default over
+  the file. Those saves also drop errors (`let _ = save_player_progress`) in
+  `state/gameplay.rs`.
+  **Change:** treat a missing file differently from one that cannot be decoded.
+  Never overwrite an undecodable progress file without an explicit player
+  choice, and report a failed progress save the way autosave failure already
+  is. This follows the shared "clear, recoverable error, never silent" save
+  rule.
+
+- [ ] **CR-05 — Remove dead turn scaffolding and debug stdout.**
+  **Evidence:** `simulation/tick.rs` has an empty
+  `if building.update_ownership(..) {}` branch. `EventSystem` is a field-less
+  struct with a "could track cooldowns" stub, recreated every tick.
+  `gameplay_turn.rs::log_monthly_status` prints marketing and dialogue status
+  to stdout every month and drives nothing.
+  **Change:** call `update_ownership` for its effect only. Make the random
+  events free functions, or keep the struct only if real state arrives.
+  Delete `log_monthly_status` (or route anything useful into the event log).
+
+- [ ] **CR-06 — Move remaining hardcoded turn tuning into `assets/config.json`.**
+  **Evidence:** the heatwave (−3 happiness/month), gentrification
+  (+1 score, +0.02 demand), boiler-unaffordable (−30 happiness),
+  structural-unaffordable (−20 hallway), the cohesion bonus threshold (`> 20`),
+  the unhappy-event threshold (`< 30`, separate from
+  `happiness.unhappy_threshold`), complaint factor cutoffs, and the
+  rent-multiplier clamp (0.5–2.0, repeated in effects and awards) are Rust
+  literals. Neighborhood rent demand is capped at 1.5 in `neighborhood.rs`
+  gentrification but at 2.0 elsewhere.
+  **Change:** load these from config with semantic validation, and settle on
+  one rent-demand ceiling. Leave balance values as they are unless a value is
+  clearly inconsistent.
+
 ## Existing engineering backlog (retained and reconciled)
 
 - [ ] Reshape the binary into a testable crate: extend the existing `src/lib.rs`
