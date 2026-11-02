@@ -32,22 +32,15 @@ impl GameplayState {
                 }
             }
             ViewMode::CityMap => {
-                if let Some(action) = crate::ui::city_view::draw_city_map(
+                let (action, scroll) = crate::ui::city_view::draw_city_view(
                     &self.city,
                     self.selected_neighborhood_id,
+                    self.city_scroll,
                     assets,
                     &self.narrative_events,
-                ) {
-                    self.handle_city_action(action);
-                }
-
-                if let Some(action) = crate::ui::city_view::draw_portfolio_panel(
-                    &self.city,
-                    self.city.active_building_index,
-                    self.city_page,
-                    self.selected_neighborhood_id,
-                    assets,
-                ) {
+                );
+                self.city_scroll = scroll;
+                if let Some(action) = action {
                     self.handle_city_action(action);
                 }
             }

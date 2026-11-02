@@ -75,19 +75,13 @@ impl GameplayState {
                 } else {
                     Some(id)
                 };
-                self.city_page = 0;
+                self.city_scroll = 0.0;
                 self.market_page = 0;
             }
             CityMapAction::ClearNeighborhood => {
                 self.selected_neighborhood_id = None;
-                self.city_page = 0;
+                self.city_scroll = 0.0;
                 self.market_page = 0;
-            }
-            CityMapAction::SelectBuilding(index) => {
-                self.save_building_to_city();
-                self.city.switch_building(index);
-                self.sync_building();
-                // Stay in map view, just update selection
             }
             CityMapAction::EnterBuilding(index) => {
                 self.save_building_to_city();
@@ -113,9 +107,6 @@ impl GameplayState {
                 self.pending_property_purchase = None;
                 self.pending_actions
                     .push(UiAction::PurchaseBuilding { listing_id });
-            }
-            CityMapAction::SetPortfolioPage(page) => {
-                self.city_page = page;
             }
             CityMapAction::SetMarketPage(page) => {
                 self.market_page = page;

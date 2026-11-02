@@ -8,23 +8,6 @@ with the `APARTMENT_CAPTURE_MANIFEST` harness (scenes in `src/game.rs`).
 
 ## UI tasks
 
-- [ ] **UI-06 — Make City and property comparison readable before adding decoration.**
-  **Scope:** `src/ui/city_view.rs::{draw_city_map,draw_neighborhood_cell,draw_portfolio_panel,draw_market_panel,draw_purchase_confirmation}`
-  and `src/ui/city_view_widgets.rs`.
-  **Problem:** City always halves the canvas, then splits the map into a 2x2
-  grid. Small tiles layer labels, district type and reputation over busy art;
-  portfolio names and occupancy truncate.
-  **Change:** prioritize neighborhood selection, then the filtered property
-  comparison, switching/stacking at small widths. Reveal district statistics
-  on selection rather than overlaying every fact on every tile. Give property
-  price, affordability, occupancy and purchase consequences a readable home;
-  preserve filters, Enter, purchase review/cancel and clear return routes.
-  **Accept:** players can identify districts and compare complete purchase terms
-  without four equally loud tiles plus a competing action panel; no lost filters.
-  **Verify:** 1280x720, 960x540, 640x480 and 390x844 with populated/empty filtered
-  markets, multiple owned properties and long names. Touch district → listing →
-  review → cancel/buy → enter property; verify hit targets after resize.
-
 - [ ] **UI-07 — Merge monthly progression and activity into one brief, retrievable result.**
   **Scope:** `src/state/gameplay_turn.rs::{end_turn,spawn_tick_feedback}`,
   `src/state/gameplay_input.rs`, `src/state/gameplay_views.rs`,
@@ -95,7 +78,7 @@ with the `APARTMENT_CAPTURE_MANIFEST` harness (scenes in `src/game.rs`).
 - [ ] **UI-10 — Finish shared readability, touch feedback and restrained motion.**
   **Scope:** `src/ui/theme.rs`, `src/ui/widgets.rs`, `src/ui/common.rs`, panel
   drawing/input in `src/state/gameplay_views.rs`, and the screens above.
-  After UI-06–UI-09; polish, not another redesign.
+  After UI-07–UI-09; polish, not another redesign.
   **Problem:** bordered buttons, panel headings, stat labels and orange
   scrolling/navigation controls compete with decisions in selected views. The
   selection Close button is 34px high while most actions are 40px; real touch

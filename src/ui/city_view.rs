@@ -1,282 +1,244 @@
-//! City workspace: neighborhood map and owned-property portfolio.
+//! City workspace: pick a district first, then read its statistics and the
+//! properties you own there. District tiles carry only art and a name; the
+//! facts live in the detail panel so nothing is layered over busy artwork.
 
-use super::city_view_widgets::{
-    draw_button_icon, draw_button_mini, draw_listing_card, draw_progress_bar, draw_property_facade,
-};
+use super::city_view_widgets::draw_property_facade;
+use super::panel_flow::{PanelFlow, BUTTON_H};
 use crate::assets::AssetManager;
-use crate::city::{City, Neighborhood, NeighborhoodType, PropertyListing};
+use crate::city::{City, Neighborhood, NeighborhoodType};
 use crate::narrative::NarrativeEventSystem;
 use crate::ui::colors;
 use crate::ui::layout;
-use crate::ui::theme::scale;
-use crate::ui::widgets::{draw_card, draw_panel};
+use crate::ui::theme::{scale, space, Tone};
+use crate::ui::widgets::{button_at, draw_panel, draw_panel_header};
 use macroquad::prelude::*;
-use macroquad_toolkit::ui::{draw_ui_text, draw_ui_text_ex, truncate_text_to_width};
+use macroquad_toolkit::ui::{draw_ui_text, truncate_text_to_width};
 
-fn text_params(font_size: f32, color: Color) -> TextParams<'static> {
-    TextParams {
-        font_size: font_size as u16,
-        color,
-        ..Default::default()
+/// Below this width the district grid stacks above the detail panel.
+const SIDE_BY_SIDE_MIN_W: f32 = 820.0;
+
+/// Workspace area between the header and the activity footer.
+pub(super) fn workspace_area() -> Rect {
+    let top = layout::HEADER_HEIGHT() + space::MD;
+    Rect::new(
+        space::LG,
+        top,
+        screen_width() - space::LG * 2.0,
+        screen_height() - top - layout::FOOTER_HEIGHT() - space::MD,
+    )
+}
+
+/// District grid and detail panel rectangles for the current canvas.
+fn city_layout(area: Rect) -> (Rect, Rect) {
+    if area.w >= SIDE_BY_SIDE_MIN_W {
+        let grid_w = (area.w * 0.48).floor();
+        (
+            Rect::new(area.x, area.y, grid_w, area.h),
+            Rect::new(
+                area.x + grid_w + space::LG,
+                area.y,
+                area.w - grid_w - space::LG,
+                area.h,
+            ),
+        )
+    } else {
+        // Two rows of short tiles: enough to recognise and pick a district
+        // while the detail panel keeps most of a narrow screen.
+        let grid_h = (area.h * 0.34).clamp(150.0, 230.0);
+        (
+            Rect::new(area.x, area.y, area.w, grid_h),
+            Rect::new(
+                area.x,
+                area.y + grid_h + space::SM,
+                area.w,
+                area.h - grid_h - space::SM,
+            ),
+        )
     }
 }
 
-/// Draw the city map showing all neighborhoods
-pub fn draw_city_map(
+/// Draw the City workspace. Returns the player's intent and the detail
+/// panel's updated scroll offset.
+pub fn draw_city_view(
     city: &City,
     selected_neighborhood_id: Option<u32>,
+    scroll: f32,
+    assets: &AssetManager,
+    narrative: &NarrativeEventSystem,
+) -> (Option<CityMapAction>, f32) {
+    let (grid, detail) = city_layout(workspace_area());
+    let mut action = draw_district_grid(city, selected_neighborhood_id, grid, assets, narrative);
+    let (detail_action, scroll) = draw_district_detail(
+        city,
+        selected_neighborhood_id,
+        detail,
+        scroll,
+        assets,
+        narrative,
+    );
+    action = action.or(detail_action);
+    (action, scroll)
+}
+
+fn draw_district_grid(
+    city: &City,
+    selected_neighborhood_id: Option<u32>,
+    grid: Rect,
     assets: &AssetManager,
     narrative: &NarrativeEventSystem,
 ) -> Option<CityMapAction> {
-    let map_x = 20.0;
-    let map_y = layout::HEADER_HEIGHT() + 16.0;
-    let map_width = screen_width() * 0.5 - 40.0;
-    let map_height = screen_height() - map_y - layout::FOOTER_HEIGHT() - 16.0;
-
-    let content = draw_panel(Rect::new(map_x, map_y, map_width, map_height), &city.name);
-
-    // Draw neighborhoods as a 2x2 grid
-    let grid_x = content.x;
-    let grid_y = content.y;
-    let cell_width = (content.w - 20.0) / 2.0;
-    let cell_height = (content.h - 20.0) / 2.0;
-    let padding = 10.0;
-
+    let content = draw_panel(grid, &city.name);
+    let gap = space::SM;
+    let columns = 2;
+    let rows = city.neighborhoods.len().div_ceil(columns).max(1);
+    let cell_w = (content.w - gap) / columns as f32;
+    let cell_h = (content.h - gap * (rows as f32 - 1.0)) / rows as f32;
     let mut action = None;
-
-    for (i, neighborhood) in city.neighborhoods.iter().enumerate() {
-        let col = i % 2;
-        let row = i / 2;
-
-        let x = grid_x + col as f32 * (cell_width + padding);
-        let y = grid_y + row as f32 * (cell_height + padding);
-
-        if let Some(a) = draw_neighborhood_cell(
-            neighborhood,
-            selected_neighborhood_id == Some(neighborhood.id),
-            Rect::new(x, y, cell_width, cell_height),
-            assets,
-            narrative,
-        ) {
-            action = Some(a);
+    for (index, neighborhood) in city.neighborhoods.iter().enumerate() {
+        let cell = Rect::new(
+            content.x + (index % columns) as f32 * (cell_w + gap),
+            content.y + (index / columns) as f32 * (cell_h + gap),
+            cell_w,
+            cell_h,
+        );
+        let selected = selected_neighborhood_id == Some(neighborhood.id);
+        let has_news = narrative
+            .events
+            .iter()
+            .any(|event| !event.read && event.related_neighborhood_id == Some(neighborhood.id));
+        if draw_district_tile(neighborhood, selected, has_news, cell, assets) {
+            action = Some(CityMapAction::SelectNeighborhood(neighborhood.id));
         }
     }
-
     action
 }
 
-/// Draw a single neighborhood cell
-fn draw_neighborhood_cell(
-    neighborhood: &Neighborhood,
-    selected: bool,
-    cell: Rect,
-    assets: &AssetManager,
-    narrative: &NarrativeEventSystem,
-) -> Option<CityMapAction> {
-    let Rect {
-        x,
-        y,
-        w: width,
-        h: height,
-    } = cell;
-    let mouse = mouse_position();
-    let hovered = mouse.0 >= x && mouse.0 <= x + width && mouse.1 >= y && mouse.1 <= y + height;
-
-    // Background with neighborhood color (fallback or tint)
-    let base_color = neighborhood.neighborhood_type.color();
-    let bg_color = if hovered {
-        Color::from_rgba(
-            ((base_color.r * 255.0) + 20.0).min(255.0) as u8,
-            ((base_color.g * 255.0) + 20.0).min(255.0) as u8,
-            ((base_color.b * 255.0) + 20.0).min(255.0) as u8,
-            200,
-        )
-    } else {
-        Color::from_rgba(
-            (base_color.r * 255.0 * 0.6) as u8,
-            (base_color.g * 255.0 * 0.6) as u8,
-            (base_color.b * 255.0 * 0.6) as u8,
-            180,
-        )
-    };
-
-    draw_rectangle(x, y, width, height, bg_color);
-
-    // Draw Neighborhood Texture
-    let texture_id = match neighborhood.neighborhood_type {
+fn district_texture(kind: &NeighborhoodType) -> &'static str {
+    match kind {
         NeighborhoodType::Downtown => "neighborhood_downtown",
         NeighborhoodType::Industrial => "neighborhood_industrial",
         NeighborhoodType::Suburbs => "neighborhood_suburbs",
         NeighborhoodType::Historic => "neighborhood_historic",
-    };
+    }
+}
 
-    if let Some(tex) = assets.get_texture(texture_id) {
-        // Draw with some transparency or multiply to blend with selection?
-        // Or just draw it fully opaque and draw selection border/overlay.
+/// A district tile: art, name and selection only. Returns true on release.
+fn draw_district_tile(
+    neighborhood: &Neighborhood,
+    selected: bool,
+    has_news: bool,
+    cell: Rect,
+    assets: &AssetManager,
+) -> bool {
+    let clicked = button_at(cell, "", true, Tone::Secondary);
+    if let Some(texture) = assets.get_texture(district_texture(&neighborhood.neighborhood_type)) {
         draw_texture_ex(
-            tex,
-            x,
-            y,
+            texture,
+            cell.x,
+            cell.y,
             WHITE,
             DrawTextureParams {
-                dest_size: Some(Vec2::new(width, height)),
+                dest_size: Some(cell.size()),
                 ..Default::default()
             },
         );
-
-        // Darken it a bit to make text readable
-        draw_rectangle(x, y, width, height, Color::new(0.0, 0.0, 0.0, 0.5));
-    }
-
-    draw_rectangle_lines(
-        x,
-        y,
-        width,
-        height,
-        if selected { 5.0 } else { 2.0 },
-        if selected {
-            colors::ACCENT()
-        } else {
-            base_color
-        },
-    );
-    if selected {
-        draw_rectangle(x + width - 78.0, y + 8.0, 70.0, 22.0, colors::ACCENT());
-        draw_ui_text_ex(
-            "FILTERED",
-            x + width - 71.0,
-            y + 23.0,
-            text_params(scale::CAPTION, colors::TEXT_BRIGHT()),
+    } else {
+        draw_rectangle(
+            cell.x,
+            cell.y,
+            cell.w,
+            cell.h,
+            neighborhood.neighborhood_type.color(),
         );
     }
-
-    // Neighborhood name
-    draw_ui_text_ex(
-        &truncate_text_to_width(&neighborhood.name, width - 16.0, scale::HEADING),
-        x + 8.0,
-        y + 22.0,
-        text_params(scale::HEADING, colors::TEXT_BRIGHT()),
+    // A solid label strip keeps the name readable on any artwork.
+    let strip_h = (scale::HEADING + space::MD).min(cell.h);
+    draw_rectangle(
+        cell.x,
+        cell.bottom() - strip_h,
+        cell.w,
+        strip_h,
+        Color::new(0.05, 0.05, 0.08, 0.82),
     );
-
-    // Neighborhood type
-    draw_ui_text_ex(
-        neighborhood.neighborhood_type.name(),
-        x + 8.0,
-        y + 40.0,
-        text_params(scale::LABEL, colors::TEXT_DIM()),
+    draw_ui_text(
+        &truncate_text_to_width(&neighborhood.name, cell.w - space::MD * 2.0, scale::BODY),
+        cell.x + space::SM,
+        cell.bottom() - strip_h * 0.5 + scale::BODY * 0.35,
+        scale::BODY,
+        colors::TEXT_BRIGHT(),
     );
-
-    // Building count. Compact cells retain name/type/reputation and elide the
-    // less important rows instead of drawing them on top of one another.
-    let building_count = neighborhood.building_ids.len();
-    if height >= 105.0 {
-        let slot_text = format!(
-            "Buildings: {}/{}",
-            building_count, neighborhood.available_slots
-        );
-        draw_ui_text_ex(
-            &slot_text,
-            x + 8.0,
-            y + 60.0,
-            text_params(
-                scale::LABEL,
-                if building_count > 0 {
-                    colors::POSITIVE()
-                } else {
-                    colors::TEXT_DIM()
-                },
-            ),
-        );
-    }
-
-    // Stats preview
-    let stats = &neighborhood.stats;
-    if height >= 135.0 {
-        draw_ui_text_ex(
-            &format!(
-                "Crime: {} | Transit: {}",
-                stats.crime_level, stats.transit_access
-            ),
-            x + 8.0,
-            y + 80.0,
-            text_params(scale::CAPTION, colors::TEXT_DIM()),
-        );
-    }
-
-    // Reputation bar
-    let bar_y = y + height - 25.0;
-    let bar_width = width - 16.0;
-    draw_ui_text_ex(
-        &format!("Rep: {}", neighborhood.reputation),
-        x + 8.0,
-        bar_y - 3.0,
-        text_params(scale::CAPTION, colors::TEXT_DIM()),
-    );
-    draw_progress_bar(
-        x + 8.0,
-        bar_y,
-        bar_width,
-        8.0,
-        neighborhood.reputation as f32 / 100.0,
-        colors::POSITIVE(),
-    );
-
-    // Event indicator
-    let has_event = narrative
-        .events
-        .iter()
-        .any(|e| !e.read && e.related_neighborhood_id == Some(neighborhood.id));
-
-    if has_event {
-        let icon_x = x + width - 30.0;
-        let icon_y = y + 30.0;
-        draw_circle(icon_x, icon_y, 12.0, colors::ACCENT());
+    if has_news {
+        draw_circle(cell.right() - 14.0, cell.y + 14.0, 9.0, colors::ACCENT());
         draw_ui_text(
             "!",
-            icon_x - 3.0,
-            icon_y + 5.0,
-            scale::HEADING,
+            cell.right() - 16.5,
+            cell.y + 19.0,
+            scale::LABEL,
             colors::TEXT_BRIGHT(),
         );
     }
-
-    // Button area
-    if hovered && is_mouse_button_pressed(MouseButton::Left) {
-        return Some(CityMapAction::SelectNeighborhood(neighborhood.id));
-    }
-
-    None
+    let (thickness, outline) = if selected {
+        (4.0, colors::ACCENT())
+    } else {
+        (1.0, colors::BORDER())
+    };
+    draw_rectangle_lines(cell.x, cell.y, cell.w, cell.h, thickness, outline);
+    clicked
 }
 
-/// Draw the portfolio panel showing all player buildings
-pub fn draw_portfolio_panel(
+/// Crime reads better as a word than as a bare score.
+fn crime_label(level: i32) -> &'static str {
+    match level {
+        ..=20 => "low",
+        21..=45 => "moderate",
+        _ => "high",
+    }
+}
+
+fn draw_district_detail(
     city: &City,
-    selected_building: usize,
-    requested_page: usize,
     selected_neighborhood_id: Option<u32>,
+    bounds: Rect,
+    scroll: f32,
     assets: &AssetManager,
-) -> Option<CityMapAction> {
-    let panel_x = screen_width() * 0.5 + 10.0;
-    let panel_y = layout::HEADER_HEIGHT() + 16.0;
-    let panel_width = screen_width() * 0.5 - 30.0;
-    let panel_height = screen_height() - panel_y - layout::FOOTER_HEIGHT() - 16.0;
-
-    let selected_name = selected_neighborhood_id.and_then(|id| {
-        city.neighborhoods
-            .iter()
-            .find(|neighborhood| neighborhood.id == id)
-            .map(|neighborhood| neighborhood.name.as_str())
-    });
-    let title = selected_name
-        .map(|name| format!("Properties · {}", name))
-        .unwrap_or_else(|| "Your Properties".to_string());
-    let content = draw_panel(
-        Rect::new(panel_x, panel_y, panel_width, panel_height),
-        &title,
-    );
-
+    narrative: &NarrativeEventSystem,
+) -> (Option<CityMapAction>, f32) {
+    let selected =
+        selected_neighborhood_id.and_then(|id| city.neighborhoods.iter().find(|n| n.id == id));
+    let title = selected.map_or("Your properties", |n| n.name.as_str());
+    draw_panel(bounds, title);
+    let mut scroll = scroll;
+    if bounds.contains(mouse_position().into()) {
+        scroll = (scroll - mouse_wheel().1 * 30.0).max(0.0);
+    }
+    let mut flow = PanelFlow::new(bounds, scroll);
     let mut action = None;
-    let item_height = 80.0;
+
+    match selected {
+        Some(neighborhood) => {
+            draw_district_facts(&mut flow, neighborhood, narrative);
+            if flow.button("Browse listings here", true, Tone::Primary) {
+                action = Some(CityMapAction::OpenMarket);
+            }
+            if flow.button("Show all districts", true, Tone::Secondary) {
+                action = Some(CityMapAction::ClearNeighborhood);
+            }
+            flow.divider();
+            flow.section_label("YOUR PROPERTIES HERE");
+        }
+        None => {
+            flow.paragraph(
+                "Pick a district to compare its statistics and listings.",
+                scale::LABEL,
+                colors::TEXT_DIM(),
+            );
+            if flow.button("Browse the property market", true, Tone::Primary) {
+                action = Some(CityMapAction::OpenMarket);
+            }
+            flow.divider();
+        }
+    }
+
     let properties: Vec<_> = city
         .buildings_with_info()
         .into_iter()
@@ -287,180 +249,142 @@ pub fn draw_portfolio_panel(
             })
         })
         .collect();
-    let controls_height = 94.0;
-    let page_size = (((content.h - controls_height) / item_height).floor() as usize).max(1);
-    let page_count = properties.len().div_ceil(page_size).max(1);
-    let page = requested_page.min(page_count - 1);
-    let mut y = content.y;
-
     if properties.is_empty() {
-        draw_ui_text_ex(
-            "No properties here yet.",
-            content.x,
-            y + 24.0,
-            text_params(scale::BODY, colors::TEXT_DIM()),
+        flow.paragraph(
+            "You do not own a property here yet.",
+            scale::BODY,
+            colors::TEXT_DIM(),
         );
     }
-
-    for (index, building, neighborhood_name) in properties
-        .iter()
-        .skip(page * page_size)
-        .take(page_size)
-        .cloned()
-    {
-        let is_selected = index == selected_building;
-
-        let item_width = content.w;
-        let item_x = content.x;
-
-        draw_card(
-            Rect::new(item_x, y, item_width, item_height - 5.0),
-            is_selected,
+    for (index, building, neighborhood_name) in properties {
+        let active = index == city.active_building_index;
+        let kind = city
+            .neighborhood_for_building(index)
+            .map(|neighborhood| &neighborhood.neighborhood_type);
+        let summary = format!(
+            "{} · {}/{} leased · appeal {}",
+            neighborhood_name,
+            building.occupancy_count(),
+            building.apartments.len(),
+            building.building_appeal()
         );
+        if draw_property_row(&mut flow, &building.name, &summary, kind, active, assets) {
+            action = Some(CityMapAction::EnterBuilding(index));
+        }
+    }
 
-        let neighborhood = city.neighborhood_for_building(index);
-        let thumbnail_w = if assets.get_texture("property_facades").is_some()
-            || assets.get_texture("building_exterior").is_some()
-        {
-            64.0
+    let max_scroll = flow.max_scroll(scroll);
+    scroll = scroll.min(max_scroll);
+    if max_scroll > 0.0 {
+        scroll = super::widgets::scroll_controls(
+            Rect::new(flow.x, bounds.bottom() - 48.0, flow.w, 40.0),
+            scroll,
+            max_scroll,
+            "Up",
+            "More",
+        );
+    }
+    draw_panel_header(bounds, title);
+    (action, scroll)
+}
+
+fn draw_district_facts(
+    flow: &mut PanelFlow,
+    neighborhood: &Neighborhood,
+    narrative: &NarrativeEventSystem,
+) {
+    let stats = &neighborhood.stats;
+    flow.kv(
+        "District",
+        neighborhood.neighborhood_type.name(),
+        colors::TEXT(),
+    );
+    flow.kv(
+        "Your buildings",
+        &format!(
+            "{} of {} lots",
+            neighborhood.building_ids.len(),
+            neighborhood.available_slots
+        ),
+        colors::TEXT(),
+    );
+    flow.kv(
+        "Crime",
+        &format!("{} ({})", crime_label(stats.crime_level), stats.crime_level),
+        if stats.crime_level > 45 {
+            colors::WARNING()
+        } else {
+            colors::TEXT()
+        },
+    );
+    flow.kv("Transit", &stats.transit_access.to_string(), colors::TEXT());
+    flow.kv(
+        "Reputation",
+        &neighborhood.reputation.to_string(),
+        colors::POSITIVE(),
+    );
+    if let Some(event) = narrative
+        .events
+        .iter()
+        .find(|event| !event.read && event.related_neighborhood_id == Some(neighborhood.id))
+    {
+        flow.paragraph(
+            &format!("News: {}", event.headline),
+            scale::LABEL,
+            colors::ACCENT(),
+        );
+    }
+    flow.gap();
+}
+
+/// One owned property with its enter action. Returns true on Enter.
+fn draw_property_row(
+    flow: &mut PanelFlow,
+    name: &str,
+    summary: &str,
+    kind: Option<&NeighborhoodType>,
+    active: bool,
+    assets: &AssetManager,
+) -> bool {
+    let row_h = BUTTON_H + space::SM;
+    let mut entered = false;
+    if flow.fits(row_h) {
+        let (x, y, w) = (flow.x, flow.y, flow.w);
+        let thumb = if let Some(kind) = kind {
+            draw_property_facade(kind, Rect::new(x, y + 2.0, 44.0, 44.0), assets);
+            48.0
         } else {
             0.0
         };
-        if let Some(neighborhood) = neighborhood {
-            draw_property_facade(
-                &neighborhood.neighborhood_type,
-                Rect::new(item_x + 8.0, y + 8.0, 56.0, 59.0),
-                assets,
-            );
-        } else if let Some(texture) = assets.get_texture("building_exterior") {
-            draw_texture_ex(
-                texture,
-                item_x + 8.0,
-                y + 8.0,
-                WHITE,
-                DrawTextureParams {
-                    dest_size: Some(vec2(56.0, 59.0)),
-                    ..Default::default()
-                },
-            );
-        }
-
-        if is_selected {
-            // Enter Button
-            if draw_button_mini("Enter", item_x + item_width - 78.0, y + 18.0, 68.0, 40.0) {
-                action = Some(CityMapAction::EnterBuilding(index));
-            }
-        }
-
-        // Building name
-        let text_x = item_x + 10.0 + thumbnail_w;
-        draw_ui_text_ex(
-            &truncate_text_to_width(
-                &building.name,
-                item_width - thumbnail_w - if is_selected { 100.0 } else { 20.0 },
-                scale::HEADING,
-            ),
-            text_x,
-            y + 22.0,
-            text_params(
-                scale::HEADING,
-                if is_selected {
-                    colors::ACCENT()
-                } else {
-                    colors::TEXT_BRIGHT()
-                },
-            ),
+        let enter_w = 84.0;
+        let text_w = w - thumb - enter_w - space::SM;
+        draw_ui_text(
+            &truncate_text_to_width(name, text_w, scale::BODY),
+            x + thumb,
+            y + 18.0,
+            scale::BODY,
+            if active {
+                colors::ACCENT()
+            } else {
+                colors::TEXT_BRIGHT()
+            },
         );
-
-        // Location
-        draw_ui_text_ex(
-            &truncate_text_to_width(
-                &neighborhood_name,
-                item_width - thumbnail_w - if is_selected { 100.0 } else { 20.0 },
-                scale::LABEL,
-            ),
-            text_x,
-            y + 40.0,
-            text_params(scale::LABEL, colors::TEXT_DIM()),
+        draw_ui_text(
+            &truncate_text_to_width(summary, text_w, scale::CAPTION),
+            x + thumb,
+            y + 38.0,
+            scale::CAPTION,
+            colors::TEXT_DIM(),
         );
-
-        // Stats
-        let occupancy = building.occupancy_count();
-        let total = building.apartments.len();
-        let appeal = building.building_appeal();
-
-        let stats = format!("Occupancy: {}/{} · Appeal: {}", occupancy, total, appeal);
-        draw_ui_text_ex(
-            &truncate_text_to_width(
-                &stats,
-                item_width - thumbnail_w - if is_selected { 100.0 } else { 20.0 },
-                scale::LABEL,
-            ),
-            text_x,
-            y + 58.0,
-            text_params(
-                scale::LABEL,
-                if occupancy == total {
-                    colors::POSITIVE()
-                } else {
-                    colors::TEXT_DIM()
-                },
-            ),
+        entered = button_at(
+            Rect::new(x + w - enter_w, y, enter_w, BUTTON_H),
+            if active { "Open" } else { "Enter" },
+            true,
+            Tone::Positive,
         );
-
-        // Click to select
-        let mouse = mouse_position();
-        let hovered = mouse.0 >= item_x
-            && mouse.0 <= item_x + item_width
-            && mouse.1 >= y
-            && mouse.1 <= y + item_height - 5.0;
-
-        if action.is_none() && hovered && is_mouse_button_pressed(MouseButton::Left) {
-            action = Some(CityMapAction::SelectBuilding(index));
-        }
-
-        y += item_height;
     }
-
-    let pager_y = content.bottom() - 40.0;
-    let acquire_y = if page_count > 1 || selected_neighborhood_id.is_some() {
-        pager_y - 48.0
-    } else {
-        pager_y
-    };
-    if draw_button_icon(
-        "+ Acquire New Building",
-        content.x,
-        acquire_y,
-        content.w,
-        40.0,
-    ) {
-        action = Some(CityMapAction::OpenMarket);
-    }
-    if selected_neighborhood_id.is_some() {
-        if draw_button_mini("Show all properties", content.x, pager_y, content.w, 40.0) {
-            action = Some(CityMapAction::ClearNeighborhood);
-        }
-    } else if page_count > 1 {
-        let gap = 8.0;
-        let button_w = (content.w - gap) * 0.5;
-        if page > 0 && draw_button_mini("Previous properties", content.x, pager_y, button_w, 40.0) {
-            action = Some(CityMapAction::SetPortfolioPage(page - 1));
-        }
-        if page + 1 < page_count
-            && draw_button_mini(
-                "Next properties",
-                content.x + button_w + gap,
-                pager_y,
-                button_w,
-                40.0,
-            )
-        {
-            action = Some(CityMapAction::SetPortfolioPage(page + 1));
-        }
-    }
-
-    action
+    flow.advance(row_h);
+    entered
 }
 
 /// Actions from the city map UI
@@ -468,14 +392,12 @@ pub fn draw_portfolio_panel(
 pub enum CityMapAction {
     SelectNeighborhood(u32),
     ClearNeighborhood,
-    SelectBuilding(usize),
     OpenMarket,
     CloseMarket,
     ReviewPurchase(u32),
     CancelPurchase,
     ConfirmPurchase(u32),
     EnterBuilding(usize),
-    SetPortfolioPage(usize),
     SetMarketPage(usize),
 }
 

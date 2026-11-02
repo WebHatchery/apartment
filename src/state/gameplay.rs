@@ -141,7 +141,7 @@ pub struct GameplayState {
     #[serde(skip)]
     pub tasks_page: usize,
     #[serde(skip)]
-    pub city_page: usize,
+    pub city_scroll: f32,
     #[serde(skip)]
     pub market_page: usize,
     #[serde(skip)]
@@ -329,7 +329,7 @@ impl GameplayState {
             selected_tenant_id: None,
             inbox_page: 0,
             tasks_page: 0,
-            city_page: 0,
+            city_scroll: 0.0,
             market_page: 0,
             selected_neighborhood_id: None,
             pending_property_purchase: None,

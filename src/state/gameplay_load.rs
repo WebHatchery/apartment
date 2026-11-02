@@ -40,7 +40,7 @@ impl GameplayState {
         self.selected_mail_id = None;
         self.inbox_page = 0;
         self.tasks_page = 0;
-        self.city_page = 0;
+        self.city_scroll = 0.0;
         self.market_page = 0;
         self.selected_neighborhood_id = None;
         self.pending_property_purchase = None;
