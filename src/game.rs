@@ -57,7 +57,10 @@ impl Game {
     fn transition(&mut self, transition: StateTransition) {
         self.state = match transition {
             StateTransition::ToMenu => GameState::Menu(MenuState::new()),
-            StateTransition::ToGameplay(s) => GameState::Gameplay(s),
+            StateTransition::ToGameplay(mut s) => {
+                s.apply_settings(&crate::save::load_settings());
+                GameState::Gameplay(s)
+            }
         };
     }
 
@@ -70,6 +73,9 @@ impl Game {
             }
             "menu" | "menu_compact" | "menu_wide" | "menu_tiny" => {
                 self.state = GameState::Menu(MenuState::new())
+            }
+            "menu_new_game" | "menu_new_game_tiny" | "menu_settings" | "menu_settings_tiny" => {
+                self.state = GameState::Menu(MenuState::for_capture(scene))
             }
             "showcase" | "showcase_compact" | "showcase_wide" | "showcase_tiny" => {
                 self.seed_gameplay_capture(true)

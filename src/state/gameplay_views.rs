@@ -363,6 +363,12 @@ impl GameplayState {
         if self.menu_button(btn_x, btn_y, btn_w, btn_h, fs_label) {
             self.is_fullscreen = !self.is_fullscreen;
             set_fullscreen(self.is_fullscreen);
+            // Keep the title-screen setting in step with the pause toggle.
+            let mut settings = crate::save::load_settings();
+            settings.fullscreen = self.is_fullscreen;
+            if let Err(error) = crate::save::save_settings(&settings) {
+                eprintln!("Failed to save settings: {error}");
+            }
         }
         btn_y += 50.0;
 

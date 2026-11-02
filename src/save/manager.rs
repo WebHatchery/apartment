@@ -1,5 +1,6 @@
 use crate::state::GameplayState;
 use macroquad_toolkit::persistence::{json_key_exists, load_json_key, save_json_key};
+use macroquad_toolkit::settings::GameSettings;
 use serde::{Deserialize, Serialize};
 
 const SAVE_FILE_NAME: &str = "savegame.json";
@@ -182,6 +183,17 @@ pub fn save_player_progress(progress: &PlayerProgress) -> std::io::Result<()> {
         progress,
     )
     .map_err(std::io::Error::other)
+}
+
+/// Player preferences (display, autosave). Missing or unreadable settings
+/// fall back to defaults: they only hold preferences, never progress.
+pub fn load_settings() -> GameSettings {
+    GameSettings::load(crate::release_mode::save_namespace())
+}
+
+/// Persist player preferences alongside the save namespace.
+pub fn save_settings(settings: &GameSettings) -> Result<(), String> {
+    settings.save(crate::release_mode::save_namespace())
 }
 
 #[cfg(test)]

@@ -1,4 +1,4 @@
-use super::*;
+use super::building_select::campaign_facade_tile;
 
 #[test]
 fn campaign_neighborhoods_map_to_distinct_facades() {

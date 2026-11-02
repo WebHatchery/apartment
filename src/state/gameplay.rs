@@ -19,6 +19,10 @@ use serde::{Deserialize, Serialize};
 
 /// Floating text layer defaults, tuned to match the game's previous
 /// hand-rolled `FloatingText` (1.5s life, 30px/s rise, quick velocity decay).
+fn default_autosave_enabled() -> bool {
+    true
+}
+
 fn default_floating_text_layer() -> FloatingTextLayer {
     let mut layer = FloatingTextLayer::new();
     layer.default_lifetime = 1.5;
@@ -148,6 +152,9 @@ pub struct GameplayState {
     pub activity_drawer_open: bool,
     #[serde(skip)]
     pub is_fullscreen: bool,
+    /// Player preference from settings; applied on entering gameplay.
+    #[serde(skip, default = "default_autosave_enabled")]
+    pub autosave_enabled: bool,
     #[serde(skip)]
     pub pending_quit_to_menu: bool,
 
@@ -317,6 +324,7 @@ impl GameplayState {
             show_pause_menu: false,
             activity_drawer_open: false,
             is_fullscreen: false,
+            autosave_enabled: true,
             pending_quit_to_menu: false,
             current_building_id: building_id,
             has_ever_had_tenant: false,
@@ -378,6 +386,12 @@ impl GameplayState {
         }
 
         state
+    }
+
+    /// Adopt the player's saved preferences (display state, autosave).
+    pub fn apply_settings(&mut self, settings: &macroquad_toolkit::settings::GameSettings) {
+        self.is_fullscreen = settings.fullscreen;
+        self.autosave_enabled = settings.autosave_enabled;
     }
 
     /// Restore fields that are intentionally skipped from save data.

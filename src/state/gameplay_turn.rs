@@ -305,6 +305,9 @@ impl GameplayState {
     }
 
     fn autosave_current_game(&mut self) {
+        if !self.autosave_enabled {
+            return;
+        }
         if let Err(error) = crate::save::save_game(self) {
             eprintln!("Failed to save game: {}", error);
             self.spawn_center_text("Save Failed!", 0.0, 0.0, colors::NEGATIVE());

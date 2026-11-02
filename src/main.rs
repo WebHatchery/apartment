@@ -55,6 +55,10 @@ async fn main() {
         return;
     }
 
+    if save::load_settings().fullscreen {
+        set_fullscreen(true);
+    }
+
     loop {
         clear_background(ui::theme::color::BACKGROUND());
         game.update();
