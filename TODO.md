@@ -223,7 +223,7 @@ tests passing (one ignored). `src/ui/workspace_views.rs` sits at exactly 800
 lines, so any edit there must start with the split already listed in the
 engineering backlog. Findings below were traced in code, not reproduced in play.
 
-- [ ] **CR-01 — A full 36-month victory never unlocks the next property.**
+- [x] **CR-01 — A full 36-month victory never unlocks the next property.**
   **Evidence:** `simulation/win_condition.rs::check_win_condition` already
   returns `Victory` once `current_tick >= game_duration_ticks`, so
   `end_turn` stores it and `gameplay_turn.rs::check_game_completion` returns

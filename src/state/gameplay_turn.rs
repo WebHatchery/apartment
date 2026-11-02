@@ -7,7 +7,7 @@ use crate::simulation::{advance_tick, ActiveWorldEvent, ActiveWorldEventKind, Ga
 use crate::ui::colors;
 use macroquad::prelude::*;
 
-use super::gameplay::{GameplayState, ViewMode};
+use super::gameplay::GameplayState;
 
 impl GameplayState {
     /// End the current turn and advance time.
@@ -58,7 +58,7 @@ impl GameplayState {
         self.apply_monthly_social_happiness();
         self.log_monthly_status();
         self.update_context_hints();
-        self.check_game_completion();
+        self.complete_building_on_victory(&result);
         // Record the tick result before evaluating missions so goals like
         // PerfectCollection can inspect this month's rent outcome.
         self.last_tick_result = Some(result);
@@ -347,33 +347,16 @@ impl GameplayState {
         );
     }
 
-    fn check_game_completion(&mut self) {
-        let duration = self.config.win_conditions.game_duration_ticks.unwrap_or(36);
-        if self.current_tick < duration || self.game_outcome.is_some() {
-            return;
-        }
-
-        self.game_outcome = Some(crate::simulation::GameOutcome::Victory {
-            score: 0,
-            months: self.current_tick,
-            total_income: self.funds.total_income,
-        });
-        self.view_mode = ViewMode::CareerSummary;
-        self.unlock_next_building();
-        self.check_final_achievements();
-    }
-
-    fn check_final_achievements(&mut self) {
-        let new_unlocks = self.achievements.check_new_unlocks(
-            &self.city,
-            &self.building,
-            &self.tenants,
-            &self.funds,
-            self.current_tick,
-            &self.config,
-        );
-        for id in new_unlocks {
-            self.achievements.unlock(&id);
+    /// A completed campaign (the tick's own `Victory` outcome) records the
+    /// building as finished and unlocks the next property. Outcomes reached
+    /// outside the tick, such as selling every building, do not unlock. The
+    /// career-summary transition and its achievement check happen in `update`.
+    fn complete_building_on_victory(&self, result: &crate::simulation::TickResult) {
+        if matches!(
+            result.outcome,
+            Some(crate::simulation::GameOutcome::Victory { .. })
+        ) {
+            self.unlock_next_building();
         }
     }
 }
