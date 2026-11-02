@@ -29,15 +29,9 @@ pub fn update_tutorial(state: &mut GameplayState) {
         }
     }
 
-    // Display hint for current milestone if stuck for a while
+    // Stuck for a while: bring back the coach if the player hid it.
     if state.tutorial.should_emit_hint(state.current_tick) {
-        if let Some(hint) = state.tutorial.get_hint() {
-            state.floating_texts.spawn(
-                hint,
-                vec2(screen_width() / 2.0, screen_height() - 100.0),
-                colors::TEXT_DIM(),
-            );
-        }
+        state.coach_hidden = false;
     }
 
     if let Some(milestone) = &state.tutorial.current_milestone {

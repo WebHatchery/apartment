@@ -44,6 +44,8 @@ impl GameplayState {
             }
             UiAction::ToggleDisclosure(section) => self.panel_disclosure.toggle(section),
             UiAction::DismissMonthSummary => self.month_summary_open = false,
+            UiAction::ToggleCoach => self.coach_hidden = !self.coach_hidden,
+            UiAction::CloseHelp => self.help_open = false,
             UiAction::ClearSelection => {
                 self.selection = Selection::None;
             }

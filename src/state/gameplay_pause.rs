@@ -24,6 +24,7 @@ enum PauseOption {
     Save,
     Load,
     Settings,
+    Tips,
     ExitToTitle,
     /// Native only — a browser tab has nothing to exit, and
     /// `std::process::exit` is unsupported on wasm.
@@ -37,6 +38,7 @@ const PAUSE_OPTIONS: &[PauseOption] = &[
     PauseOption::Save,
     PauseOption::Load,
     PauseOption::Settings,
+    PauseOption::Tips,
     PauseOption::ExitToTitle,
     PauseOption::ExitGame,
 ];
@@ -46,6 +48,7 @@ const PAUSE_OPTIONS: &[PauseOption] = &[
     PauseOption::Save,
     PauseOption::Load,
     PauseOption::Settings,
+    PauseOption::Tips,
     PauseOption::ExitToTitle,
 ];
 
@@ -56,6 +59,7 @@ impl PauseOption {
             PauseOption::Save => "Save Game",
             PauseOption::Load => "Load Saved Game",
             PauseOption::Settings => "Settings",
+            PauseOption::Tips => "Tips",
             PauseOption::ExitToTitle => "Exit to Title",
             #[cfg(not(target_arch = "wasm32"))]
             PauseOption::ExitGame => "Exit Game",
@@ -66,7 +70,7 @@ impl PauseOption {
         match self {
             PauseOption::Resume => Tone::Positive,
             PauseOption::Save | PauseOption::Load => Tone::Primary,
-            PauseOption::Settings | PauseOption::ExitToTitle => Tone::Secondary,
+            PauseOption::Settings | PauseOption::Tips | PauseOption::ExitToTitle => Tone::Secondary,
             #[cfg(not(target_arch = "wasm32"))]
             PauseOption::ExitGame => Tone::Danger,
         }
@@ -158,13 +162,13 @@ impl GameplayState {
         let has_save = has_save_game();
         for (i, option) in PAUSE_OPTIONS.iter().enumerate() {
             let enabled = *option != PauseOption::Load || has_save;
-            if button_at(
-                button_rect(panel, i),
-                option.label(),
-                enabled,
-                option.tone(),
-            ) && enabled
-            {
+            let label = match option {
+                PauseOption::Tips if self.tutorial.active && self.coach_hidden => "Show tips",
+                PauseOption::Tips if self.tutorial.active => "Hide tips",
+                PauseOption::Tips => "How to play",
+                _ => option.label(),
+            };
+            if button_at(button_rect(panel, i), label, enabled, option.tone()) && enabled {
                 self.choose_pause_option(*option);
             }
         }
@@ -200,6 +204,15 @@ impl GameplayState {
             PauseOption::Load => self.pending_load_game = true,
             PauseOption::Settings => {
                 self.pause_settings = Some(SettingsScreen::new(centered_top));
+            }
+            // Guidance only: tutorial progress and saves are untouched.
+            PauseOption::Tips => {
+                if self.tutorial.active {
+                    self.coach_hidden = !self.coach_hidden;
+                } else {
+                    self.help_open = true;
+                }
+                self.show_pause_menu = false;
             }
             PauseOption::ExitToTitle => self.pending_quit_to_menu = true,
             #[cfg(not(target_arch = "wasm32"))]

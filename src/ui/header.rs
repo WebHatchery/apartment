@@ -5,6 +5,17 @@ use super::UiAction;
 use macroquad::prelude::*;
 use macroquad_toolkit::ui::{draw_ui_text, format_money, truncate_text_to_width};
 
+/// Where End Month is drawn; shared with tutorial guidance.
+pub fn end_month_rect() -> Rect {
+    let width = screen_width();
+    let x = if width >= 1180.0 {
+        width - 198.0
+    } else {
+        width - 182.0
+    };
+    Rect::new(x, 8.0, 108.0, 40.0)
+}
+
 pub fn draw_header(
     money: i32,
     tick: u32,
@@ -28,17 +39,7 @@ pub fn draw_header(
         color::BORDER(),
     );
     let mut action = None;
-    let end_month_x = if width >= 1180.0 {
-        width - 198.0
-    } else {
-        width - 182.0
-    };
-    if button_at(
-        Rect::new(end_month_x, 8.0, 108.0, 40.0),
-        "End Month",
-        true,
-        Tone::Primary,
-    ) {
+    if button_at(end_month_rect(), "End Month", true, Tone::Primary) {
         action = Some(UiAction::EndTurn);
     }
     if width < 760.0

@@ -5,8 +5,8 @@ mod room_story;
 
 #[cfg(test)]
 use geometry::cutaway_metrics;
-pub use geometry::reveal_selection;
-use geometry::{unit_width, CutawayMetrics, TowerGeometry};
+pub use geometry::{place_rect, reveal_place, reveal_selection, Place};
+use geometry::{unit_rooms, CutawayMetrics, TowerGeometry};
 
 use super::theme::{color, scale, space, Tone};
 use super::widgets::button_at;
@@ -89,33 +89,16 @@ fn draw_cutaway(
         .unwrap_or(1);
     draw_building_shell(content, metrics, max_floor);
     let mut action = None;
-    for floor in 1..=max_floor {
-        let floor_y = metrics.floor_y(floor);
-        let floor_apartments: Vec<_> = building
-            .apartments
-            .iter()
-            .filter(|apartment| apartment.floor == floor)
-            .collect();
-        let floor_width = floor_apartments
-            .iter()
-            .map(|apartment| unit_width(apartment, metrics) + metrics.unit_gap)
-            .sum::<f32>()
-            - metrics.unit_gap;
-        let mut x = metrics.units_left + (metrics.units_width - floor_width) / 2.0;
-
-        for apartment in floor_apartments {
-            let width = unit_width(apartment, metrics);
-            if let Some(unit_action) = draw_apartment(
-                apartment,
-                building.is_unit_sold(apartment.id),
-                tenants,
-                Rect::new(x, floor_y, width, metrics.unit_h),
-                selection,
-                assets,
-            ) {
-                action = Some(unit_action);
-            }
-            x += width + metrics.unit_gap;
+    for (apartment, room) in unit_rooms(building, metrics) {
+        if let Some(unit_action) = draw_apartment(
+            apartment,
+            building.is_unit_sold(apartment.id),
+            tenants,
+            room,
+            selection,
+            assets,
+        ) {
+            action = Some(unit_action);
         }
     }
 
@@ -494,16 +477,16 @@ fn draw_lobby_amenities(building: &Building, room: Rect) {
     }
 }
 
-fn draw_building_controls(view: Rect, name: &str) -> Option<UiAction> {
+/// The building's Details button above the tower.
+pub(super) fn details_button_rect(view: Rect) -> Rect {
     let width = (view.w - 24.0).min(360.0);
-    let label = truncate_text_to_width(&format!("{} - Details", name), width - 24.0, scale::LABEL);
-    button_at(
-        Rect::new(view.x + (view.w - width) / 2.0, view.y + 6.0, width, 40.0),
-        &label,
-        true,
-        Tone::Secondary,
-    )
-    .then_some(UiAction::SelectBuilding)
+    Rect::new(view.x + (view.w - width) / 2.0, view.y + 6.0, width, 40.0)
+}
+
+fn draw_building_controls(view: Rect, name: &str) -> Option<UiAction> {
+    let rect = details_button_rect(view);
+    let label = truncate_text_to_width(&format!("{} - Details", name), rect.w - 24.0, scale::LABEL);
+    button_at(rect, &label, true, Tone::Secondary).then_some(UiAction::SelectBuilding)
 }
 
 #[cfg(test)]

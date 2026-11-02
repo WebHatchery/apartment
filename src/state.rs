@@ -7,7 +7,8 @@
 
 mod gameplay;
 mod gameplay_actions; // UI action dispatch and city action handling
-mod gameplay_awards; // Tax breaks, annual awards, tenant council
+mod gameplay_awards;
+mod gameplay_coach; // Tutorial coach and Help card // Tax breaks, annual awards, tenant council
 mod gameplay_effects; // Narrative event effect application
 mod gameplay_input; // Input dispatch, pause, and modal ownership
 mod gameplay_inspections; // Building inspections and regulatory fines

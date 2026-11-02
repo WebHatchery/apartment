@@ -61,7 +61,38 @@ pub(super) fn cutaway_metrics(view: Rect, floors: usize, max_slots: usize) -> Cu
     }
 }
 
-pub(super) fn unit_width(apartment: &Apartment, metrics: CutawayMetrics) -> f32 {
+/// Every unit with its room rectangle, floor by floor, centred per floor.
+pub(super) fn unit_rooms(building: &Building, metrics: CutawayMetrics) -> Vec<(&Apartment, Rect)> {
+    let max_floor = building
+        .apartments
+        .iter()
+        .map(|unit| unit.floor)
+        .max()
+        .unwrap_or(1);
+    let mut rooms = Vec::with_capacity(building.apartments.len());
+    for floor in 1..=max_floor {
+        let floor_y = metrics.floor_y(floor);
+        let floor_units: Vec<_> = building
+            .apartments
+            .iter()
+            .filter(|apartment| apartment.floor == floor)
+            .collect();
+        let floor_width = floor_units
+            .iter()
+            .map(|apartment| unit_width(apartment, metrics) + metrics.unit_gap)
+            .sum::<f32>()
+            - metrics.unit_gap;
+        let mut x = metrics.units_left + (metrics.units_width - floor_width) / 2.0;
+        for apartment in floor_units {
+            let width = unit_width(apartment, metrics);
+            rooms.push((apartment, Rect::new(x, floor_y, width, metrics.unit_h)));
+            x += width + metrics.unit_gap;
+        }
+    }
+    rooms
+}
+
+fn unit_width(apartment: &Apartment, metrics: CutawayMetrics) -> f32 {
     if matches!(apartment.size, ApartmentSize::Penthouse) {
         metrics.unit_w * 2.0 + metrics.unit_gap
     } else {
@@ -144,23 +175,40 @@ impl TowerGeometry {
         )
     }
 
-    /// Scroll that centres the selected room or lobby in the viewport, or
-    /// `None` when the selection is not a place in the tower.
-    pub fn reveal_scroll(&self, building: &Building, selection: &Selection) -> Option<f32> {
+    /// Scroll that centres `place` in the viewport (rooms and the lobby).
+    fn reveal_place(&self, building: &Building, place: Place) -> Option<f32> {
         let metrics = self.metrics(0.0);
-        let (top, bottom) = match selection {
-            Selection::Apartment(id) => {
-                let floor = building.get_apartment(*id)?.floor;
+        let (top, bottom) = match place {
+            Place::Unit(id) => {
+                let floor = building.get_apartment(id)?.floor;
                 let top = metrics.floor_y(floor);
                 (top, top + metrics.unit_h)
             }
-            Selection::Hallway => (metrics.hallway_y, metrics.hallway_y + metrics.hallway_h),
-            _ => return None,
+            Place::Lobby => (metrics.hallway_y, metrics.hallway_y + metrics.hallway_h),
+            Place::DetailsButton => return None,
         };
         let target_center = (top + bottom) * 0.5;
         let viewport_center = self.viewport.y + self.viewport.h * 0.5;
         Some((target_center - viewport_center).clamp(0.0, self.max_scroll))
     }
+
+    /// Scroll that centres the selected room or lobby in the viewport, or
+    /// `None` when the selection is not a place in the tower.
+    pub fn reveal_scroll(&self, building: &Building, selection: &Selection) -> Option<f32> {
+        let place = match selection {
+            Selection::Apartment(id) => Place::Unit(*id),
+            Selection::Hallway => Place::Lobby,
+            _ => return None,
+        };
+        self.reveal_place(building, place)
+    }
+}
+
+/// Scroll that brings `place` into view for the current selection layout.
+pub fn reveal_place(building: &Building, selection: &Selection, place: Place, scroll: f32) -> f32 {
+    TowerGeometry::new(building, selection)
+        .reveal_place(building, place)
+        .unwrap_or(scroll)
 }
 
 /// Reframe the tower so the selected room or lobby is visible; other
@@ -169,4 +217,41 @@ pub fn reveal_selection(building: &Building, selection: &Selection, scroll: f32)
     TowerGeometry::new(building, selection)
         .reveal_scroll(building, selection)
         .unwrap_or(scroll)
+}
+
+/// A place in the building workspace that guidance can point at.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Place {
+    Unit(u32),
+    Lobby,
+    DetailsButton,
+}
+
+/// Where `place` is drawn on screen right now (clipped to the visible tower
+/// viewport for rooms), or `None` when it is scrolled out of view.
+pub fn place_rect(
+    building: &Building,
+    selection: &Selection,
+    scroll: f32,
+    place: Place,
+) -> Option<Rect> {
+    let geometry = TowerGeometry::new(building, selection);
+    let scroll = scroll.clamp(0.0, geometry.max_scroll);
+    let metrics = geometry.metrics(scroll);
+    let rect = match place {
+        Place::DetailsButton => return Some(super::details_button_rect(geometry.view)),
+        Place::Lobby => Rect::new(
+            metrics.units_left,
+            metrics.hallway_y,
+            metrics.units_width,
+            metrics.hallway_h,
+        ),
+        Place::Unit(id) => {
+            unit_rooms(building, metrics)
+                .into_iter()
+                .find(|(apartment, _)| apartment.id == id)?
+                .1
+        }
+    };
+    rect.intersect(geometry.viewport)
 }

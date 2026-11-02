@@ -166,6 +166,14 @@ pub struct GameplayState {
     /// The month summary card owns input until dismissed.
     #[serde(skip)]
     pub month_summary_open: bool,
+    /// The player hid the tutorial coach (reopened from the pause menu).
+    #[serde(skip)]
+    pub coach_hidden: bool,
+    #[serde(skip)]
+    pub help_open: bool,
+    /// The tutorial step whose target the tower last scrolled to.
+    #[serde(skip)]
+    pub coach_framed_step: Option<String>,
     /// Player preference from settings; applied on entering gameplay.
     #[serde(skip, default = "default_autosave_enabled")]
     pub autosave_enabled: bool,
@@ -347,6 +355,9 @@ impl GameplayState {
             activity_drawer_open: false,
             latest_month: None,
             month_summary_open: false,
+            coach_hidden: false,
+            help_open: false,
+            coach_framed_step: None,
             autosave_enabled: true,
             pending_quit_to_menu: false,
             pending_load_game: false,

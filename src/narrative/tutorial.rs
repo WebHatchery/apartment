@@ -203,22 +203,6 @@ impl TutorialManager {
         }
     }
 
-    /// Get a contextual hint for the current milestone
-    pub fn get_hint(&self) -> Option<&'static str> {
-        match &self.current_milestone {
-            Some(TutorialMilestone::InheritedMess) => {
-                Some("Hint: Tap HALLWAY and repair it to 80+ condition.")
-            }
-            Some(TutorialMilestone::FirstResident) => {
-                Some("Hint: List an apartment for lease, End Month, then check Applications.")
-            }
-            Some(TutorialMilestone::TheLeak) => {
-                Some("Hint: A unit has low condition. Repair it to proceed!")
-            }
-            Some(TutorialMilestone::Complete) | None => None,
-        }
-    }
-
     /// Check if the player should see the rival introduction
     pub fn should_introduce_rival(&self, month: u32) -> bool {
         // Introduce Magnuson Corp after first 6 months

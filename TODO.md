@@ -8,26 +8,6 @@ with the `APARTMENT_CAPTURE_MANIFEST` harness (scenes in `src/game.rs`).
 
 ## UI tasks
 
-- [ ] **UI-08 — Make coaching accurate, dismissible and reopenable.**
-  **Scope:** `src/state/gameplay_views.rs::draw_tutorial_coach`,
-  `src/state/gameplay_pause.rs` (pause menu), `src/state/tutorial_system.rs`,
-  `src/narrative/tutorial.rs`, and relevant `UiAction` routes. 
-  **Problem:** coach anchors are guessed screen positions rather than the
-  target's rendered bounds; the vacancy step anchors at `screen_width() - 68`,
-  near Menu rather than End Month. The pause menu has no Help/reopen option.
-  Milestone coaching stays visible until progression and hides entirely while
-  a selection is open.
-  **Change:** derive highlights from shared target geometry; add a quiet Help
-  option (e.g. in the pause menu) that dismisses/reopens current instructions
-  without resetting tutorial or saves. Teach the exact current labels/touch
-  paths, and let brief contextual help accompany the required panel action
-  without obscuring it.
-  **Accept:** completed prose disappears, returning players can recover guidance,
-  and each highlight identifies the action actually described.
-  **Verify:** first game and resumed tutorial at all review sizes; dismiss/reopen,
-  lobby repair, listing, End Month, filtered applications, damaged-unit repair,
-  selection/Close and scrolling. Ensure coach taps cannot activate rooms beneath.
-
 - [ ] **UI-09 — Extend tenant identity and passage of time using existing state.**
   **Scope:** `src/ui/resident_sprite.rs::{style_for,animated_pose}`,
   `src/ui/building_view/room_story.rs`, `src/ui/building_view.rs::draw_sunset_backdrop`,
@@ -55,7 +35,7 @@ with the `APARTMENT_CAPTURE_MANIFEST` harness (scenes in `src/game.rs`).
 - [ ] **UI-10 — Finish shared readability, touch feedback and restrained motion.**
   **Scope:** `src/ui/theme.rs`, `src/ui/widgets.rs`, `src/ui/common.rs`, panel
   drawing/input in `src/state/gameplay_views.rs`, and the screens above.
-  After UI-08 and UI-09; polish, not another redesign.
+  After UI-09; polish, not another redesign.
   **Problem:** bordered buttons, panel headings, stat labels and orange
   scrolling/navigation controls compete with decisions in selected views. The
   selection Close button is 34px high while most actions are 40px; real touch

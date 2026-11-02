@@ -2,7 +2,6 @@
 
 use crate::assets::AssetManager;
 use crate::narrative::NotificationCategory;
-use crate::narrative::TutorialMilestone;
 use crate::ui::workspace_nav::{draw_workspace_nav, WorkspaceTab};
 use crate::ui::{
     draw_apartment_panel, draw_application_panel, draw_building_summary, draw_building_view,
@@ -11,7 +10,6 @@ use crate::ui::{
 use macroquad::prelude::*;
 
 use super::gameplay::{GameplayState, ViewMode};
-use macroquad_toolkit::ui::draw_ui_text;
 
 impl GameplayState {
     /// Main draw function - dispatches to appropriate view
@@ -181,13 +179,11 @@ impl GameplayState {
         // Floating text
         self.floating_texts.draw();
 
-        if self.view_mode == ViewMode::Building
-            && self.tutorial.active
-            && self.selection == Selection::None
-            && self.tutorial.pending_messages.is_empty()
-            && !self.activity_drawer_open
-        {
+        if self.coach_visible(blocking_event_open) {
             self.draw_tutorial_coach(assets);
+        }
+        if self.help_open && !self.month_summary_open && !blocking_event_open {
+            self.draw_help_card();
         }
 
         // Toasts dismiss on their own buttons, so they stay hidden while the
@@ -377,136 +373,6 @@ impl GameplayState {
     /// Non-blocking, target-anchored coaching for the current tutorial step.
     /// The introductory dialogue still uses a modal toast; once dismissed,
     /// this marker stays beside the control the player actually needs.
-    fn draw_tutorial_coach(&mut self, assets: &AssetManager) {
-        use crate::ui::theme::{color, scale, space};
-        use crate::ui::widgets::{draw_card, line_height, wrap};
-
-        let Some(milestone) = self.tutorial.current_milestone.as_ref() else {
-            return;
-        };
-        let world = crate::ui::layout::building(self.selection != Selection::None).world;
-        let view_w = world.w;
-        let footer_y = world.bottom();
-        let (anchor, message, place_above) = match milestone {
-            TutorialMilestone::InheritedMess => (
-                vec2(view_w / 2.0, world.bottom() - 70.0),
-                "Tap the lobby in the building, then repair the hallway to 80%.",
-                true,
-            ),
-            TutorialMilestone::FirstResident => {
-                let listed = self
-                    .building
-                    .apartments
-                    .iter()
-                    .any(|unit| unit.is_vacant() && unit.is_listed_for_lease);
-                let active_apps = self
-                    .applications
-                    .iter()
-                    .any(|application| application.building_id == self.active_building_id());
-                if active_apps {
-                    (
-                        vec2(
-                            view_w / 2.0 - 72.0,
-                            crate::ui::layout::HEADER_HEIGHT() + 28.0,
-                        ),
-                        "Tap the building name, then Applications to choose a resident.",
-                        false,
-                    )
-                } else if listed {
-                    (
-                        vec2(screen_width() - 68.0, 32.0),
-                        "The unit is listed. Tap END MONTH to bring in applicants.",
-                        false,
-                    )
-                } else {
-                    (
-                        vec2(view_w / 2.0, crate::ui::layout::HEADER_HEIGHT() + 150.0),
-                        "Tap a vacant unit, set rent, then tap Any Tenant under List for Lease.",
-                        false,
-                    )
-                }
-            }
-            TutorialMilestone::TheLeak => (
-                vec2(view_w / 2.0, crate::ui::layout::HEADER_HEIGHT() + 190.0),
-                "Look for cracked walls and worn floors. Tap the damaged unit, then choose a repair.",
-                false,
-            ),
-            TutorialMilestone::Complete => return,
-        };
-
-        let card_w = view_w.min(360.0) - space::LG * 2.0;
-        let lines = wrap(message, card_w - space::LG * 2.0, scale::BODY);
-        let has_portrait = assets.get_texture("npc_uncle_artie").is_some();
-        let header_h = if has_portrait { 50.0 } else { 36.0 };
-        let card_h = header_h + space::SM + lines.len() as f32 * line_height(scale::BODY);
-        let card_x = (anchor.x - card_w / 2.0).clamp(space::SM, view_w - card_w - space::SM);
-        let preferred_y = if place_above {
-            anchor.y - card_h - 18.0
-        } else {
-            anchor.y + 18.0
-        };
-        let card_y = preferred_y.clamp(
-            crate::ui::layout::HEADER_HEIGHT() + space::SM,
-            (footer_y - card_h - space::SM).max(crate::ui::layout::HEADER_HEIGHT() + space::SM),
-        );
-
-        draw_line(
-            anchor.x,
-            anchor.y,
-            anchor.x,
-            if place_above { card_y + card_h } else { card_y },
-            3.0,
-            color::PRIMARY(),
-        );
-        draw_circle(anchor.x, anchor.y, 7.0, color::PRIMARY());
-        if crate::ui::was_clicked(card_x, card_y, card_w, card_h) {
-            self.pending_actions.clear();
-        }
-        draw_card(Rect::new(card_x, card_y, card_w, card_h), true);
-        let title_x = if let Some(portrait) = assets.get_texture("npc_uncle_artie") {
-            let portrait_size = 38.0;
-            draw_texture_ex(
-                portrait,
-                card_x + space::SM,
-                card_y + space::SM,
-                WHITE,
-                DrawTextureParams {
-                    dest_size: Some(vec2(portrait_size, portrait_size)),
-                    ..Default::default()
-                },
-            );
-            draw_rectangle_lines(
-                card_x + space::SM,
-                card_y + space::SM,
-                portrait_size,
-                portrait_size,
-                1.0,
-                color::PRIMARY(),
-            );
-            card_x + space::SM + portrait_size + space::SM
-        } else {
-            card_x + space::LG
-        };
-        draw_ui_text(
-            "UNCLE ARTIE'S NEXT STEP",
-            title_x,
-            card_y + 21.0,
-            scale::LABEL,
-            color::PRIMARY(),
-        );
-        let mut y = card_y + header_h;
-        for line in lines {
-            draw_ui_text(
-                &line,
-                card_x + space::LG,
-                y + scale::BODY,
-                scale::BODY,
-                color::TEXT(),
-            );
-            y += line_height(scale::BODY);
-        }
-    }
-
     /// Draw the hint/relationship notification as a bottom toast. Dismisses on
     /// "OK".
     pub(super) fn draw_notification_overlay(&mut self) {

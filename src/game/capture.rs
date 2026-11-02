@@ -6,6 +6,7 @@
 
 use super::capture_seeds::*;
 use super::Game;
+use crate::narrative::TutorialMilestone;
 use crate::state::{GameState, GameplayState, MenuState, ViewMode};
 use crate::ui::{Disclosure, Selection};
 
@@ -39,7 +40,9 @@ fn capture_base(key: &str) -> CaptureBase {
         "resident_sprites" => ResidentGallery,
         "menu" => Menu,
         "menu_new_game" | "menu_settings" => MenuScreen,
-        "tower_scrolled" | "gameplay" | "tutorial" | "tutorial_coach" => Gameplay {
+        "tower_scrolled" | "gameplay" | "tutorial" | "tutorial_coach" | "coach_lobby_panel"
+        | "coach_list" | "coach_list_panel" | "coach_end_month" | "coach_leak"
+        | "coach_applicants" => Gameplay {
             showcase: false,
             template: 0,
         },
@@ -70,6 +73,12 @@ fn open_all_sections(state: &mut GameplayState) {
     ] {
         state.panel_disclosure.toggle(section);
     }
+}
+
+/// Put a fresh game at a tutorial milestone with no message pending.
+fn coach_at(state: &mut GameplayState, milestone: TutorialMilestone) {
+    state.tutorial.pending_messages.clear();
+    state.tutorial.current_milestone = Some(milestone);
 }
 
 /// Play one real month without writing a save.
@@ -214,6 +223,51 @@ fn adjust_scene(key: &str, state: &mut GameplayState) {
             state.career_badges_page = 1;
         }
         "tutorial_coach" => state.tutorial.pending_messages.clear(),
+        "coach_lobby_panel" => {
+            state.tutorial.pending_messages.clear();
+            state.selection = Selection::Hallway;
+        }
+        "coach_list" | "coach_list_panel" | "coach_end_month" => {
+            coach_at(state, TutorialMilestone::FirstResident);
+            state.applications.clear();
+            let vacant = state
+                .building
+                .apartments
+                .iter()
+                .find(|unit| unit.is_vacant());
+            let vacant = vacant.map(|unit| unit.id);
+            if let Some(id) = vacant {
+                if key == "coach_end_month" {
+                    if let Some(unit) = state.building.get_apartment_mut(id) {
+                        unit.is_listed_for_lease = true;
+                    }
+                } else if key == "coach_list_panel" {
+                    state.selection = Selection::Apartment(id);
+                }
+            }
+        }
+        // List every vacancy and play a real month so applicants arrive.
+        "coach_applicants" => {
+            coach_at(state, TutorialMilestone::FirstResident);
+            for unit in state
+                .building
+                .apartments
+                .iter_mut()
+                .filter(|u| u.is_vacant())
+            {
+                unit.is_listed_for_lease = true;
+            }
+            close_month(state);
+            state.month_summary_open = false;
+            state.tutorial.pending_messages.clear();
+        }
+        "coach_leak" => {
+            coach_at(state, TutorialMilestone::TheLeak);
+            if let Some(unit) = state.building.apartments.first_mut() {
+                unit.condition = 20;
+            }
+        }
+        "help" => state.help_open = true,
         "event" => seed_showcase_event(state),
         "event_notice" => seed_showcase_notice(state),
         "notification" => {

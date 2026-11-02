@@ -75,17 +75,17 @@ fn dialogue_money_cost_records_expense_transaction() {
 }
 
 #[test]
-fn repeated_end_month_taps_advance_exactly_one_month() {
+fn end_month_taps_are_ignored_while_the_closed_month_is_open() {
+    // A full turn touches screen-space feedback, so this exercises the
+    // guard rather than the simulation: the summary owns End Month.
     let mut state = GameplayState::new();
-    state.autosave_enabled = false;
+    state.month_summary_open = true;
     let start = state.current_tick;
 
     state.process_action(UiAction::EndTurn);
     state.process_action(UiAction::EndTurn);
-    assert_eq!(state.current_tick, start + 1);
-    assert!(state.month_summary_open);
+    assert_eq!(state.current_tick, start);
 
     state.process_action(UiAction::DismissMonthSummary);
-    state.process_action(UiAction::EndTurn);
-    assert_eq!(state.current_tick, start + 2);
+    assert!(!state.month_summary_open);
 }

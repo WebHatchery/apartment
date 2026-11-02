@@ -1,0 +1,35 @@
+{
+  "title": "UNCLE ARTIE'S NEXT STEP",
+  "hide_label": "Hide",
+  "steps": {
+    "repair_lobby": {
+      "world": "Tap the lobby at the bottom of the building.",
+      "panel": "Tap Repair Hallway until the lobby reaches 80%."
+    },
+    "list_unit": {
+      "world": "Tap the empty unit to put it on the market.",
+      "panel": "Tap List for any tenant, or pick one kind of tenant."
+    },
+    "end_month": {
+      "world": "Your unit is listed. Tap End Month to bring in applicants.",
+      "panel": "Close this panel, then tap End Month to bring in applicants."
+    },
+    "choose_applicant": {
+      "world": "Applicants are waiting. Tap the building's Details button.",
+      "panel": "Tap Applications, then Accept the applicant you like."
+    },
+    "repair_damage": {
+      "world": "A leak has damaged a unit. Tap the room with the cracked walls.",
+      "panel": "Tap the repair at the top of the panel until the room is above 30%."
+    }
+  },
+  "help_title": "How to run Second Story",
+  "help": [
+    "Tap any room or the lobby to inspect it; Close returns to the whole building.",
+    "Each room's panel leads with its condition, rent and the one thing it needs now.",
+    "List empty units, then End Month to collect rent and bring in applicants.",
+    "Repair before rooms fall below 40%: residents in poor rooms leave.",
+    "People, Money, City and Inbox hold residents, finances, new properties and mail.",
+    "Menu (or Esc) saves, loads, changes settings and shows these tips again."
+  ]
+}

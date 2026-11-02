@@ -20,7 +20,7 @@ mod common;
 mod event_art;
 pub mod event_modal; // Phase 4 event modal
 mod hallway_panel;
-mod header;
+pub mod header;
 mod inspector_summary;
 pub mod month_summary;
 pub mod notifications;
@@ -114,6 +114,8 @@ pub enum UiAction {
     ClearSelection,
     ToggleActivityDrawer,
     DismissMonthSummary,
+    ToggleCoach,
+    CloseHelp,
     ToggleDisclosure(Disclosure),
 
     // Generic Upgrade Action
