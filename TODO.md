@@ -258,7 +258,7 @@ engineering backlog. Findings below were traced in code, not reproduced in play.
   **Accept:** a month's report income/outgoings/net equals the balance change
   across that month (start of month to after End Month).
 
-- [ ] **CR-03 — Filling a unit leaves its other applicants actionable.**
+- [x] **CR-03 — Filling a unit leaves its other applicants actionable.**
   **Evidence:** `gameplay_actions.rs` `AcceptApplication` removes only the
   accepted application. The others for that apartment stay until expiry: they
   still show in the inbox and applications panel, still charge for credit and

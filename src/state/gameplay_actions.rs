@@ -195,6 +195,12 @@ impl GameplayState {
                     if let Some(apt) = self.building.get_apartment_mut(app.apartment_id) {
                         apt.move_in(tenant.id);
                     }
+                    // The unit is let; competing applicants must not stay
+                    // actionable (or keep charging vetting fees).
+                    self.applications.retain(|other| {
+                        other.building_id != app.building_id
+                            || other.apartment_id != app.apartment_id
+                    });
 
                     self.event_log.log(
                         GameEvent::TenantMovedIn {
