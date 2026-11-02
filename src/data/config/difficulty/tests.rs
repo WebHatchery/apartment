@@ -3,12 +3,19 @@ use super::*;
 #[test]
 fn hard_difficulty_tightens_the_rules() {
     let mut config = GameConfig::default();
+    let hard = config.difficulty["Hard"].clone();
     let base_fine = config.regulations.fine_multiplier;
     let funds = config.apply_difficulty("Hard");
-    assert_eq!(funds, 3500);
+    assert_eq!(funds, hard.starting_funds);
     assert!(config.regulations.fine_multiplier > base_fine);
-    assert_eq!(config.regulations.random_inspection_chance_percent, 12);
-    assert_eq!(config.tenant_risk.problem_applicant_chance_percent, 28);
+    assert_eq!(
+        config.regulations.random_inspection_chance_percent,
+        hard.random_inspection_chance_percent
+    );
+    assert_eq!(
+        config.tenant_risk.problem_applicant_chance_percent,
+        hard.problem_applicant_chance_percent
+    );
 }
 
 #[test]

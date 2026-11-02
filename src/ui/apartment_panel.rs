@@ -7,6 +7,7 @@ use crate::consequences::TenantNetwork;
 use crate::data::config::GameConfig;
 use crate::narrative::TenantStory;
 use crate::tenant::Tenant;
+use apartment::text::{t, tr};
 use macroquad::prelude::*;
 use std::collections::HashMap;
 
@@ -62,18 +63,18 @@ pub fn draw_apartment_panel(
     match tenant {
         Some(tenant) => draw_resident_identity(&mut flow, tenant, ctx.network, ctx.assets),
         None => flow.line(
-            if apt.is_listed_for_lease {
-                "Vacant · listed for lease"
+            &t(if apt.is_listed_for_lease {
+                "inspector.vacant_listed"
             } else {
-                "Vacant · off the market"
-            },
+                "inspector.vacant_unlisted"
+            }),
             scale::HEADING,
             colors::WARNING(),
         ),
     }
     flow.gap();
     flow.kv(
-        "Condition",
+        &t("inspector.condition"),
         &condition_issue(apt.condition, ctx.config),
         condition_color(apt.condition),
     );
@@ -82,8 +83,11 @@ pub fn draw_apartment_panel(
     }
     match tenant {
         Some(tenant) => flow.kv(
-            "Rent",
-            &format!("${}/mo · limit ${}", apt.rent_price, tenant.rent_tolerance),
+            &t("inspector.rent"),
+            &tr(
+                "inspector.rent_with_limit",
+                &[("rent", &apt.rent_price), ("limit", &tenant.rent_tolerance)],
+            ),
             if apt.rent_price <= tenant.rent_tolerance {
                 colors::POSITIVE()
             } else {
@@ -91,8 +95,8 @@ pub fn draw_apartment_panel(
             },
         ),
         None => flow.kv(
-            "Asking rent",
-            &format!("${}/mo", apt.rent_price),
+            &t("inspector.asking_rent"),
+            &tr("inspector.rent_monthly", &[("rent", &apt.rent_price)]),
             colors::PRIMARY(),
         ),
     }
@@ -106,7 +110,7 @@ pub fn draw_apartment_panel(
     let decision = match tenant {
         Some(tenant) => {
             flow.kv(
-                "Happiness",
+                &t("inspector.happiness"),
                 &format!("{}%", tenant.happiness),
                 happiness_color(tenant.happiness),
             );
@@ -157,16 +161,16 @@ pub fn draw_apartment_panel(
 
 /// Condition plus the plain consequence of letting it slide.
 fn condition_issue(condition: i32, config: &GameConfig) -> String {
-    let issue = if condition < config.thresholds.critical_condition {
-        "critical, residents may leave"
+    let key = if condition < config.thresholds.critical_condition {
+        "inspector.condition_critical"
     } else if condition < config.thresholds.poor_condition {
-        "poor, needs repair"
+        "inspector.condition_poor"
     } else if condition < config.ui_thresholds.condition_good {
-        "worn"
+        "inspector.condition_worn"
     } else {
-        "good"
+        "inspector.condition_good"
     };
-    format!("{condition}% · {issue}")
+    tr(key, &[("condition", &condition)])
 }
 
 fn repair_option(apt: &Apartment, ctx: &UnitPanelContext) -> Option<(UpgradeAction, i32)> {
@@ -193,11 +197,22 @@ fn draw_repair(
 }
 
 /// Price and, when short, exactly how much more is needed.
+pub(super) fn priced_label(action: &str, cost: i32, money: i32) -> String {
+    if money >= cost {
+        tr("inspector.priced", &[("action", &action), ("cost", &cost)])
+    } else {
+        tr(
+            "inspector.priced_short",
+            &[
+                ("action", &action),
+                ("cost", &cost),
+                ("shortfall", &(cost - money)),
+            ],
+        )
+    }
+}
+
 fn repair_label(repair: &UpgradeAction, cost: i32, ctx: &UnitPanelContext) -> String {
     let name = repair.label(&ctx.config.ui, &ctx.config.upgrades);
-    if ctx.money >= cost {
-        format!("{name} · ${cost}")
-    } else {
-        format!("{name} · ${cost} (need ${} more)", cost - ctx.money)
-    }
+    priced_label(&name, cost, ctx.money)
 }

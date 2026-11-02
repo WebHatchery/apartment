@@ -124,142 +124,152 @@ pub enum GameEvent {
 
 impl GameEvent {
     /// Get a short message for display
+    /// The event as the player reads it, from `text_strings.json`.
     pub fn message(&self) -> String {
+        use apartment::text::{t, tr};
         match self {
             GameEvent::RentPaid {
                 tenant_name,
                 amount,
-            } => {
-                format!("Received ${} rent from {}", amount, tenant_name)
-            }
+            } => tr(
+                "events.rent_paid",
+                &[("amount", amount), ("tenant", tenant_name)],
+            ),
             GameEvent::RentMissed { tenant_name, .. } => {
-                format!("{} missed rent payment", tenant_name)
+                tr("events.rent_missed", &[("tenant", tenant_name)])
             }
             GameEvent::TenantUnhappy {
                 tenant_name,
                 happiness,
-            } => {
-                format!("{} is unhappy ({}%)", tenant_name, happiness)
-            }
+            } => tr(
+                "events.tenant_unhappy",
+                &[("tenant", tenant_name), ("happiness", happiness)],
+            ),
             GameEvent::TenantMovedOut { message } => message.clone(),
             GameEvent::NewApplication {
                 tenant_name,
                 archetype,
                 apartment_unit,
-            } => {
-                format!(
-                    "{} ({}) applied for Unit {}",
-                    tenant_name, archetype, apartment_unit
-                )
-            }
+            } => tr(
+                "events.new_application",
+                &[
+                    ("tenant", tenant_name),
+                    ("archetype", archetype),
+                    ("unit", apartment_unit),
+                ],
+            ),
             GameEvent::TenantMovedIn {
                 tenant_name,
                 apartment_unit,
-            } => {
-                format!("{} moved into Unit {}", tenant_name, apartment_unit)
-            }
+            } => tr(
+                "events.tenant_moved_in",
+                &[("tenant", tenant_name), ("unit", apartment_unit)],
+            ),
             GameEvent::NoiseComplaint { tenant_name } => {
-                format!("Noise complaint from {}", tenant_name)
+                tr("events.noise_complaint", &[("tenant", tenant_name)])
             }
             GameEvent::TenantDamage {
                 tenant_name,
                 apartment_unit,
                 damage,
-            } => {
-                format!(
-                    "{} damaged Unit {} (-{} condition)",
-                    tenant_name, apartment_unit, damage
-                )
-            }
+            } => tr(
+                "events.tenant_damage",
+                &[
+                    ("tenant", tenant_name),
+                    ("unit", apartment_unit),
+                    ("damage", damage),
+                ],
+            ),
             GameEvent::ConditionComplaint {
                 tenant_name,
                 apartment_unit,
-            } => {
-                format!(
-                    "{} complained about Unit {} condition",
-                    tenant_name, apartment_unit
-                )
-            }
+            } => tr(
+                "events.condition_complaint",
+                &[("tenant", tenant_name), ("unit", apartment_unit)],
+            ),
             GameEvent::PoorCondition {
                 apartment_unit,
                 condition,
-            } => {
-                format!("Unit {} in poor condition ({}%)", apartment_unit, condition)
-            }
+            } => tr(
+                "events.poor_condition",
+                &[("unit", apartment_unit), ("condition", condition)],
+            ),
             GameEvent::CriticalCondition {
                 apartment_unit,
                 condition,
-            } => {
-                format!("Unit {} CRITICAL ({}%)", apartment_unit, condition)
-            }
+            } => tr(
+                "events.critical_condition",
+                &[("unit", apartment_unit), ("condition", condition)],
+            ),
             GameEvent::HallwayDeteriorating { condition } => {
-                format!("Hallway deteriorating ({}%)", condition)
+                tr("events.hallway_deteriorating", &[("condition", condition)])
             }
-            GameEvent::UpgradeCompleted { description, cost } => {
-                format!("{} (-${})", description, cost)
-            }
+            GameEvent::UpgradeCompleted { description, cost } => tr(
+                "events.upgrade_completed",
+                &[("description", description), ("cost", cost)],
+            ),
             GameEvent::InsufficientFunds {
                 action,
                 needed,
                 available,
-            } => {
-                format!(
-                    "Cannot afford {} (need ${}, have ${})",
-                    action, needed, available
-                )
-            }
+            } => tr(
+                "events.insufficient_funds",
+                &[
+                    ("action", action),
+                    ("needed", needed),
+                    ("available", available),
+                ],
+            ),
             GameEvent::MonthEnd {
                 tick,
                 income,
                 expenses,
                 balance,
-            } => {
-                format!(
-                    "Month {} ended: +${} -${} = ${}",
-                    tick, income, expenses, balance
-                )
-            }
+            } => tr(
+                "events.month_end",
+                &[
+                    ("month", tick),
+                    ("income", income),
+                    ("expenses", expenses),
+                    ("balance", balance),
+                ],
+            ),
             GameEvent::GameEnded { outcome } => match outcome {
-                GameOutcome::Victory { .. } => "Career complete!".to_string(),
-                GameOutcome::Bankruptcy { .. } => "Bankruptcy declared!".to_string(),
-                GameOutcome::AllTenantsLeft => "All tenants have left!".to_string(),
+                GameOutcome::Victory { .. } => t("events.victory"),
+                GameOutcome::Bankruptcy { .. } => t("events.bankruptcy"),
+                GameOutcome::AllTenantsLeft => t("events.all_left"),
             },
             GameEvent::Heatwave { tick_duration } => {
-                format!("Heatwave! (Duration: {} months)", tick_duration)
+                tr("events.heatwave", &[("months", tick_duration)])
             }
             GameEvent::PipeBurst {
                 apartment_unit,
                 damage,
-            } => {
-                format!(
-                    "Pipe burst in Unit {}! (-{} condition)",
-                    apartment_unit, damage
-                )
-            }
+            } => tr(
+                "events.pipe_burst",
+                &[("unit", apartment_unit), ("damage", damage)],
+            ),
             GameEvent::Gentrification {
                 tick_duration,
                 effect_desc,
-            } => {
-                format!(
-                    "Neighborhood improving! {} (Duration: {})",
-                    effect_desc, tick_duration
-                )
+            } => tr(
+                "events.gentrification",
+                &[("effect", effect_desc), ("months", tick_duration)],
+            ),
+            GameEvent::Inspection { result, fine } if *fine > 0 => tr(
+                "events.inspection_failed",
+                &[("result", result), ("fine", fine)],
+            ),
+            GameEvent::Inspection { result, .. } => {
+                tr("events.inspection_passed", &[("result", result)])
             }
-            GameEvent::Inspection { result, fine } => {
-                if *fine > 0 {
-                    format!("Inspection failed: {} (Fine: -${})", result, fine)
-                } else {
-                    format!("Inspection passed: {}", result)
-                }
-            }
-            GameEvent::BoilerFailure { cost } => {
-                format!("Boiler failure! (-${} repair)", cost)
-            }
-            GameEvent::StructuralIssue { cost, description } => {
-                format!("Structural issue: {} (-${})", description, cost)
-            }
+            GameEvent::BoilerFailure { cost } => tr("events.boiler_failure", &[("cost", cost)]),
+            GameEvent::StructuralIssue { cost, description } => tr(
+                "events.structural_issue",
+                &[("description", description), ("cost", cost)],
+            ),
             GameEvent::StaffAction { role, action } => {
-                format!("{}: {}", role, action)
+                tr("events.staff_action", &[("role", role), ("action", action)])
             }
             GameEvent::Notification { message, .. } => message.clone(),
         }

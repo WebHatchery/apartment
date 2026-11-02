@@ -10,9 +10,8 @@ use macroquad::prelude::*;
 use super::panel_flow::{PanelFlow, BUTTON_H};
 use super::theme::{scale, Tone};
 use super::{common::*, Disclosure, PanelDisclosure, UiAction};
+use apartment::text::t;
 use macroquad_toolkit::ui::draw_ui_text;
-
-const TITLE: &str = "Lobby & hallway";
 
 pub fn draw_hallway_panel(
     building: &Building,
@@ -23,7 +22,8 @@ pub fn draw_hallway_panel(
     disclosure: PanelDisclosure,
 ) -> (Option<UiAction>, f32) {
     let bounds = layout::context_panel();
-    panel(bounds.x, bounds.y, bounds.w, bounds.h, TITLE);
+    let title = t("inspector.lobby_title");
+    panel(bounds.x, bounds.y, bounds.w, bounds.h, &title);
     let mut scroll = scroll_offset;
     if bounds.contains(mouse_position().into()) {
         scroll = (scroll - mouse_wheel().1 * 30.0).max(0.0);
@@ -33,7 +33,7 @@ pub fn draw_hallway_panel(
 
     let condition = building.hallway_condition;
     flow.kv(
-        "Condition",
+        &t("inspector.condition"),
         &format!("{condition}%"),
         condition_color(condition),
     );
@@ -41,15 +41,11 @@ pub fn draw_hallway_panel(
         flow.meter(condition, 100, condition_color(condition));
     }
     flow.kv(
-        "Building appeal",
+        &t("inspector.building_appeal"),
         &building.building_appeal().to_string(),
         colors::ACCENT(),
     );
-    flow.paragraph(
-        "The lobby is the first thing every applicant sees.",
-        scale::LABEL,
-        colors::TEXT_DIM(),
-    );
+    flow.paragraph(&t("inspector.lobby_note"), scale::LABEL, colors::TEXT_DIM());
 
     let (staff_actions, mut other_actions) = split_staff_actions(building, config);
     if let Some(index) = other_actions
@@ -59,11 +55,7 @@ pub fn draw_hallway_panel(
         let repair = other_actions.remove(index);
         if let Some(cost) = repair.cost(&config.economy, &config.upgrades) {
             let name = repair.label(&config.ui, &config.upgrades);
-            let label = if money >= cost {
-                format!("{name} · ${cost}")
-            } else {
-                format!("{name} · ${cost} (need ${} more)", cost - money)
-            };
+            let label = super::apartment_panel::priced_label(&name, cost, money);
             let tone = if condition < config.thresholds.poor_condition {
                 Tone::Primary
             } else {
@@ -104,7 +96,7 @@ pub fn draw_hallway_panel(
             "Upgrades & staff",
         );
     }
-    super::widgets::draw_panel_header(bounds, TITLE);
+    super::widgets::draw_panel_header(bounds, &title);
     (action, scroll)
 }
 

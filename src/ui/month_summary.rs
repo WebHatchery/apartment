@@ -10,6 +10,7 @@ use super::widgets::{button_at, draw_panel, kv_row, line_height, wrap};
 use super::UiAction;
 use crate::simulation::EventSeverity;
 use crate::state::MonthSummary;
+use apartment::text::{t, tr};
 
 pub(crate) fn severity_color(severity: &EventSeverity) -> Color {
     match severity {
@@ -33,35 +34,43 @@ fn signed(value: i32) -> String {
 }
 
 /// Ledger rows worth showing: zero buckets are left out.
-fn ledger_rows(summary: &MonthSummary) -> Vec<(&'static str, String, Color)> {
+fn ledger_rows(summary: &MonthSummary) -> Vec<(String, String, Color)> {
     let report = &summary.report;
-    let mut rows = vec![("Rent", money(report.rent_income), colors::POSITIVE())];
+    let mut rows = vec![(
+        t("month.rent"),
+        money(report.rent_income),
+        colors::POSITIVE(),
+    )];
     if report.other_income > 0 {
         rows.push((
-            "Grants & sales",
+            t("month.other_income"),
             money(report.other_income),
             colors::POSITIVE(),
         ));
     }
     if report.operating_costs > 0 {
         rows.push((
-            "Running costs",
+            t("month.running_costs"),
             money(report.operating_costs),
             colors::TEXT(),
         ));
     }
     if report.repair_costs > 0 {
-        rows.push(("Repairs", money(report.repair_costs), colors::TEXT()));
+        rows.push((
+            t("month.repairs"),
+            money(report.repair_costs),
+            colors::TEXT(),
+        ));
     }
     if report.upgrade_costs > 0 {
         rows.push((
-            "Upgrades & purchases",
+            t("month.upgrades"),
             money(report.upgrade_costs),
             colors::TEXT(),
         ));
     }
     rows.push((
-        "Net",
+        t("month.net"),
         signed(report.net),
         if report.net >= 0 {
             colors::POSITIVE()
@@ -70,7 +79,7 @@ fn ledger_rows(summary: &MonthSummary) -> Vec<(&'static str, String, Color)> {
         },
     ));
     rows.push((
-        "Balance",
+        t("month.balance"),
         money(report.ending_balance),
         colors::TEXT_BRIGHT(),
     ));
@@ -104,7 +113,7 @@ pub(crate) fn draw_summary_body(summary: &MonthSummary, rect: Rect) -> f32 {
         if y + row_h > rect.bottom() {
             return y;
         }
-        kv_row(rect.x, y, rect.w, key, &value, value_color);
+        kv_row(rect.x, y, rect.w, &key, &value, value_color);
         y += row_h;
     }
     y += space::SM;
@@ -125,7 +134,7 @@ pub(crate) fn draw_summary_body(summary: &MonthSummary, rect: Rect) -> f32 {
     }
     if overflow && y + line_h <= rect.bottom() {
         draw_ui_text(
-            "More in View history",
+            &t("month.overflow"),
             rect.x,
             y + scale::LABEL,
             scale::LABEL,
@@ -158,11 +167,12 @@ pub fn draw_month_summary(summary: &MonthSummary) -> Option<UiAction> {
         w,
         h,
     );
-    let inner = draw_panel(card, &format!("Month {} closed", summary.month));
+    let inner = draw_panel(card, &tr("month.title", &[("month", &summary.month)]));
     let button = Rect::new(inner.x, inner.bottom() - 44.0, inner.w, 44.0);
     draw_summary_body(
         summary,
         Rect::new(inner.x, inner.y, inner.w, button.y - inner.y - space::SM),
     );
-    button_at(button, "Continue", true, Tone::Primary).then_some(UiAction::DismissMonthSummary)
+    button_at(button, &t("month.continue"), true, Tone::Primary)
+        .then_some(UiAction::DismissMonthSummary)
 }

@@ -1,76 +1,76 @@
 {
-    "ui": {
-        "header": {
-            "end_turn": "End Month",
-            "money_label": "Funds",
-            "month_label": "Month"
-        },
-        "building_view": {
-            "vacant": "VACANT",
-            "hallway": "HALLWAY"
-        },
-        "apartment_panel": {
-            "condition": "CONDITION",
-            "design": "Design",
-            "size": "Size",
-            "noise": "Noise Level",
-            "rent": "Rent",
-            "quality_score": "Quality Score",
-            "tenant": "TENANT",
-            "happiness": "Happiness",
-            "months_resided": "Months",
-            "upgrades": "UPGRADES"
-        },
-        "applications": {
-            "title": "Applications",
-            "no_applications": "No pending applications",
-            "accept": "Accept",
-            "reject": "Reject",
-            "match_score": "Match"
-        }
-    },
-    "design_types": {
-        "bare": "Bare",
-        "practical": "Practical",
-        "cozy": "Cozy"
-    },
-    "noise_levels": {
-        "low": "Quiet",
-        "high": "Noisy"
-    },
-    "sizes": {
-        "small": "Small",
-        "medium": "Medium"
-    },
-    "events": {
-        "rent_paid": "Received ${amount} rent from {tenant}",
-        "rent_missed": "{tenant} missed rent payment",
-        "tenant_unhappy": "{tenant} is unhappy ({happiness}%)",
-        "tenant_moved_out": "{tenant} has moved out!",
-        "tenant_moved_in": "{tenant} moved into Unit {unit}",
-        "new_application": "{tenant} ({archetype}) applied for Unit {unit}",
-        "noise_complaint": "Noise complaint from {tenant}",
-        "condition_complaint": "{tenant} complained about Unit {unit} condition",
-        "poor_condition": "Unit {unit} in poor condition ({condition}%)",
-        "critical_condition": "Unit {unit} CRITICAL ({condition}%)",
-        "hallway_deteriorating": "Hallway deteriorating ({condition}%)",
-        "month_end": "Month {tick} ended: +${income} -${expenses} = ${balance}",
-        "victory": "Career complete!",
-        "bankruptcy": "Bankruptcy declared!",
-        "all_left": "All tenants have left!"
-    },
-    "upgrade_buttons": {
-        "repair": "Repair +{amount} (${cost})",
-        "design_upgrade": "Upgrade to {design} (${cost})",
-        "soundproofing": "Add Soundproofing (${cost})",
-        "hallway_repair": "Repair Hallway +{amount} (${cost})"
-    },
-    "tooltips": {
-        "condition": "Physical state of the apartment. Decays monthly.",
-        "design": "Interior quality. Affects tenant preferences.",
-        "noise": "Ambient noise level. Can be mitigated with soundproofing.",
-        "quality_score": "Combined score of all factors. Higher attracts better tenants.",
-        "happiness": "Tenant satisfaction. If this reaches 0, they leave.",
-        "hallway": "Shared space condition. Affects all tenant happiness."
-    }
+  "events": {
+    "rent_paid": "Received ${amount} rent from {tenant}",
+    "rent_missed": "{tenant} missed rent payment",
+    "tenant_unhappy": "{tenant} is unhappy ({happiness}%)",
+    "new_application": "{tenant} ({archetype}) applied for Unit {unit}",
+    "tenant_moved_in": "{tenant} moved into Unit {unit}",
+    "noise_complaint": "Noise complaint from {tenant}",
+    "tenant_damage": "{tenant} damaged Unit {unit} (-{damage} condition)",
+    "condition_complaint": "{tenant} complained about Unit {unit} condition",
+    "poor_condition": "Unit {unit} in poor condition ({condition}%)",
+    "critical_condition": "Unit {unit} is in critical condition ({condition}%)",
+    "hallway_deteriorating": "The lobby is wearing down ({condition}%)",
+    "upgrade_completed": "{description} (-${cost})",
+    "insufficient_funds": "Cannot afford {action} (need ${needed}, have ${available})",
+    "month_end": "Month {month} closed: +${income} -${expenses}, balance ${balance}",
+    "victory": "Career complete!",
+    "bankruptcy": "Bankruptcy declared!",
+    "all_left": "All tenants have left!",
+    "heatwave": "Heatwave! (lasts {months} months)",
+    "pipe_burst": "Pipe burst in Unit {unit}! (-{damage} condition)",
+    "gentrification": "Neighborhood improving! {effect} (lasts {months} months)",
+    "inspection_failed": "Inspection failed: {result} (fine -${fine})",
+    "inspection_passed": "Inspection passed: {result}",
+    "boiler_failure": "Boiler failure! (-${cost} repair)",
+    "structural_issue": "Structural issue: {description} (-${cost})",
+    "staff_action": "{role}: {action}"
+  },
+  "status": {
+    "critical_units": "{count} unit(s) in critical condition",
+    "overdrawn": "Funds are overdrawn",
+    "requests_waiting": "{count} resident request(s) waiting",
+    "unlisted_vacancies": "{count} empty unit(s) not listed",
+    "needs_repair": "{count} unit(s) need repair",
+    "activity": "ACTIVITY",
+    "view_history": "View history",
+    "hide_history": "Hide history",
+    "history_title": "Month {month} result",
+    "earlier_activity": "Earlier activity"
+  },
+  "month": {
+    "title": "Month {month} closed",
+    "rent": "Rent",
+    "other_income": "Grants & sales",
+    "running_costs": "Running costs",
+    "repairs": "Repairs",
+    "upgrades": "Upgrades & purchases",
+    "net": "Net",
+    "balance": "Balance",
+    "rent_paid": "Rent paid by {count} resident(s)",
+    "missed_rent": "Missed rent: {names}",
+    "applications": "{count} new application(s)",
+    "more_lines": "…and {count} more in the history",
+    "overflow": "More in View history",
+    "continue": "Continue"
+  },
+  "inspector": {
+    "condition": "Condition",
+    "rent": "Rent",
+    "asking_rent": "Asking rent",
+    "rent_with_limit": "${rent}/mo · limit ${limit}",
+    "rent_monthly": "${rent}/mo",
+    "happiness": "Happiness",
+    "condition_critical": "{condition}% · critical, residents may leave",
+    "condition_poor": "{condition}% · poor, needs repair",
+    "condition_worn": "{condition}% · worn",
+    "condition_good": "{condition}% · good",
+    "vacant_listed": "Vacant · listed for lease",
+    "vacant_unlisted": "Vacant · off the market",
+    "priced": "{action} · ${cost}",
+    "priced_short": "{action} · ${cost} (need ${shortfall} more)",
+    "lobby_title": "Lobby & hallway",
+    "building_appeal": "Building appeal",
+    "lobby_note": "The lobby is the first thing every applicant sees."
+  }
 }

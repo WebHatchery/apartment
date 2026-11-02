@@ -47,27 +47,50 @@ pub struct ArchetypeRegistry {
 }
 
 impl ArchetypeRegistry {
-    /// Load archetypes from JSON file
+    /// Load archetypes from JSON. A local file that fails to parse or omits
+    /// an archetype is reported and the embedded copy is used instead, so the
+    /// game never runs with a partial roster.
     pub fn load() -> Self {
-        let json_result = load_json_file_with_fallback_sync::<ArchetypeData>(
+        let embedded = macroquad_toolkit::include_json_str!("../../assets/tenant_archetypes.json");
+        let loaded = load_json_file_with_fallback_sync::<ArchetypeData>(
             "assets/tenant_archetypes.json",
-            macroquad_toolkit::include_json_str!("../../assets/tenant_archetypes.json"),
+            embedded,
             JsonFallbackPolicy::ReadError,
-        );
+        )
+        .map_err(|error| error.to_string())
+        .map(Self::from_data)
+        .and_then(|registry| registry.validate().map(|()| registry));
+        loaded.unwrap_or_else(|error| {
+            eprintln!("Invalid tenant_archetypes.json ({error}); using the built-in roster");
+            let data: ArchetypeData =
+                serde_json::from_str(embedded).expect("the embedded tenant_archetypes.json parses");
+            Self::from_data(data)
+        })
+    }
 
-        match json_result {
-            Ok(data) => {
-                let mut definitions = HashMap::new();
-                for archetype in data.archetypes {
-                    definitions.insert(archetype.id.clone(), archetype);
-                }
-                Self { definitions }
-            }
-            Err(e) => {
-                eprintln!("Failed to parse tenant_archetypes.json: {}", e);
-                Self::default()
+    fn from_data(data: ArchetypeData) -> Self {
+        let definitions = data
+            .archetypes
+            .into_iter()
+            .map(|archetype| (archetype.id.clone(), archetype))
+            .collect();
+        Self { definitions }
+    }
+
+    /// Every archetype the game can generate must be defined with names.
+    pub fn validate(&self) -> Result<(), String> {
+        for id in ["student", "professional", "artist", "family", "elderly"] {
+            let definition = self
+                .definitions
+                .get(id)
+                .ok_or_else(|| format!("missing archetype '{id}'"))?;
+            if definition.name_pool.first_names.is_empty()
+                || definition.name_pool.last_initials.is_empty()
+            {
+                return Err(format!("archetype '{id}' has an empty name pool"));
             }
         }
+        Ok(())
     }
 
     /// Get archetype definition by ID

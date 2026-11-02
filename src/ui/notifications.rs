@@ -8,6 +8,7 @@ use super::UiAction;
 use crate::assets::AssetManager;
 use crate::simulation::{EventLog, GameEvent};
 use crate::state::{MonthSummary, SummaryLine};
+use apartment::text::{t, tr};
 use macroquad::prelude::*;
 use macroquad_toolkit::ui::{draw_ui_text, truncate_text_to_width};
 
@@ -46,17 +47,17 @@ pub fn draw_notifications(
             scale::BODY,
             severity_color(&issue.severity),
         ),
-        None => ("ACTIVITY".to_string(), scale::LABEL, colors::TEXT_DIM()),
+        None => (t("status.activity"), scale::LABEL, colors::TEXT_DIM()),
     };
     draw_ui_text(&label, space::LG, y + 26.0, size, label_color);
 
     if button_at(
         Rect::new(w - button_w - space::LG, y + 2.0, button_w, 40.0),
-        if expanded {
-            "Hide history"
+        &t(if expanded {
+            "status.hide_history"
         } else {
-            "View history"
-        },
+            "status.view_history"
+        }),
         true,
         Tone::Secondary,
     ) {
@@ -82,7 +83,7 @@ fn draw_activity_drawer(
     let mut event_y = y + space::MD;
     if let Some(summary) = latest_month {
         draw_ui_text(
-            &format!("Month {} result", summary.month),
+            &tr("status.history_title", &[("month", &summary.month)]),
             x,
             event_y + scale::HEADING,
             scale::HEADING,
@@ -96,7 +97,7 @@ fn draw_activity_drawer(
         return;
     }
     draw_ui_text(
-        "Earlier activity",
+        &t("status.earlier_activity"),
         x,
         event_y + scale::LABEL,
         scale::LABEL,

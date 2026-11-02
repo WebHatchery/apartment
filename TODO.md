@@ -36,12 +36,6 @@ with the `APARTMENT_CAPTURE_MANIFEST` harness (scenes in `src/game.rs`).
   public seams. Preserve useful coverage; for suites with more than five cases
   per feature, use table-driven assertions or document why cases stay distinct.
 
-- [ ] Make JSON the single runtime source of truth for content, configuration,
-  and player-facing text: wire `assets/text_strings.json` through the toolkit
-  loader with typed semantic validation, then migrate hardcoded UI/status text
-  and duplicate archetype/config defaults, keeping only intentional schema
-  fallbacks.
-
 - [ ] Extend `tests/code_standards.rs` or CI with enforceable checks for module
   docs, forbidden `mod.rs` files, in-source tests, undocumented `#[allow]`
   attributes, file/function size signals, and direct game-data parsing so the

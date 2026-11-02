@@ -2,6 +2,8 @@
 //! the building, gathered once so the summary card and the history drawer
 //! show the same thing. Also the footer's "unresolved right now" status.
 
+use apartment::text::{t, tr};
+
 use crate::economy::MonthlyReport;
 use crate::simulation::{EventSeverity, GameEvent};
 
@@ -64,16 +66,13 @@ fn summarize_events<'a>(events: impl Iterator<Item = &'a GameEvent>) -> Vec<Summ
     let mut summary = Vec::new();
     if paid > 0 {
         summary.push(SummaryLine::new(
-            format!(
-                "Rent paid by {paid} resident{}",
-                if paid == 1 { "" } else { "s" }
-            ),
+            tr("month.rent_paid", &[("count", &paid)]),
             EventSeverity::Positive,
         ));
     }
     if !missed.is_empty() {
         summary.push(SummaryLine::new(
-            format!("Missed rent: {}", missed.join(", ")),
+            tr("month.missed_rent", &[("names", &missed.join(", "))]),
             EventSeverity::Negative,
         ));
     }
@@ -86,10 +85,7 @@ fn summarize_events<'a>(events: impl Iterator<Item = &'a GameEvent>) -> Vec<Summ
     summary.extend(lines);
     if applications > 0 {
         summary.push(SummaryLine::new(
-            format!(
-                "{applications} new application{}",
-                if applications == 1 { "" } else { "s" }
-            ),
+            tr("month.applications", &[("count", &applications)]),
             EventSeverity::Info,
         ));
     }
@@ -97,7 +93,7 @@ fn summarize_events<'a>(events: impl Iterator<Item = &'a GameEvent>) -> Vec<Summ
         let hidden = summary.len() - (MAX_LINES - 1);
         summary.truncate(MAX_LINES - 1);
         summary.push(SummaryLine::new(
-            format!("…and {hidden} more in the history"),
+            tr("month.more_lines", &[("count", &hidden)]),
             EventSeverity::Info,
         ));
     }
@@ -128,13 +124,13 @@ impl GameplayState {
             .count();
         if critical > 0 {
             return Some(SummaryLine::new(
-                format!("{critical} unit(s) in critical condition"),
+                tr("status.critical_units", &[("count", &critical)]),
                 EventSeverity::Negative,
             ));
         }
         if self.funds.balance < 0 {
             return Some(SummaryLine::new(
-                "Funds are overdrawn",
+                t("status.overdrawn"),
                 EventSeverity::Negative,
             ));
         }
@@ -145,7 +141,7 @@ impl GameplayState {
             .count();
         if requests > 0 {
             return Some(SummaryLine::new(
-                format!("{requests} resident request(s) waiting"),
+                tr("status.requests_waiting", &[("count", &requests)]),
                 EventSeverity::Warning,
             ));
         }
@@ -161,7 +157,7 @@ impl GameplayState {
             .count();
         if unlisted > 0 {
             return Some(SummaryLine::new(
-                format!("{unlisted} empty unit(s) not listed"),
+                tr("status.unlisted_vacancies", &[("count", &unlisted)]),
                 EventSeverity::Warning,
             ));
         }
@@ -173,7 +169,7 @@ impl GameplayState {
             .count();
         (poor > 0).then(|| {
             SummaryLine::new(
-                format!("{poor} unit(s) need repair"),
+                tr("status.needs_repair", &[("count", &poor)]),
                 EventSeverity::Warning,
             )
         })
