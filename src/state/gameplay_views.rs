@@ -5,14 +5,13 @@ use crate::narrative::NotificationCategory;
 use crate::narrative::TutorialMilestone;
 use crate::ui::workspace_nav::{draw_workspace_nav, WorkspaceTab};
 use crate::ui::{
-    colors, draw_apartment_panel, draw_application_panel, draw_building_summary,
-    draw_building_view, draw_hallway_panel, draw_header, draw_notifications, draw_ownership_panel,
-    Selection,
+    draw_apartment_panel, draw_application_panel, draw_building_summary, draw_building_view,
+    draw_hallway_panel, draw_header, draw_notifications, draw_ownership_panel, Selection,
 };
 use macroquad::prelude::*;
 
 use super::gameplay::{GameplayState, ViewMode};
-use macroquad_toolkit::ui::{draw_ui_text, measure_ui_text};
+use macroquad_toolkit::ui::draw_ui_text;
 
 impl GameplayState {
     /// Main draw function - dispatches to appropriate view
@@ -147,8 +146,13 @@ impl GameplayState {
             if let Some(action) = action {
                 self.pending_actions.push(action);
             }
-            self.pending_actions
-                .retain(|action| matches!(action, crate::ui::UiAction::ResolveEventChoice { .. }));
+            self.pending_actions.retain(|action| {
+                matches!(
+                    action,
+                    crate::ui::UiAction::ResolveEventChoice { .. }
+                        | crate::ui::UiAction::OpenPauseMenu
+                )
+            });
         } else {
             self.event_scroll_event_id = None;
             self.event_scroll_offset = 0.0;
@@ -178,14 +182,19 @@ impl GameplayState {
             self.draw_tutorial_coach(assets);
         }
 
-        // Tutorial overlay (takes precedence)
-        if self.tutorial.active && !self.tutorial.pending_messages.is_empty() {
-            self.draw_tutorial_overlay(assets);
-            self.pending_actions.clear();
-        }
-        // Notification overlay (shows when tutorial is done/empty)
-        else if self.notifications.has_pending() {
-            self.draw_notification_overlay();
+        // Toasts dismiss on their own buttons, so they stay hidden while the
+        // pause menu owns input. Opening the pause menu is always allowed.
+        if !self.show_pause_menu {
+            // Tutorial overlay (takes precedence)
+            if self.tutorial.active && !self.tutorial.pending_messages.is_empty() {
+                self.draw_tutorial_overlay(assets);
+                self.pending_actions
+                    .retain(|action| matches!(action, crate::ui::UiAction::OpenPauseMenu));
+            }
+            // Notification overlay (shows when tutorial is done/empty)
+            else if self.notifications.has_pending() {
+                self.draw_notification_overlay();
+            }
         }
 
         // Draw pause menu on top of everything if active
@@ -310,145 +319,6 @@ impl GameplayState {
                     .push(crate::ui::UiAction::ClearSelection);
             }
         }
-    }
-
-    /// Draw the pause menu overlay (called from draw())
-    pub(super) fn draw_pause_menu_overlay(&mut self) {
-        // Semi-transparent overlay
-        draw_rectangle(
-            0.0,
-            0.0,
-            screen_width(),
-            screen_height(),
-            Color::new(0.0, 0.0, 0.0, 0.7),
-        );
-
-        // Menu panel
-        let panel_w = 300.0;
-        let panel_h = 366.0;
-        let panel_x = (screen_width() - panel_w) / 2.0;
-        let panel_y = (screen_height() - panel_h) / 2.0;
-
-        draw_rectangle(panel_x, panel_y, panel_w, panel_h, colors::SURFACE());
-        draw_rectangle_lines(panel_x, panel_y, panel_w, panel_h, 2.0, colors::ACCENT());
-
-        // Title
-        let title = "PAUSED";
-        let title_width = measure_ui_text(title, None, 32, 1.0).width;
-        draw_ui_text(
-            title,
-            panel_x + (panel_w - title_width) / 2.0,
-            panel_y + 40.0,
-            32.0,
-            colors::TEXT_BRIGHT(),
-        );
-
-        let btn_w = 200.0;
-        let btn_h = 40.0;
-        let btn_x = panel_x + (panel_w - btn_w) / 2.0;
-        let mut btn_y = panel_y + 70.0;
-
-        // Resume button
-        if self.menu_button(btn_x, btn_y, btn_w, btn_h, "Resume") {
-            self.show_pause_menu = false;
-        }
-        btn_y += 50.0;
-
-        // Fullscreen toggle
-        let fs_label = if self.is_fullscreen {
-            "Windowed Mode"
-        } else {
-            "Fullscreen"
-        };
-        if self.menu_button(btn_x, btn_y, btn_w, btn_h, fs_label) {
-            self.is_fullscreen = !self.is_fullscreen;
-            set_fullscreen(self.is_fullscreen);
-            // Keep the title-screen setting in step with the pause toggle.
-            let mut settings = crate::save::load_settings();
-            settings.fullscreen = self.is_fullscreen;
-            if let Err(error) = crate::save::save_settings(&settings) {
-                eprintln!("Failed to save settings: {error}");
-            }
-        }
-        btn_y += 50.0;
-
-        // Save button
-        if self.menu_button(btn_x, btn_y, btn_w, btn_h, "Save Game") {
-            let (message, message_color) = if crate::save::save_game(self).is_ok() {
-                ("Game saved", colors::POSITIVE())
-            } else {
-                ("Save failed — please try again", colors::NEGATIVE())
-            };
-            self.floating_texts.spawn(
-                message,
-                vec2(screen_width() / 2.0, screen_height() / 2.0),
-                message_color,
-            );
-            self.show_pause_menu = false;
-        }
-        btn_y += 50.0;
-
-        // Quit to Menu button
-        if self.menu_button(btn_x, btn_y, btn_w, btn_h, "Quit to Menu") {
-            self.pending_quit_to_menu = true;
-        }
-
-        // Quit Game button (exits completely) — native only; a browser tab has
-        // nothing to exit and std::process::exit is unsupported on wasm.
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            btn_y += 50.0;
-            if self.menu_button(btn_x, btn_y, btn_w, btn_h, "Quit Game") {
-                std::process::exit(0);
-            }
-        }
-
-        // Touch-first continuation hint; keyboard shortcuts remain supplemental.
-        draw_ui_text(
-            "Tap RESUME to continue",
-            panel_x + (panel_w - 164.0) / 2.0,
-            panel_y + panel_h - 20.0,
-            14.0,
-            colors::TEXT_DIM(),
-        );
-    }
-
-    /// Helper for drawing menu buttons
-    pub(super) fn menu_button(&self, x: f32, y: f32, w: f32, h: f32, text: &str) -> bool {
-        let mouse = mouse_position();
-        let hovered = mouse.0 >= x && mouse.0 <= x + w && mouse.1 >= y && mouse.1 <= y + h;
-        let clicked = hovered && is_mouse_button_pressed(MouseButton::Left);
-
-        let bg_color = if hovered {
-            colors::HOVERED()
-        } else {
-            colors::SURFACE_ALT()
-        };
-
-        draw_rectangle(x, y, w, h, bg_color);
-        draw_rectangle_lines(
-            x,
-            y,
-            w,
-            h,
-            1.0,
-            if hovered {
-                colors::PRIMARY()
-            } else {
-                colors::BORDER_STRONG()
-            },
-        );
-
-        let text_width = measure_ui_text(text, None, 20, 1.0).width;
-        draw_ui_text(
-            text,
-            x + (w - text_width) / 2.0,
-            y + h / 2.0 + 6.0,
-            20.0,
-            colors::TEXT(),
-        );
-
-        clicked
     }
 
     /// Draw the tutorial overlay as a bottom toast. Dismisses on "Next".

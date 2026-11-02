@@ -15,16 +15,19 @@ mod gameplay_life_events; // Emergent tenant life events
 mod gameplay_narrative_turn; // Monthly narrative, mail, dialogue, requests
 mod gameplay_neighborhood; // Neighborhood reputation and market conditions
 mod gameplay_ownership; // Safe condo sale and buyback transactions
+mod gameplay_pause; // Pause menu: save, load, settings, exit
 mod gameplay_policies; // Rent, marketing, and operating-policy changes
 mod gameplay_turn; // Monthly turn advancement
 mod gameplay_views; // Drawing functions (draw, draw_building_mode, etc.)
 mod menu;
 pub mod mission_system;
+mod settings_screen; // Settings page shared by the title and pause menus
 pub mod tutorial_system; // Tutorial logic // Mission logic
 
 pub use gameplay::GameplayState;
 pub(crate) use gameplay::ViewMode;
 pub use menu::MenuState;
+pub(crate) use settings_screen::{centered_top as centered_settings_top, SettingsScreen};
 
 pub enum GameState {
     Menu(MenuState),

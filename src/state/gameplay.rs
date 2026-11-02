@@ -150,13 +150,16 @@ pub struct GameplayState {
     pub show_pause_menu: bool,
     #[serde(skip)]
     pub activity_drawer_open: bool,
-    #[serde(skip)]
-    pub is_fullscreen: bool,
     /// Player preference from settings; applied on entering gameplay.
     #[serde(skip, default = "default_autosave_enabled")]
     pub autosave_enabled: bool,
     #[serde(skip)]
     pub pending_quit_to_menu: bool,
+    #[serde(skip)]
+    pub pending_load_game: bool,
+    /// Settings page opened from the pause menu.
+    #[serde(skip)]
+    pub(crate) pause_settings: Option<super::settings_screen::SettingsScreen>,
 
     /// Current building template ID (for unlock tracking)
     #[serde(default)]
@@ -323,9 +326,10 @@ impl GameplayState {
             career_badges_page: 0,
             show_pause_menu: false,
             activity_drawer_open: false,
-            is_fullscreen: false,
             autosave_enabled: true,
             pending_quit_to_menu: false,
+            pending_load_game: false,
+            pause_settings: None,
             current_building_id: building_id,
             has_ever_had_tenant: false,
             ever_occupied_buildings: HashSet::new(),
@@ -388,9 +392,9 @@ impl GameplayState {
         state
     }
 
-    /// Adopt the player's saved preferences (display state, autosave).
+    /// Adopt the player's saved gameplay preferences (fullscreen is applied
+    /// to the window directly by the settings page).
     pub fn apply_settings(&mut self, settings: &macroquad_toolkit::settings::GameSettings) {
-        self.is_fullscreen = settings.fullscreen;
         self.autosave_enabled = settings.autosave_enabled;
     }
 

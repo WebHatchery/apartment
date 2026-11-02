@@ -30,7 +30,11 @@ impl GameplayState {
         let escape_pressed = is_key_pressed(KeyCode::Escape);
         let was_paused = self.show_pause_menu;
         if escape_pressed {
-            self.show_pause_menu = !self.show_pause_menu;
+            if self.pause_settings.is_some() {
+                self.close_pause_settings();
+            } else {
+                self.show_pause_menu = !self.show_pause_menu;
+            }
         }
 
         // A modal is drawn over the base view, so base-view clicks from that
@@ -67,6 +71,9 @@ impl GameplayState {
         self.update_tutorial();
 
         if self.show_pause_menu {
+            if let Some(transition) = self.update_pause_menu() {
+                return Some(transition);
+            }
             if self.pending_quit_to_menu {
                 self.pending_quit_to_menu = false;
                 return Some(StateTransition::ToMenu);
@@ -94,8 +101,15 @@ impl GameplayState {
     }
 }
 
+/// The pause menu stays reachable under blocking overlays (tutorial toasts,
+/// event modals); otherwise those overlays accept only their own responses.
 fn action_allowed_while_blocked(paused: bool, blocked: bool, action: &UiAction) -> bool {
-    !paused && (!blocked || matches!(action, UiAction::ResolveEventChoice { .. }))
+    !paused
+        && (!blocked
+            || matches!(
+                action,
+                UiAction::ResolveEventChoice { .. } | UiAction::OpenPauseMenu
+            ))
 }
 
 #[cfg(test)]

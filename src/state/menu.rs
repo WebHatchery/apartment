@@ -10,9 +10,8 @@ use macroquad::prelude::*;
 use macroquad_toolkit::ui::{draw_ui_text, measure_ui_text, truncate_text_to_width};
 
 mod building_select;
-mod settings;
 
-use settings::SettingsScreen;
+use super::settings_screen::SettingsScreen;
 
 const HOME_BUTTON_W: f32 = 280.0;
 const HOME_BUTTON_H: f32 = 48.0;
@@ -127,7 +126,7 @@ impl MenuState {
             progress,
             templates,
             load_error,
-            settings: SettingsScreen::new(),
+            settings: SettingsScreen::new(content_top),
         }
     }
 
@@ -213,7 +212,7 @@ impl MenuState {
             }
             HomeOption::NewGame => self.screen = MenuScreen::NewGame,
             HomeOption::Settings => {
-                self.settings = SettingsScreen::new();
+                self.settings = SettingsScreen::new(content_top);
                 self.screen = MenuScreen::Settings;
             }
             #[cfg(not(target_arch = "wasm32"))]

@@ -236,6 +236,15 @@ impl Game {
                     state.show_pause_menu = true;
                 }
             }
+            "pause_settings" | "pause_settings_tiny" => {
+                self.seed_gameplay_capture(true);
+                if let GameState::Gameplay(state) = &mut self.state {
+                    state.show_pause_menu = true;
+                    state.pause_settings = Some(crate::state::SettingsScreen::new(
+                        crate::state::centered_settings_top,
+                    ));
+                }
+            }
             "history_showcase" | "history_compact" | "history_tiny" => {
                 self.seed_gameplay_capture(true);
                 if let GameState::Gameplay(state) = &mut self.state {

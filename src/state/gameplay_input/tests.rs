@@ -1,7 +1,7 @@
 use super::*;
 
 #[test]
-fn overlays_reject_gameplay_actions_but_accept_event_responses() {
+fn overlays_reject_gameplay_actions_but_accept_event_responses_and_pause() {
     let gameplay_action = UiAction::EndTurn;
     let pause_action = UiAction::OpenPauseMenu;
     let response = UiAction::ResolveEventChoice {
@@ -10,7 +10,7 @@ fn overlays_reject_gameplay_actions_but_accept_event_responses() {
     };
 
     assert!(!action_allowed_while_blocked(false, true, &gameplay_action));
-    assert!(!action_allowed_while_blocked(false, true, &pause_action));
+    assert!(action_allowed_while_blocked(false, true, &pause_action));
     assert!(action_allowed_while_blocked(false, true, &response));
     assert!(!action_allowed_while_blocked(true, false, &gameplay_action));
 }
