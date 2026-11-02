@@ -19,7 +19,9 @@ mod tutorial;
 pub use dialogue::{ActiveDialogue, DialogueSystem};
 pub use events::{NarrativeEvent, NarrativeEventSystem};
 pub use mail::{MailItem, MailType, Mailbox};
-pub use missions::{ActiveTaxBreak, MissionGoal, MissionManager, MissionReward, MissionStatus};
+pub use missions::{
+    ActiveTaxBreak, MissionGoal, MissionManager, MissionReward, MissionSnapshot, MissionStatus,
+};
 pub use notifications::{NotificationCategory, NotificationManager, RelationshipChange};
 pub use stories::{LifeChangeType, StoryImpact, TenantRequest, TenantStory};
 pub use tutorial::{TutorialManager, TutorialMilestone};

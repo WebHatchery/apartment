@@ -269,17 +269,21 @@ impl Sim {
             let reputation_multiplier = self.application_reputation_multiplier();
 
             let result = advance_tick(
-                0,
-                &mut self.building,
-                &mut self.tenants,
-                &mut self.applications,
-                &mut self.funds,
-                &mut self.event_log,
+                crate::simulation::TickWorld {
+                    building: &mut self.building,
+                    tenants: &mut self.tenants,
+                    applications: &mut self.applications,
+                    funds: &mut self.funds,
+                    event_log: &mut self.event_log,
+                    next_tenant_id: &mut self.next_tenant_id,
+                },
                 &mut self.current_tick,
-                &mut self.next_tenant_id,
-                has_ever_had_tenant,
-                reputation_multiplier,
-                &self.config,
+                &crate::simulation::TickContext {
+                    building_id: 0,
+                    has_ever_had_tenant,
+                    reputation_multiplier,
+                    config: &self.config,
+                },
             );
 
             self.apply_active_tax_breaks();

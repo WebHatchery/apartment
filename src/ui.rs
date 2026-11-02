@@ -12,7 +12,7 @@ pub mod widgets;
 mod apartment_panel;
 mod apartment_panel_sections;
 mod application_panel;
-mod building_view;
+pub mod building_view;
 pub mod career_summary;
 pub mod city_view; // Phase 3 city map
 mod city_view_widgets;
@@ -24,6 +24,7 @@ mod header;
 mod inspector_summary;
 mod notifications;
 pub mod ownership_panel; // Phase 3 ownership
+mod panel_flow;
 mod resident_sprite;
 mod tenant_panel;
 mod tenants_view;
@@ -33,7 +34,7 @@ pub mod workspace_nav;
 pub mod workspace_tasks;
 pub mod workspace_views;
 
-pub use apartment_panel::draw_apartment_panel;
+pub use apartment_panel::{draw_apartment_panel, UnitPanelContext};
 pub use building_view::draw_building_view;
 pub use common::*;
 pub use hallway_panel::draw_hallway_panel;
@@ -60,6 +61,42 @@ pub enum Selection {
     Ownership,                 // Ownership View
 }
 
+/// Collapsible inspector sections; closed by default so each panel leads
+/// with its immediate decision.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Disclosure {
+    ResidentDetails,
+    UnitDetails,
+    Improvements,
+    Staff,
+}
+
+/// Which inspector sections the player has opened this session.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct PanelDisclosure {
+    open: [bool; 4],
+}
+
+impl PanelDisclosure {
+    fn index(section: Disclosure) -> usize {
+        match section {
+            Disclosure::ResidentDetails => 0,
+            Disclosure::UnitDetails => 1,
+            Disclosure::Improvements => 2,
+            Disclosure::Staff => 3,
+        }
+    }
+
+    pub fn is_open(&self, section: Disclosure) -> bool {
+        self.open[Self::index(section)]
+    }
+
+    pub fn toggle(&mut self, section: Disclosure) {
+        let index = Self::index(section);
+        self.open[index] = !self.open[index];
+    }
+}
+
 use crate::building::UpgradeAction;
 
 /// UI action intents (returned to game logic)
@@ -75,6 +112,7 @@ pub enum UiAction {
     SelectOwnership,
     ClearSelection,
     ToggleActivityDrawer,
+    ToggleDisclosure(Disclosure),
 
     // Generic Upgrade Action
     UpgradeAction(UpgradeAction),

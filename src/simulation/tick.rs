@@ -20,6 +20,26 @@ pub struct TickResult {
 /// Main tick processor
 pub struct GameTick;
 
+/// The building state one month of simulation mutates.
+pub struct TickWorld<'a> {
+    pub building: &'a mut Building,
+    pub tenants: &'a mut Vec<Tenant>,
+    pub applications: &'a mut Vec<TenantApplication>,
+    pub funds: &'a mut PlayerFunds,
+    pub event_log: &'a mut EventLog,
+    pub next_tenant_id: &'a mut u32,
+}
+
+/// Read-only facts a month is simulated and judged against.
+pub struct TickContext<'a> {
+    pub building_id: u32,
+    /// Latched once the building was occupied, so an empty new building is
+    /// not mistaken for a mass departure.
+    pub has_ever_had_tenant: bool,
+    pub reputation_multiplier: f32,
+    pub config: &'a crate::data::config::GameConfig,
+}
+
 fn emergency_repair_cost(
     base_cost: i32,
     aging_cost: i32,
@@ -36,20 +56,17 @@ fn emergency_repair_cost(
 
 impl GameTick {
     /// Process a single game tick (one month)
-    #[allow(clippy::too_many_arguments)]
-    pub fn process(
-        building_id: u32,
-        building: &mut Building,
-        tenants: &mut Vec<Tenant>,
-        applications: &mut Vec<TenantApplication>,
-        funds: &mut PlayerFunds,
-        event_log: &mut EventLog,
-        current_tick: u32,
-        next_tenant_id: &mut u32,
-        has_ever_had_tenant: bool,
-        reputation_multiplier: f32,
-        config: &crate::data::config::GameConfig,
-    ) -> TickResult {
+    pub fn process(world: TickWorld, current_tick: u32, context: &TickContext) -> TickResult {
+        let TickWorld {
+            building,
+            tenants,
+            applications,
+            funds,
+            event_log,
+            next_tenant_id,
+        } = world;
+        let building_id = context.building_id;
+        let config = context.config;
         let mut result = TickResult {
             events: Vec::new(),
             rent_collected: 0,
@@ -101,7 +118,48 @@ impl GameTick {
         // 5. Tenant Happiness & Updates
         Self::update_tenants(building_id, building, tenants, &mut result, config);
 
-        // 6. Move-outs
+        // 6-7. Move-outs and new applications
+        Self::process_turnover(
+            building,
+            tenants,
+            applications,
+            current_tick,
+            next_tenant_id,
+            context,
+            &mut result,
+        );
+
+        // 8. Win/Lose check (the month's report is closed by the caller once
+        //    every part of the turn has posted its transactions)
+        result.outcome =
+            win_condition::check_win_condition(building, tenants, funds, current_tick, context);
+
+        if let Some(ref outcome) = result.outcome {
+            result.events.push(GameEvent::GameEnded {
+                outcome: outcome.clone(),
+            });
+        }
+
+        // Log all events
+        for event in &result.events {
+            event_log.log(event.clone(), current_tick);
+        }
+
+        result
+    }
+
+    /// Departures for unhappy tenants, then expire and generate applications.
+    fn process_turnover(
+        building: &mut Building,
+        tenants: &mut Vec<Tenant>,
+        applications: &mut Vec<TenantApplication>,
+        current_tick: u32,
+        next_tenant_id: &mut u32,
+        context: &TickContext,
+        result: &mut TickResult,
+    ) {
+        let building_id = context.building_id;
+        let config = context.config;
         let departure_notices =
             process_departures(building_id, tenants, building, &config.happiness);
         for notice in departure_notices {
@@ -111,7 +169,6 @@ impl GameTick {
             result.tenants_moved_out.push(notice);
         }
 
-        // 7. Applications
         applications.retain(|app| {
             !app.is_expired_after(current_tick, config.applications.expire_after_ticks)
         });
@@ -121,7 +178,7 @@ impl GameTick {
             applications,
             current_tick,
             next_tenant_id,
-            reputation_multiplier,
+            context.reputation_multiplier,
             config,
         );
         result.new_applications = new_apps.len();
@@ -137,33 +194,6 @@ impl GameTick {
             });
         }
         applications.extend(new_apps);
-
-        // 8. Win/Lose check (the month's report is closed by the caller once
-        //    every part of the turn has posted its transactions)
-        result.outcome = win_condition::check_win_condition(
-            building_id,
-            building,
-            tenants,
-            funds,
-            current_tick,
-            has_ever_had_tenant,
-            &config.win_conditions,
-            &config.happiness,
-            &config.thresholds,
-        );
-
-        if let Some(ref outcome) = result.outcome {
-            result.events.push(GameEvent::GameEnded {
-                outcome: outcome.clone(),
-            });
-        }
-
-        // Log all events
-        for event in &result.events {
-            event_log.log(event.clone(), current_tick);
-        }
-
-        result
     }
 
     fn collect_rent(
@@ -248,7 +278,6 @@ impl GameTick {
 
         // Taxes & Expenses
         let tax = OperatingCosts::calculate_property_tax(
-            building,
             result.rent_collected,
             &config.operating_costs,
             current_tick,
@@ -534,36 +563,10 @@ impl GameTick {
     }
 }
 
-/// Advance time and return whether game should continue
-#[allow(clippy::too_many_arguments)]
-pub fn advance_tick(
-    building_id: u32,
-    building: &mut Building,
-    tenants: &mut Vec<Tenant>,
-    applications: &mut Vec<TenantApplication>,
-    funds: &mut PlayerFunds,
-    event_log: &mut EventLog,
-    current_tick: &mut u32,
-    next_tenant_id: &mut u32,
-    has_ever_had_tenant: bool,
-    reputation_multiplier: f32,
-    config: &crate::data::config::GameConfig,
-) -> TickResult {
+/// Advance time by one month and simulate it.
+pub fn advance_tick(world: TickWorld, current_tick: &mut u32, context: &TickContext) -> TickResult {
     *current_tick += 1;
-
-    GameTick::process(
-        building_id,
-        building,
-        tenants,
-        applications,
-        funds,
-        event_log,
-        *current_tick,
-        next_tenant_id,
-        has_ever_had_tenant,
-        reputation_multiplier,
-        config,
-    )
+    GameTick::process(world, *current_tick, context)
 }
 
 #[cfg(test)]

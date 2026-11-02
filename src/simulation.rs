@@ -12,7 +12,7 @@ mod random_events;
 mod tick;
 mod win_condition;
 
-pub use tick::{advance_tick, TickResult};
+pub use tick::{advance_tick, TickContext, TickResult, TickWorld};
 // pub use decay::apply_decay;
 pub use events::{
     ActiveWorldEvent, ActiveWorldEventKind, EventLog, EventSeverity, GameEvent, NotificationLevel,

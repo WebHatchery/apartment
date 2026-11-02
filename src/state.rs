@@ -31,11 +31,11 @@ pub use menu::MenuState;
 pub(crate) use settings_screen::{centered_top as centered_settings_top, SettingsScreen};
 
 pub enum GameState {
-    Menu(MenuState),
-    Gameplay(GameplayState),
+    Menu(Box<MenuState>),
+    Gameplay(Box<GameplayState>),
 }
 
 pub enum StateTransition {
     ToMenu,
-    ToGameplay(GameplayState),
+    ToGameplay(Box<GameplayState>),
 }

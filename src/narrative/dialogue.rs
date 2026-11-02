@@ -14,19 +14,24 @@ pub enum DialogueType {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum DialogueEffect {
     /// Change tenant happiness
-    HappinessChange { tenant_id: u32, amount: i32 },
+    #[serde(alias = "HappinessChange")]
+    Happiness { tenant_id: u32, amount: i32 },
     /// Gain or lose money
-    MoneyChange(i32),
+    #[serde(alias = "MoneyChange")]
+    Money(i32),
     /// Change tension between apartments
-    TensionChange { apt_a: u32, apt_b: u32, amount: i32 },
+    #[serde(alias = "TensionChange")]
+    Tension { apt_a: u32, apt_b: u32, amount: i32 },
     /// Change relationship between tenants
-    RelationshipChange {
+    #[serde(alias = "RelationshipChange")]
+    Relationship {
         tenant_a: u32,
         tenant_b: u32,
         change: i32,
     },
     /// Change landlord opinion
-    OpinionChange { tenant_id: u32, amount: i32 },
+    #[serde(alias = "OpinionChange")]
+    Opinion { tenant_id: u32, amount: i32 },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -72,7 +77,6 @@ impl DialogueSystem {
         headline: &str,
         description: &str,
         choices: Vec<DialogueChoice>,
-        deadline: Option<u32>,
     ) -> u32 {
         let id = self.next_id;
         self.next_id += 1;
@@ -85,7 +89,7 @@ impl DialogueSystem {
             headline: headline.to_string(),
             description: description.to_string(),
             choices,
-            deadline_month: deadline,
+            deadline_month: None,
         });
 
         id
@@ -179,7 +183,6 @@ impl DialogueSystem {
                     &substitute(&template.headline, &ctx),
                     &substitute(&template.description, &ctx),
                     build_choices(template, &ctx),
-                    None,
                 );
             }
         }
@@ -237,7 +240,6 @@ impl DialogueSystem {
             &substitute(&template.headline, &ctx),
             &substitute(&template.description, &ctx),
             build_choices(template, &ctx),
-            None,
         );
     }
 
@@ -287,7 +289,6 @@ impl DialogueSystem {
                 &substitute(&template.headline, &ctx),
                 &substitute(&template.description, &ctx),
                 build_choices(template, &ctx),
-                None,
             );
         }
     }
@@ -384,18 +385,18 @@ fn resolve_effect_spec(spec: &DialogueEffectSpec, ctx: &DialogueContext) -> Opti
         Some(ctx.initiator_id)
     };
     match spec.kind.as_str() {
-        "happiness" => target_id.map(|id| DialogueEffect::HappinessChange {
+        "happiness" => target_id.map(|id| DialogueEffect::Happiness {
             tenant_id: id,
             amount: spec.amount,
         }),
-        "opinion" => target_id.map(|id| DialogueEffect::OpinionChange {
+        "opinion" => target_id.map(|id| DialogueEffect::Opinion {
             tenant_id: id,
             amount: spec.amount,
         }),
-        "money" => Some(DialogueEffect::MoneyChange(spec.amount)),
+        "money" => Some(DialogueEffect::Money(spec.amount)),
         // The repair quote varies with the landlord's funds, resolved at runtime.
-        "repair_money" => Some(DialogueEffect::MoneyChange(-ctx.repair_cost)),
-        "relationship" => ctx.target_id.map(|t| DialogueEffect::RelationshipChange {
+        "repair_money" => Some(DialogueEffect::Money(-ctx.repair_cost)),
+        "relationship" => ctx.target_id.map(|t| DialogueEffect::Relationship {
             tenant_a: ctx.initiator_id,
             tenant_b: t,
             change: spec.amount,

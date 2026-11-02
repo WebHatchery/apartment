@@ -1,5 +1,4 @@
 use crate::building::Building;
-use crate::data::config::{HappinessConfig, ThresholdsConfig, WinConditions};
 use crate::economy::{PlayerFunds, TransactionType};
 use crate::tenant::Tenant;
 use serde::{Deserialize, Serialize};
@@ -20,16 +19,17 @@ pub enum GameOutcome {
 
 /// Check current game state for win/lose conditions
 pub fn check_win_condition(
-    building_id: u32,
     building: &Building,
     tenants: &[Tenant],
     funds: &PlayerFunds,
     current_tick: u32,
-    has_ever_had_tenant: bool,
-    win_conditions: &WinConditions,
-    happiness_config: &HappinessConfig,
-    thresholds: &ThresholdsConfig,
+    context: &super::tick::TickContext,
 ) -> Option<GameOutcome> {
+    let building_id = context.building_id;
+    let has_ever_had_tenant = context.has_ever_had_tenant;
+    let win_conditions = &context.config.win_conditions;
+    let happiness_config = &context.config.happiness;
+    let thresholds = &context.config.thresholds;
     let active_tenants: Vec<&Tenant> = tenants
         .iter()
         .filter(|tenant| tenant.building_id == building_id)

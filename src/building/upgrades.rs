@@ -25,7 +25,6 @@ impl UpgradeAction {
     /// Get a user-friendly label for this action
     pub fn label(
         &self,
-        _building: &Building,
         config: &UiConfig,
         upgrades: &HashMap<String, UpgradeDefinition>,
     ) -> String {
@@ -56,7 +55,6 @@ impl UpgradeAction {
     /// Calculate the cost of this action
     pub fn cost(
         &self,
-        _building: &Building,
         config: &EconomyConfig,
         upgrades: &HashMap<String, UpgradeDefinition>,
     ) -> Option<i32> {

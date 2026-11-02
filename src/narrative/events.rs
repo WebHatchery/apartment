@@ -288,7 +288,6 @@ impl NarrativeEventSystem {
         month: u32,
         neighborhoods: &[crate::city::Neighborhood],
         buildings: &[crate::building::Building],
-        _tenants: &[crate::tenant::Tenant],
     ) {
         // News event copy + effects are data-driven (assets/news_events.json).
         let news = load_news_events();

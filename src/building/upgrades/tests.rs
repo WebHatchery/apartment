@@ -4,7 +4,6 @@ use crate::data::config::GameConfig;
 
 #[test]
 fn test_upgrade_costs() {
-    let building = Building::new("Test", 3, 2);
     let game_config = crate::data::config::load_config();
     let config = game_config.economy;
     let upgrades = game_config.upgrades;
@@ -13,13 +12,13 @@ fn test_upgrade_costs() {
         apartment_id: 0,
         amount: 10,
     };
-    assert_eq!(repair.cost(&building, &config, &upgrades), Some(100)); // 10 * $10
+    assert_eq!(repair.cost(&config, &upgrades), Some(100)); // 10 * $10
 
     let design = UpgradeAction::Apply {
         upgrade_id: "upgrade_to_practical".to_string(),
         target_id: Some(0),
     };
-    assert_eq!(design.cost(&building, &config, &upgrades), Some(1200));
+    assert_eq!(design.cost(&config, &upgrades), Some(1200));
 }
 
 #[test]

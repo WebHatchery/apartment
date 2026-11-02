@@ -1,283 +1,301 @@
+//! Lobby inspector: condition, appeal and the lobby repair first; building
+//! upgrades and staff behind explicit disclosure.
+
 use crate::assets::AssetManager;
+use crate::building::upgrades::UpgradeAction;
 use crate::building::Building;
+use crate::data::config::{GameConfig, UpgradeEffect};
 use macroquad::prelude::*;
 
-use super::{common::*, UiAction};
+use super::panel_flow::{PanelFlow, BUTTON_H};
+use super::theme::{scale, Tone};
+use super::{common::*, Disclosure, PanelDisclosure, UiAction};
 use macroquad_toolkit::ui::draw_ui_text;
+
+const TITLE: &str = "Lobby & hallway";
 
 pub fn draw_hallway_panel(
     building: &Building,
     money: i32,
-    offset_x: f32,
     scroll_offset: f32,
     assets: &AssetManager,
-    config: &crate::data::config::GameConfig,
+    config: &GameConfig,
+    disclosure: PanelDisclosure,
 ) -> (Option<UiAction>, f32) {
-    let mut action = None;
-    let mut new_scroll = scroll_offset;
-
     let bounds = layout::context_panel();
-    let panel_x = bounds.x + offset_x;
-    let panel_y = bounds.y;
-    let panel_w = bounds.w;
-    let panel_h = bounds.h;
+    panel(bounds.x, bounds.y, bounds.w, bounds.h, TITLE);
+    let mut scroll = scroll_offset;
+    if bounds.contains(mouse_position().into()) {
+        scroll = (scroll - mouse_wheel().1 * 30.0).max(0.0);
+    }
+    let mut flow = PanelFlow::new(bounds, scroll);
+    let mut action = None;
 
-    panel(panel_x, panel_y, panel_w, panel_h, "Hallway");
+    let condition = building.hallway_condition;
+    flow.kv(
+        "Condition",
+        &format!("{condition}%"),
+        condition_color(condition),
+    );
+    if flow.roomy() {
+        flow.meter(condition, 100, condition_color(condition));
+    }
+    flow.kv(
+        "Building appeal",
+        &building.building_appeal().to_string(),
+        colors::ACCENT(),
+    );
+    flow.paragraph(
+        "The lobby is the first thing every applicant sees.",
+        scale::LABEL,
+        colors::TEXT_DIM(),
+    );
 
-    let mouse = mouse_position();
-    let is_hovering = mouse.0 >= panel_x
-        && mouse.0 <= panel_x + panel_w
-        && mouse.1 >= panel_y
-        && mouse.1 <= panel_y + panel_h;
+    let (staff_actions, mut other_actions) = split_staff_actions(building, config);
+    if let Some(index) = other_actions
+        .iter()
+        .position(|upgrade| matches!(upgrade, UpgradeAction::RepairHallway { .. }))
+    {
+        let repair = other_actions.remove(index);
+        if let Some(cost) = repair.cost(&config.economy, &config.upgrades) {
+            let name = repair.label(&config.ui, &config.upgrades);
+            let label = if money >= cost {
+                format!("{name} · ${cost}")
+            } else {
+                format!("{name} · ${cost} (need ${} more)", cost - money)
+            };
+            let tone = if condition < config.thresholds.poor_condition {
+                Tone::Primary
+            } else {
+                Tone::Secondary
+            };
+            if flow.button(&label, money >= cost, tone) {
+                action = Some(UiAction::UpgradeAction(repair));
+            }
+        }
+    }
+    flow.gap();
 
-    if is_hovering {
-        let wheel = mouse_wheel();
-        new_scroll -= wheel.1 * 30.0;
-        new_scroll = new_scroll.max(0.0);
+    if let Some(upgrade) =
+        draw_building_upgrades(&mut flow, money, config, disclosure, other_actions)
+    {
+        action = Some(upgrade);
+    }
+    if let Some(staff) = draw_staff(
+        &mut flow,
+        building,
+        money,
+        config,
+        assets,
+        disclosure,
+        staff_actions,
+    ) {
+        action = Some(staff);
     }
 
-    let content_x = panel_x + 15.0;
-    let content_w = panel_w - 30.0;
-    let content_top = panel_y + 40.0;
-    let content_bottom = panel_y + panel_h - 58.0;
-    let mut y = panel_y + 50.0 - new_scroll;
-
-    if y >= content_top && y + 20.0 <= content_bottom {
-        crate::ui::widgets::section_label(content_x, y, "CONDITION");
-    }
-    y += 22.0;
-
-    if y >= content_top && y + 20.0 <= content_bottom {
-        crate::ui::widgets::stat_meter(
-            content_x,
-            y,
-            content_w,
-            building.hallway_condition,
-            100,
-            condition_color(building.hallway_condition),
+    let max_scroll = flow.max_scroll(scroll);
+    scroll = scroll.min(max_scroll);
+    if max_scroll > 0.0 {
+        scroll = super::widgets::scroll_controls(
+            Rect::new(flow.x, bounds.bottom() - 48.0, flow.w, 40.0),
+            scroll,
+            max_scroll,
+            "Lobby summary",
+            "Upgrades & staff",
         );
     }
-    y += 30.0;
+    super::widgets::draw_panel_header(bounds, TITLE);
+    (action, scroll)
+}
 
-    if y >= content_top && y + 14.0 <= content_bottom {
+fn draw_building_upgrades(
+    flow: &mut PanelFlow,
+    money: i32,
+    config: &GameConfig,
+    disclosure: PanelDisclosure,
+    actions: Vec<UpgradeAction>,
+) -> Option<UiAction> {
+    let upgrades: Vec<_> = actions
+        .into_iter()
+        .filter_map(|upgrade| {
+            let cost = upgrade.cost(&config.economy, &config.upgrades)?;
+            Some((upgrade, cost))
+        })
+        .collect();
+    if upgrades.is_empty() {
+        return None;
+    }
+    let open = disclosure.is_open(Disclosure::Improvements);
+    let mut action = None;
+    if flow.disclosure(
+        "Building upgrades",
+        &format!("{} available", upgrades.len()),
+        open,
+    ) {
+        action = Some(UiAction::ToggleDisclosure(Disclosure::Improvements));
+    }
+    if open {
+        for (upgrade, cost) in upgrades {
+            let label = format!("{} · ${cost}", upgrade.label(&config.ui, &config.upgrades));
+            if flow.button(&label, money >= cost, Tone::Secondary) {
+                action = Some(UiAction::UpgradeAction(upgrade));
+            }
+        }
+    }
+    action
+}
+
+fn draw_staff(
+    flow: &mut PanelFlow,
+    building: &Building,
+    money: i32,
+    config: &GameConfig,
+    assets: &AssetManager,
+    disclosure: PanelDisclosure,
+    actions: Vec<UpgradeAction>,
+) -> Option<UiAction> {
+    let hired = hired_staff(building, config);
+    let open = disclosure.is_open(Disclosure::Staff);
+    let summary = if hired.is_empty() {
+        "none hired".to_string()
+    } else {
+        format!("{} hired", hired.len())
+    };
+    let mut action = None;
+    if flow.disclosure("Staff", &summary, open) {
+        action = Some(UiAction::ToggleDisclosure(Disclosure::Staff));
+    }
+    if !open {
+        return action;
+    }
+    for (role, cost) in &hired {
+        draw_staff_row(flow, role, *cost, config, assets);
+    }
+    for upgrade in actions {
+        if let Some(cost) = upgrade.cost(&config.economy, &config.upgrades) {
+            let label = staff_label(&upgrade, config);
+            if flow.button(&label, money >= cost, Tone::Secondary) {
+                action = Some(UiAction::UpgradeAction(upgrade));
+            }
+        }
+    }
+    action
+}
+
+/// Hiring and firing apart from everything else; hires sort before fires.
+fn split_staff_actions(
+    building: &Building,
+    config: &GameConfig,
+) -> (Vec<UpgradeAction>, Vec<UpgradeAction>) {
+    let (mut staff, other): (Vec<_>, Vec<_>) =
+        crate::building::upgrades::available_building_upgrades(building, &config.upgrades)
+            .into_iter()
+            .partition(|upgrade| is_staff_action(upgrade, config));
+    staff.sort_by_key(|upgrade| {
+        let id = upgrade_id(upgrade);
+        (id.contains("fire"), id.to_string())
+    });
+    (staff, other)
+}
+
+fn upgrade_id(upgrade: &UpgradeAction) -> &str {
+    match upgrade {
+        UpgradeAction::Apply { upgrade_id, .. } => upgrade_id,
+        _ => "",
+    }
+}
+
+fn is_staff_action(upgrade: &UpgradeAction, config: &GameConfig) -> bool {
+    config.upgrades.get(upgrade_id(upgrade)).is_some_and(|def| {
+        def.effects.iter().any(|effect| match effect {
+            UpgradeEffect::SetFlag(flag) | UpgradeEffect::RemoveFlag(flag) => {
+                flag.starts_with("staff_")
+            }
+            _ => false,
+        })
+    })
+}
+
+fn hired_staff(building: &Building, config: &GameConfig) -> Vec<(String, i32)> {
+    let mut hired: Vec<_> = config
+        .economy
+        .staff_costs
+        .iter()
+        .filter(|(role, _)| building.flags.contains(&format!("staff_{role}")))
+        .map(|(role, cost)| (role.clone(), *cost))
+        .collect();
+    hired.sort();
+    hired
+}
+
+fn staff_label(upgrade: &UpgradeAction, config: &GameConfig) -> String {
+    let name = upgrade.label(&config.ui, &config.upgrades);
+    match upgrade_id(upgrade)
+        .strip_prefix("hire_")
+        .and_then(|role| config.economy.staff_costs.get(role))
+    {
+        Some(monthly) => format!("{name} · ${monthly}/month"),
+        None => name,
+    }
+}
+
+fn draw_staff_row(
+    flow: &mut PanelFlow,
+    role: &str,
+    cost: i32,
+    config: &GameConfig,
+    assets: &AssetManager,
+) {
+    if flow.fits(BUTTON_H) {
+        let portrait = Rect::new(flow.x, flow.y + 2.0, 38.0, 38.0);
+        let text_x = if draw_staff_portrait(role, portrait, assets) {
+            portrait.right() + 8.0
+        } else {
+            flow.x
+        };
+        let mut name = role.to_string();
+        if let Some(first) = name.get_mut(0..1) {
+            first.make_ascii_uppercase();
+        }
         draw_ui_text(
-            "Affects overall building appeal",
-            content_x,
-            y,
-            14.0,
+            &format!("{name} · ${cost}/mo"),
+            text_x,
+            flow.y + 16.0,
+            scale::BODY,
+            colors::TEXT(),
+        );
+        draw_ui_text(
+            &staff_benefit(role, config),
+            text_x,
+            flow.y + 34.0,
+            scale::CAPTION,
             colors::TEXT_DIM(),
         );
     }
-    y += 20.0;
+    flow.advance(BUTTON_H + 4.0);
+}
 
-    if y >= content_top && y + 18.0 <= content_bottom {
-        let appeal = building.building_appeal();
-        draw_ui_text(
-            &format!("Building Appeal: {}", appeal),
-            content_x,
-            y,
-            18.0,
-            colors::ACCENT(),
-        );
+fn staff_benefit(role: &str, config: &GameConfig) -> String {
+    let effects = &config.staff_effects;
+    match role {
+        "janitor" => format!(
+            "Maintains {} units against monthly wear",
+            effects.janitor_units_maintained
+        ),
+        "security" => format!(
+            "+{} happiness; {}% fewer emergencies",
+            effects.security_happiness_bonus, effects.security_failure_reduction_percent
+        ),
+        "manager" => format!(
+            "+{} happiness; handles resident requests",
+            effects.manager_happiness_bonus
+        ),
+        "receptionist" => format!(
+            "{:.2}x applicant volume",
+            effects.receptionist_application_multiplier
+        ),
+        _ => String::new(),
     }
-    y += 50.0;
-
-    let available =
-        crate::building::upgrades::available_building_upgrades(building, &config.upgrades);
-
-    let mut staff_actions = Vec::new();
-    let mut other_actions = Vec::new();
-
-    for upgrade in available {
-        let is_staff = match &upgrade {
-            crate::building::upgrades::UpgradeAction::Apply { upgrade_id, .. } => {
-                if let Some(def) = config.upgrades.get(upgrade_id) {
-                    def.effects.iter().any(|effect| match effect {
-                        crate::data::config::UpgradeEffect::SetFlag(flag)
-                        | crate::data::config::UpgradeEffect::RemoveFlag(flag) => {
-                            flag.starts_with("staff_")
-                        }
-                        _ => false,
-                    })
-                } else {
-                    false
-                }
-            }
-            _ => false,
-        };
-
-        if is_staff {
-            staff_actions.push(upgrade);
-        } else {
-            other_actions.push(upgrade);
-        }
-    }
-
-    staff_actions.sort_by(|a, b| {
-        let a_id = match a {
-            crate::building::upgrades::UpgradeAction::Apply { upgrade_id, .. } => upgrade_id,
-            _ => "",
-        };
-        let b_id = match b {
-            crate::building::upgrades::UpgradeAction::Apply { upgrade_id, .. } => upgrade_id,
-            _ => "",
-        };
-
-        let a_is_fire = a_id.contains("fire");
-        let b_is_fire = b_id.contains("fire");
-
-        if a_is_fire && !b_is_fire {
-            std::cmp::Ordering::Greater
-        } else if !a_is_fire && b_is_fire {
-            std::cmp::Ordering::Less
-        } else {
-            a_id.cmp(b_id)
-        }
-    });
-
-    let btn_w = panel_w - 30.0;
-
-    if y >= content_top && y + 14.0 <= content_bottom {
-        draw_ui_text("UPGRADES", content_x, y, 14.0, colors::TEXT_DIM());
-    }
-    y += 25.0;
-
-    for upgrade in other_actions {
-        if let Some(cost) = upgrade.cost(building, &config.economy, &config.upgrades) {
-            let can_afford = money >= cost;
-            let label = format!(
-                "{} (${})",
-                upgrade.label(building, &config.ui, &config.upgrades),
-                cost
-            );
-
-            if y >= content_top
-                && y + 40.0 <= content_bottom
-                && button(content_x, y, btn_w, 40.0, &label, can_afford)
-            {
-                action = Some(UiAction::UpgradeAction(upgrade));
-            }
-            y += 44.0;
-        }
-    }
-
-    y += 14.0;
-    if y >= content_top && y + 14.0 <= content_bottom {
-        draw_ui_text("STAFF", content_x, y, 14.0, colors::TEXT_DIM());
-    }
-    y += 25.0;
-
-    let mut staff_count = 0;
-    let mut staff_types: Vec<_> = config.economy.staff_costs.keys().collect();
-    staff_types.sort();
-    for staff_type in staff_types {
-        let Some(cost) = config.economy.staff_costs.get(staff_type) else {
-            continue;
-        };
-        let flag = format!("staff_{}", staff_type);
-        if building.flags.contains(&flag) {
-            let mut chars = staff_type.chars();
-            let label = match chars.next() {
-                None => String::new(),
-                Some(f) => f.to_uppercase().collect::<String>() + chars.as_str(),
-            };
-            let portrait_rect = Rect::new(content_x, y - 7.0, 38.0, 38.0);
-            let has_portrait = draw_staff_portrait(staff_type, portrait_rect, assets);
-            let staff_x = if has_portrait {
-                portrait_rect.right() + 8.0
-            } else {
-                content_x
-            };
-            if y >= content_top && y + 16.0 <= content_bottom {
-                draw_ui_text(
-                    &format!("{} (${}/mo)", label, cost),
-                    staff_x,
-                    y,
-                    16.0,
-                    colors::TEXT(),
-                );
-            }
-            y += 20.0;
-            let benefit = match staff_type.as_str() {
-                "janitor" => format!(
-                    "Maintains {} units against monthly wear",
-                    config.staff_effects.janitor_units_maintained
-                ),
-                "security" => format!(
-                    "+{} happiness; {}% fewer emergencies",
-                    config.staff_effects.security_happiness_bonus,
-                    config.staff_effects.security_failure_reduction_percent
-                ),
-                "manager" => format!(
-                    "+{} happiness; handles resident requests",
-                    config.staff_effects.manager_happiness_bonus
-                ),
-                "receptionist" => format!(
-                    "{:.2}× applicant volume",
-                    config.staff_effects.receptionist_application_multiplier
-                ),
-                _ => String::new(),
-            };
-            if !benefit.is_empty() {
-                if y >= content_top && y + 13.0 <= content_bottom {
-                    draw_ui_text(&benefit, staff_x, y, 13.0, colors::TEXT_DIM());
-                }
-                y += 20.0;
-            }
-            if has_portrait {
-                y = y.max(portrait_rect.bottom() + 6.0);
-            }
-            staff_count += 1;
-        }
-    }
-    if staff_count == 0 {
-        if y >= content_top && y + 16.0 <= content_bottom {
-            draw_ui_text("None hired", content_x, y, 16.0, colors::TEXT_DIM());
-        }
-        y += 25.0;
-    }
-
-    for upgrade in staff_actions {
-        if let Some(cost) = upgrade.cost(building, &config.economy, &config.upgrades) {
-            let can_afford = money >= cost;
-            let action_label = upgrade.label(building, &config.ui, &config.upgrades);
-            let monthly_cost = match &upgrade {
-                crate::building::upgrades::UpgradeAction::Apply { upgrade_id, .. } => upgrade_id
-                    .strip_prefix("hire_")
-                    .and_then(|role| config.economy.staff_costs.get(role))
-                    .copied(),
-                _ => None,
-            };
-            let label = monthly_cost.map_or_else(
-                || action_label.clone(),
-                |monthly| format!("{} (${} / month)", action_label, monthly),
-            );
-            if y >= content_top
-                && y + 40.0 <= content_bottom
-                && button(content_x, y, btn_w, 40.0, &label, can_afford)
-            {
-                action = Some(UiAction::UpgradeAction(upgrade));
-            }
-            y += 44.0;
-        }
-    }
-
-    let content_height = (y + new_scroll) - (panel_y + 50.0);
-    let visible_height = content_bottom - (panel_y + 50.0);
-    let max_scroll = (content_height - visible_height).max(0.0);
-    new_scroll = new_scroll.min(max_scroll);
-    if max_scroll > 0.0 {
-        new_scroll = super::widgets::scroll_controls(
-            Rect::new(content_x, panel_y + panel_h - 48.0, content_w, 40.0),
-            new_scroll,
-            max_scroll,
-            "Hallway summary",
-            "Staff & upgrades",
-        );
-    }
-    super::widgets::draw_panel_header(Rect::new(panel_x, panel_y, panel_w, panel_h), "Hallway");
-
-    (action, new_scroll)
 }
 
 fn draw_staff_portrait(role: &str, rect: Rect, assets: &AssetManager) -> bool {

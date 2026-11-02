@@ -382,19 +382,18 @@ pub(super) fn seed_showcase_mail(state: &mut crate::state::GameplayState) {
         vec![
             DialogueChoice {
                 text: "Post quiet hours".to_string(),
-                effects: vec![DialogueEffect::HappinessChange {
+                effects: vec![DialogueEffect::Happiness {
                     tenant_id: 1,
                     amount: 6,
                 }],
             },
             DialogueChoice {
                 text: "Leave it informal".to_string(),
-                effects: vec![DialogueEffect::HappinessChange {
+                effects: vec![DialogueEffect::Happiness {
                     tenant_id: 1,
                     amount: -3,
                 }],
             },
         ],
-        None,
     );
 }

@@ -1,21 +1,23 @@
 use super::*;
 use crate::building::Building;
 use crate::data::config::GameConfig;
+use crate::simulation::TickContext;
 
 fn check(tenants: &[Tenant], tick: u32, ever_occupied: bool) -> Option<GameOutcome> {
     let building = Building::new("Test", 3, 2);
     let funds = PlayerFunds::default(); // 5000, solvent
     let cfg = GameConfig::default(); // all_left_check_tick = 3, duration = 36
     check_win_condition(
-        0,
         &building,
         tenants,
         &funds,
         tick,
-        ever_occupied,
-        &cfg.win_conditions,
-        &cfg.happiness,
-        &cfg.thresholds,
+        &TickContext {
+            building_id: 0,
+            has_ever_had_tenant: ever_occupied,
+            reputation_multiplier: 1.0,
+            config: &cfg,
+        },
     )
 }
 
@@ -67,15 +69,16 @@ fn grants_and_asset_sales_do_not_inflate_victory_score() {
     ));
 
     let score = |funds: &PlayerFunds| match check_win_condition(
-        0,
         &building,
         &[],
         funds,
         36,
-        false,
-        &cfg.win_conditions,
-        &cfg.happiness,
-        &cfg.thresholds,
+        &TickContext {
+            building_id: 0,
+            has_ever_had_tenant: false,
+            reputation_multiplier: 1.0,
+            config: &cfg,
+        },
     ) {
         Some(GameOutcome::Victory { score, .. }) => score,
         outcome => panic!("expected victory, got {outcome:?}"),

@@ -1,6 +1,12 @@
 //! Scrollable tower cutaway and fixed building navigation.
 mod condition_art;
+mod geometry;
 mod room_story;
+
+#[cfg(test)]
+use geometry::cutaway_metrics;
+pub use geometry::reveal_selection;
+use geometry::{unit_width, CutawayMetrics, TowerGeometry};
 
 use super::theme::{color, scale, space, Tone};
 use super::widgets::button_at;
@@ -24,55 +30,26 @@ pub fn draw_building_view(
     assets: &AssetManager,
     scroll_offset: f32,
 ) -> (Option<UiAction>, f32) {
-    let view = layout::building(*selection != Selection::None).world;
+    let geometry = TowerGeometry::new(building, selection);
+    let view = geometry.view;
     draw_sunset_backdrop(view);
-
-    let max_floor = building
-        .apartments
-        .iter()
-        .map(|apartment| apartment.floor)
-        .max()
-        .unwrap_or(1);
-    let max_floor_slots = (1..=max_floor)
-        .map(|floor| {
-            building
-                .apartments
-                .iter()
-                .filter(|apartment| apartment.floor == floor)
-                .map(|apartment| {
-                    usize::from(matches!(apartment.size, ApartmentSize::Penthouse)) + 1
-                })
-                .sum::<usize>()
-        })
-        .max()
-        .unwrap_or(1);
-    // Keep rooms readable and scroll the tower when its natural height exceeds
-    // the workspace. The controls and contextual panel stay fixed.
-    let natural_height = 58.0 + max_floor as f32 * MIN_FLOOR_HEIGHT + 96.0 + space::MD;
-    let overflow = natural_height > view.h;
-    let viewport = Rect::new(
-        view.x,
-        view.y + 58.0,
-        view.w,
-        (view.h - 58.0 - if overflow { 54.0 } else { 0.0 }).max(1.0),
-    );
-    let content_height = natural_height.max(viewport.h + 58.0);
-    let max_scroll = (content_height - 58.0 - viewport.h).max(0.0);
+    let viewport = geometry.viewport;
+    let max_scroll = geometry.max_scroll;
     let mouse = mouse_position();
     let over_tower = viewport.contains(vec2(mouse.0, mouse.1));
     let mut next_scroll = scroll_offset.clamp(0.0, max_scroll);
     if over_tower {
         next_scroll = (next_scroll - mouse_wheel().1 * 40.0).clamp(0.0, max_scroll);
     }
-    let content = Rect::new(view.x, view.y - next_scroll, view.w, content_height);
-    let metrics = cutaway_metrics(content, max_floor as usize, max_floor_slots);
+    let content = geometry.content(next_scroll);
+    let metrics = geometry.metrics(next_scroll);
     let ui = macroquad_toolkit::ui::VirtualUi::new(screen_width(), screen_height());
     let mut action = ui
         .with_clip(viewport, || {
             draw_cutaway(content, metrics, building, tenants, selection, assets)
         })
         .filter(|_| over_tower);
-    if overflow {
+    if geometry.overflow {
         next_scroll = super::widgets::scroll_controls(
             Rect::new(
                 view.x + space::MD,
@@ -113,10 +90,7 @@ fn draw_cutaway(
     draw_building_shell(content, metrics, max_floor);
     let mut action = None;
     for floor in 1..=max_floor {
-        let floor_y = metrics.hallway_y
-            - metrics.unit_gap
-            - metrics.unit_h
-            - floor.saturating_sub(1) as f32 * metrics.floor_step;
+        let floor_y = metrics.floor_y(floor);
         let floor_apartments: Vec<_> = building
             .apartments
             .iter()
@@ -133,6 +107,7 @@ fn draw_cutaway(
             let width = unit_width(apartment, metrics);
             if let Some(unit_action) = draw_apartment(
                 apartment,
+                building.is_unit_sold(apartment.id),
                 tenants,
                 Rect::new(x, floor_y, width, metrics.unit_h),
                 selection,
@@ -148,14 +123,6 @@ fn draw_cutaway(
         action = Some(hallway_action);
     }
     action
-}
-
-fn unit_width(apartment: &Apartment, metrics: CutawayMetrics) -> f32 {
-    if matches!(apartment.size, ApartmentSize::Penthouse) {
-        metrics.unit_w * 2.0 + metrics.unit_gap
-    } else {
-        metrics.unit_w
-    }
 }
 
 fn draw_sunset_backdrop(view: Rect) {
@@ -200,10 +167,7 @@ fn draw_sunset_backdrop(view: Rect) {
 }
 
 fn draw_building_shell(view: Rect, metrics: CutawayMetrics, floors: u32) {
-    let top_y = metrics.hallway_y
-        - metrics.unit_gap
-        - metrics.unit_h
-        - floors.saturating_sub(1) as f32 * metrics.floor_step;
+    let top_y = metrics.floor_y(floors);
     let shell = Rect::new(
         metrics.units_left - 14.0,
         top_y - 12.0,
@@ -255,6 +219,7 @@ fn draw_building_shell(view: Rect, metrics: CutawayMetrics, floors: u32) {
 
 fn draw_apartment(
     apartment: &Apartment,
+    sold: bool,
     tenants: &[Tenant],
     room: Rect,
     selection: &Selection,
@@ -316,7 +281,7 @@ fn draw_apartment(
             );
         }
     } else {
-        draw_vacancy(apartment, room, assets);
+        draw_vacancy(apartment, sold, room, assets);
     }
 
     if selected {
@@ -384,7 +349,8 @@ fn draw_unit_plaque(apartment: &Apartment, room: Rect) {
     );
 }
 
-fn draw_vacancy(apartment: &Apartment, room: Rect, assets: &AssetManager) {
+/// An empty room: for rent at its asking price, or a privately owned condo.
+fn draw_vacancy(apartment: &Apartment, sold: bool, room: Rect, assets: &AssetManager) {
     let window_id = if matches!(apartment.effective_noise(), NoiseLevel::High) {
         "window_street"
     } else {
@@ -404,12 +370,15 @@ fn draw_vacancy(apartment: &Apartment, room: Rect, assets: &AssetManager) {
         );
     }
     draw_ui_text(
-        "VACANT",
+        if sold { "CONDO · OWNED" } else { "VACANT" },
         room.x + space::SM,
         room.bottom() - 8.0,
         scale::CAPTION,
         color::TEXT_DIM(),
     );
+    if sold {
+        return;
+    }
     let rent = format!("${}", apartment.rent_price);
     let rent_w = measure_ui_text(&rent, None, scale::CAPTION as u16, 1.0).width;
     draw_ui_text(
@@ -535,45 +504,6 @@ fn draw_building_controls(view: Rect, name: &str) -> Option<UiAction> {
         Tone::Secondary,
     )
     .then_some(UiAction::SelectBuilding)
-}
-
-#[derive(Clone, Copy, Debug)]
-struct CutawayMetrics {
-    unit_w: f32,
-    unit_h: f32,
-    unit_gap: f32,
-    floor_step: f32,
-    units_left: f32,
-    units_width: f32,
-    hallway_y: f32,
-    hallway_h: f32,
-}
-
-fn cutaway_metrics(view: Rect, floors: usize, max_slots: usize) -> CutawayMetrics {
-    let edge = if view.w < 500.0 { space::SM } else { space::XL };
-    let unit_gap = layout::UNIT_GAP().clamp(8.0, 12.0);
-    let hallway_h = 96.0;
-    let hallway_y = view.bottom() - hallway_h - space::MD;
-    let units_top = view.y + 58.0;
-    let vertical_room = (hallway_y - unit_gap - units_top).max(80.0);
-    let floor_step = vertical_room / floors.max(1) as f32;
-    let unit_h = (floor_step - unit_gap).max(46.0);
-    let horizontal_room = (view.w - edge * 2.0).max(120.0);
-    let slots = max_slots.max(1) as f32;
-    let unit_w = ((horizontal_room - unit_gap * (slots - 1.0)) / slots)
-        .clamp(68.0, (unit_h * 3.2).max(320.0));
-    let units_width = unit_w * slots + unit_gap * (slots - 1.0);
-    let units_left = view.x + (view.w - units_width) / 2.0;
-    CutawayMetrics {
-        unit_w,
-        unit_h,
-        unit_gap,
-        floor_step,
-        units_left,
-        units_width,
-        hallway_y,
-        hallway_h,
-    }
 }
 
 #[cfg(test)]

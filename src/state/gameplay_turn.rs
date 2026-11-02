@@ -23,17 +23,21 @@ impl GameplayState {
         let reputation_multiplier = self.application_reputation_multiplier();
 
         let result = advance_tick(
-            building_id,
-            &mut self.building,
-            &mut self.tenants,
-            &mut self.applications,
-            &mut self.funds,
-            &mut self.event_log,
+            crate::simulation::TickWorld {
+                building: &mut self.building,
+                tenants: &mut self.tenants,
+                applications: &mut self.applications,
+                funds: &mut self.funds,
+                event_log: &mut self.event_log,
+                next_tenant_id: &mut self.next_tenant_id,
+            },
             &mut self.current_tick,
-            &mut self.next_tenant_id,
-            self.ever_occupied_buildings.contains(&building_id),
-            reputation_multiplier,
-            &self.config,
+            &crate::simulation::TickContext {
+                building_id,
+                has_ever_had_tenant: self.ever_occupied_buildings.contains(&building_id),
+                reputation_multiplier,
+                config: &self.config,
+            },
         );
 
         self.game_outcome = result.outcome.clone();

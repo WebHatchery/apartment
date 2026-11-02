@@ -145,11 +145,7 @@ impl MenuState {
         }
     }
 
-    pub fn update(
-        &mut self,
-        _assets: &AssetManager,
-        config: &crate::data::config::GameConfig,
-    ) -> Option<StateTransition> {
+    pub fn update(&mut self, config: &crate::data::config::GameConfig) -> Option<StateTransition> {
         if self.screen != MenuScreen::Home && is_key_pressed(KeyCode::Escape) {
             self.screen = MenuScreen::Home;
             return None;
@@ -176,7 +172,7 @@ impl MenuState {
                     building_select::clicked_template(&self.templates, &self.progress, pointer)
                 {
                     let state = GameplayState::new_with_template(config.clone(), template.clone());
-                    return Some(StateTransition::ToGameplay(state));
+                    return Some(StateTransition::ToGameplay(Box::new(state)));
                 }
             }
             MenuScreen::Settings => {
@@ -201,7 +197,7 @@ impl MenuState {
                     return None;
                 }
                 match load_game() {
-                    Ok(state) => return Some(StateTransition::ToGameplay(state)),
+                    Ok(state) => return Some(StateTransition::ToGameplay(Box::new(state))),
                     Err(_) => {
                         self.load_error = Some(
                             "That saved game could not be opened. Choose New Game to start again."

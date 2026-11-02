@@ -7,6 +7,25 @@ use crate::simulation::GameEvent;
 use crate::state::GameplayState;
 
 impl GameplayState {
+    /// Settle a resident's pending request and apply its consequence.
+    pub(in crate::state) fn resolve_request(&mut self, tenant_id: u32, approved: bool) {
+        let current_tick = self.current_tick;
+        let effect = self.tenant_stories.get_mut(&tenant_id).and_then(|story| {
+            story.pending_request.take().map(|request| {
+                let (effect, note) = if approved {
+                    (request.approval_effect(), "Request approved by landlord")
+                } else {
+                    (request.denial_effect(), "Request denied by landlord")
+                };
+                story.add_event(current_tick, note, effect.clone());
+                effect
+            })
+        });
+        if let Some(effect) = effect {
+            self.apply_story_impact(tenant_id, effect);
+        }
+    }
+
     pub(in crate::state) fn apply_story_impact(&mut self, tenant_id: u32, impact: StoryImpact) {
         let mut stack = vec![impact];
         while let Some(effect) = stack.pop() {
@@ -72,15 +91,15 @@ impl GameplayState {
         effect: crate::narrative::dialogue::DialogueEffect,
     ) {
         match effect {
-            crate::narrative::dialogue::DialogueEffect::HappinessChange { tenant_id, amount } => {
+            crate::narrative::dialogue::DialogueEffect::Happiness { tenant_id, amount } => {
                 if let Some(tenant) = self.tenants.iter_mut().find(|t| t.id == tenant_id) {
                     tenant.happiness = (tenant.happiness + amount).clamp(0, 100);
                 }
             }
-            crate::narrative::dialogue::DialogueEffect::MoneyChange(amount) => {
+            crate::narrative::dialogue::DialogueEffect::Money(amount) => {
                 self.apply_dialogue_money_change(amount);
             }
-            crate::narrative::dialogue::DialogueEffect::TensionChange {
+            crate::narrative::dialogue::DialogueEffect::Tension {
                 apt_a,
                 apt_b,
                 amount,
@@ -93,7 +112,7 @@ impl GameplayState {
                     "Dialogue choice",
                 );
             }
-            crate::narrative::dialogue::DialogueEffect::RelationshipChange {
+            crate::narrative::dialogue::DialogueEffect::Relationship {
                 tenant_a,
                 tenant_b,
                 change,
@@ -101,7 +120,7 @@ impl GameplayState {
                 self.tenant_network
                     .apply_relationship_change(tenant_a, tenant_b, change);
             }
-            crate::narrative::dialogue::DialogueEffect::OpinionChange { tenant_id, amount } => {
+            crate::narrative::dialogue::DialogueEffect::Opinion { tenant_id, amount } => {
                 if let Some(tenant) = self.tenants.iter_mut().find(|t| t.id == tenant_id) {
                     tenant.landlord_opinion = (tenant.landlord_opinion + amount).clamp(-100, 100);
                 }

@@ -5,7 +5,7 @@ fn test_dialogue_creation() {
     let mut system = DialogueSystem::new();
     let choices = vec![DialogueChoice {
         text: "Yes".to_string(),
-        effects: vec![DialogueEffect::MoneyChange(100)],
+        effects: vec![DialogueEffect::Money(100)],
     }];
 
     let id = system.add_dialogue(
@@ -15,7 +15,6 @@ fn test_dialogue_creation() {
         "Test",
         "Test Desc",
         choices,
-        None,
     );
 
     assert_eq!(system.pending_dialogues().len(), 1);
@@ -94,7 +93,7 @@ fn test_dialogue_resolution() {
     let mut system = DialogueSystem::new();
     let choices = vec![DialogueChoice {
         text: "Yes".to_string(),
-        effects: vec![DialogueEffect::MoneyChange(100)],
+        effects: vec![DialogueEffect::Money(100)],
     }];
 
     let id = system.add_dialogue(
@@ -104,7 +103,6 @@ fn test_dialogue_resolution() {
         "Test",
         "Test Desc",
         choices,
-        None,
     );
 
     let effects = system.resolve_dialogue(id, 0);
@@ -112,7 +110,7 @@ fn test_dialogue_resolution() {
     if let Some(effects) = effects {
         assert_eq!(effects.len(), 1);
         assert!(
-            matches!(effects[0], DialogueEffect::MoneyChange(100)),
+            matches!(effects[0], DialogueEffect::Money(100)),
             "expected money change effect"
         );
     }

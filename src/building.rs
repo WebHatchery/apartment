@@ -7,10 +7,10 @@
 //! - `Ownership`: Logic for selling units as condos.
 
 mod apartment;
-mod building;
 pub mod ownership;
+mod structure;
 pub mod upgrades;
 
 pub use apartment::{Apartment, ApartmentSize, DesignType, NoiseLevel};
-pub use building::{Building, MarketingType};
+pub use structure::{Building, MarketingType};
 pub use upgrades::{apply_upgrade, UpgradeAction};

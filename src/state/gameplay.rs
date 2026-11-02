@@ -116,6 +116,14 @@ pub struct GameplayState {
     pub panel_scroll_offset: f32,
     #[serde(skip)]
     pub tower_scroll_offset: f32,
+    /// Set when a place is selected so the tower scrolls it into view.
+    #[serde(skip)]
+    pub tower_focus_pending: bool,
+    /// Canvas size the tower was last framed for; a resize reframes it.
+    #[serde(skip)]
+    pub framed_canvas: (f32, f32),
+    #[serde(skip)]
+    pub panel_disclosure: crate::ui::PanelDisclosure,
     #[serde(skip)]
     pub finance_scroll_offset: f32,
     #[serde(skip)]
@@ -310,6 +318,9 @@ impl GameplayState {
             floating_texts: default_floating_text_layer(),
             panel_scroll_offset: 0.0,
             tower_scroll_offset: 0.0,
+            tower_focus_pending: false,
+            framed_canvas: (0.0, 0.0),
+            panel_disclosure: crate::ui::PanelDisclosure::default(),
             finance_scroll_offset: 0.0,
             tasks_scroll_offset: 0.0,
             event_scroll_offset: 0.0,

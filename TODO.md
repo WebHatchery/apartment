@@ -8,32 +8,6 @@ with the `APARTMENT_CAPTURE_MANIFEST` harness (scenes in `src/game.rs`).
 
 ## UI tasks
 
-- [ ] **UI-05 — Keep selected rooms visible and put their immediate decisions first.**
-  **Scope:** `src/screen_layout.rs::BuildingLayout::new`,
-  `src/ui/building_view.rs::{draw_building_view,cutaway_metrics}`,
-  `src/ui/apartment_panel.rs`, `src/ui/apartment_panel_sections.rs`,
-  `src/ui/tenant_panel.rs`, `src/ui/hallway_panel.rs`, and selection handling in
-  `src/state/gameplay_actions.rs`.
-  **Problem:** at 390x844, selecting a unit shows upper-floor rooms instead of
-  the selected one, and the bottom inspector takes most of the remaining space.
-  The inspector opens on a repair plus a long stat stack, with tenant and
-  actions further down; repair appears both at the top and in the upgrade list.
-  The compact hallway view shows staff while the lobby is out of view.
-  **Change:** scroll/reframe to the selected unit or lobby when the panel opens
-  or the canvas resizes, keeping useful scale and visible Up/Down controls.
-  Lead with identity/vacancy, relevant condition/issue, rent and the current
-  action with price/affordability. Give repair one home; disclose design, size,
-  kitchen, lighting, quality and advanced tenant detail as needed. Group staff
-  and upgrades behind explicit disclosure instead of a continuous stat wall.
-  Keep applications, ownership, listing and sold-unit routes accessible.
-  **Accept:** players see which place they are acting on and its immediate
-  consequence without scrolling through unrelated facts. Default desktop
-  composition remains world-first; closing restores a useful building view.
-  **Verify:** all review sizes: top/bottom floors, lobby, tall building, vacancy,
-  sold unit, unaffordable repair, applications and ownership. Tap target → action
-  → result → Close, scroll both regions, resize, and reselect; confirm draw and
-  hit bounds agree and no covered room receives the same input.
-
 - [ ] **UI-06 — Make City and property comparison readable before adding decoration.**
   **Scope:** `src/ui/city_view.rs::{draw_city_map,draw_neighborhood_cell,draw_portfolio_panel,draw_market_panel,draw_purchase_confirmation}`
   and `src/ui/city_view_widgets.rs`.
@@ -77,7 +51,7 @@ with the `APARTMENT_CAPTURE_MANIFEST` harness (scenes in `src/game.rs`).
 - [ ] **UI-08 — Make coaching accurate, dismissible and reopenable.**
   **Scope:** `src/state/gameplay_views.rs::draw_tutorial_coach`,
   `src/state/gameplay_pause.rs` (pause menu), `src/state/tutorial_system.rs`,
-  `src/narrative/tutorial.rs`, and relevant `UiAction` routes. After UI-05.
+  `src/narrative/tutorial.rs`, and relevant `UiAction` routes. 
   **Problem:** coach anchors are guessed screen positions rather than the
   target's rendered bounds; the vacancy step anchors at `screen_width() - 68`,
   near Menu rather than End Month. The pause menu has no Help/reopen option.
@@ -98,7 +72,7 @@ with the `APARTMENT_CAPTURE_MANIFEST` harness (scenes in `src/game.rs`).
   **Scope:** `src/ui/resident_sprite.rs::{style_for,animated_pose}`,
   `src/ui/building_view/room_story.rs`, `src/ui/building_view.rs::draw_sunset_backdrop`,
   `src/ui/building_view/condition_art.rs`, assets and presentation configuration.
-  After UI-05 and UI-07.
+  After UI-07.
   **Problem:** resident styling and pose cycling exist, but same-design rooms
   repeat their furnishings, room-story inputs are only apartment features, and
   the exterior uses a fixed sunset. (Residents, wear and upgrade art are done —
@@ -121,7 +95,7 @@ with the `APARTMENT_CAPTURE_MANIFEST` harness (scenes in `src/game.rs`).
 - [ ] **UI-10 — Finish shared readability, touch feedback and restrained motion.**
   **Scope:** `src/ui/theme.rs`, `src/ui/widgets.rs`, `src/ui/common.rs`, panel
   drawing/input in `src/state/gameplay_views.rs`, and the screens above.
-  After UI-05–UI-09; polish, not another redesign.
+  After UI-06–UI-09; polish, not another redesign.
   **Problem:** bordered buttons, panel headings, stat labels and orange
   scrolling/navigation controls compete with decisions in selected views. The
   selection Close button is 34px high while most actions are 40px; real touch
@@ -171,14 +145,6 @@ with the `APARTMENT_CAPTURE_MANIFEST` harness (scenes in `src/game.rs`).
 - [ ] Add a short `//!` purpose comment to each of the 62 production Rust files
   that lack module-level documentation, including child modules created by the
   test and size migrations.
-
-- [ ] Refactor long and over-arity paths such as `GameplayState::process_action`,
-  `GameTick::process`, `MissionManager::evaluate_active`,
-  `TenantNetwork::tick`, and the capture-scene dispatcher around context or
-  result structs (the capture-scene dispatcher is already table-driven). Remove the broad `too_many_arguments`, `large_enum_variant`,
-  `module_inception`, and `non_snake_case` allowances where possible, document
-  any remaining narrow allowance, and remove unused parameters such as the
-  `_city` argument in `draw_neighborhood_cell`.
 
 - [ ] Make JSON the single runtime source of truth for content, configuration,
   and player-facing text: wire `assets/text_strings.json` through the toolkit

@@ -143,13 +143,11 @@ fn resident_anchor(
     style: ResidentStyle,
     pose: ResidentPose,
     happiness: i32,
-    body_x: f32,
-    body_y: f32,
-    body_w: f32,
-    sprite_h: f32,
-    head_w: f32,
-    head_h: f32,
+    body: Rect,
+    head: Vec2,
 ) -> (f32, f32) {
+    let (body_x, body_y, body_w, sprite_h) = (body.x, body.y, body.w, body.h);
+    let (head_w, head_h) = (head.x, head.y);
     let pose_index = anchor_index(pose);
     let face_index = emotion_column(happiness) as usize;
     let neck_x = body_x + style.body_anchor_x[pose_index] * body_w;
@@ -266,7 +264,11 @@ fn draw_resident_layers(
     let head_h = sprite_h * style.head_height_ratio;
     let head_w = head_h * 0.72;
     let (head_x, head_y) = resident_anchor(
-        style, pose, happiness, body_x, body_y, body_w, sprite_h, head_w, head_h,
+        style,
+        pose,
+        happiness,
+        Rect::new(body_x, body_y, body_w, sprite_h),
+        vec2(head_w, head_h),
     );
     draw_texture_ex(
         faces,

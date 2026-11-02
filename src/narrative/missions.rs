@@ -325,20 +325,9 @@ impl MissionManager {
     }
 
     /// Evaluate active missions from an authoritative monthly snapshot.
-    #[allow(clippy::too_many_arguments)]
-    pub fn evaluate_active(
-        &mut self,
-        current_month: u32,
-        active_building_id: u32,
-        active_tenants: &[crate::tenant::Tenant],
-        occupancy: f32,
-        avg_happiness: f32,
-        perfect_collection: bool,
-        fully_repaired_by_building: &std::collections::HashMap<u32, bool>,
-        building_count: usize,
-    ) -> Vec<CompletedMission> {
-        self.check_expirations(current_month);
-        if building_count == 0 {
+    pub fn evaluate_active(&mut self, snapshot: &MissionSnapshot) -> Vec<CompletedMission> {
+        self.check_expirations(snapshot.current_month);
+        if snapshot.building_count == 0 {
             for mission in &mut self.missions {
                 if mission.status == MissionStatus::Active
                     && matches!(mission.goal, MissionGoal::AcquireBuilding)
@@ -350,53 +339,7 @@ impl MissionManager {
 
         let mut completed = Vec::new();
         for mission in &mut self.missions {
-            if mission.status != MissionStatus::Active {
-                continue;
-            }
-            let goal_met = match &mut mission.goal {
-                MissionGoal::HouseTenants { count, archetype } => {
-                    active_tenants
-                        .iter()
-                        .filter(|tenant| {
-                            tenant.building_id == active_building_id
-                                && archetype
-                                    .as_ref()
-                                    .is_none_or(|name| tenant.archetype.name() == name)
-                        })
-                        .count() as u32
-                        >= *count
-                }
-                MissionGoal::ReachOccupancy { percentage } => occupancy >= *percentage,
-                MissionGoal::AcquireBuilding => building_count > 1,
-                MissionGoal::MaintainHappiness {
-                    threshold,
-                    months,
-                    current_months,
-                } => {
-                    if !active_tenants.is_empty() && avg_happiness >= *threshold {
-                        *current_months += 1;
-                    } else {
-                        *current_months = 0;
-                    }
-                    *current_months >= *months
-                }
-                MissionGoal::PerfectCollection {
-                    months,
-                    current_months,
-                } => {
-                    if perfect_collection {
-                        *current_months += 1;
-                    } else {
-                        *current_months = 0;
-                    }
-                    *current_months >= *months
-                }
-                MissionGoal::FullRepair { building_id } => fully_repaired_by_building
-                    .get(building_id)
-                    .copied()
-                    .unwrap_or(false),
-            };
-            if goal_met {
+            if mission.status == MissionStatus::Active && goal_met(&mut mission.goal, snapshot) {
                 mission.complete();
                 completed.push(CompletedMission {
                     title: mission.title.clone(),
@@ -407,6 +350,64 @@ impl MissionManager {
         }
         completed
     }
+}
+
+/// The month-end facts mission goals are judged against.
+pub struct MissionSnapshot<'a> {
+    pub current_month: u32,
+    pub active_building_id: u32,
+    pub active_tenants: &'a [crate::tenant::Tenant],
+    pub occupancy: f32,
+    pub avg_happiness: f32,
+    /// At least one tenant and no missed rent this month.
+    pub perfect_collection: bool,
+    pub fully_repaired_by_building: &'a std::collections::HashMap<u32, bool>,
+    pub building_count: usize,
+}
+
+/// Whether `goal` is satisfied this month; streak goals advance or reset
+/// their month counters as a side effect.
+fn goal_met(goal: &mut MissionGoal, snapshot: &MissionSnapshot) -> bool {
+    let tenants = snapshot.active_tenants;
+    match goal {
+        MissionGoal::HouseTenants { count, archetype } => {
+            tenants
+                .iter()
+                .filter(|tenant| {
+                    tenant.building_id == snapshot.active_building_id
+                        && archetype
+                            .as_ref()
+                            .is_none_or(|name| tenant.archetype.name() == name)
+                })
+                .count() as u32
+                >= *count
+        }
+        MissionGoal::ReachOccupancy { percentage } => snapshot.occupancy >= *percentage,
+        MissionGoal::AcquireBuilding => snapshot.building_count > 1,
+        MissionGoal::MaintainHappiness {
+            threshold,
+            months,
+            current_months,
+        } => advance_streak(
+            current_months,
+            !tenants.is_empty() && snapshot.avg_happiness >= *threshold,
+            *months,
+        ),
+        MissionGoal::PerfectCollection {
+            months,
+            current_months,
+        } => advance_streak(current_months, snapshot.perfect_collection, *months),
+        MissionGoal::FullRepair { building_id } => snapshot
+            .fully_repaired_by_building
+            .get(building_id)
+            .copied()
+            .unwrap_or(false),
+    }
+}
+
+fn advance_streak(current_months: &mut u32, kept_up: bool, required: u32) -> bool {
+    *current_months = if kept_up { *current_months + 1 } else { 0 };
+    *current_months >= required
 }
 
 /// A mission as authored in `assets/missions.json`, before runtime fields

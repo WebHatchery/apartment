@@ -215,6 +215,21 @@ impl GameplayState {
             .cloned()
             .collect();
 
+        // Reframe on selection or canvas resize so the place being acted on
+        // stays in view above (or beside) its inspector.
+        let canvas = (screen_width(), screen_height());
+        if canvas != self.framed_canvas {
+            self.framed_canvas = canvas;
+            self.tower_focus_pending = true;
+        }
+        if std::mem::take(&mut self.tower_focus_pending) {
+            self.tower_scroll_offset = crate::ui::building_view::reveal_selection(
+                &self.building,
+                &self.selection,
+                self.tower_scroll_offset,
+            );
+        }
+
         // Draw Building View
         let (tower_action, tower_scroll) = draw_building_view(
             &self.building,
@@ -228,23 +243,22 @@ impl GameplayState {
             self.pending_actions.push(action);
         }
 
-        // Keep panel rendering aligned with the shared input bounds.
-        let panel_offset = 0.0;
-
         match self.selection {
             Selection::Apartment(id) => {
                 if let Some(apt) = self.building.get_apartment(id) {
                     let (action, new_scroll) = draw_apartment_panel(
                         apt,
-                        &self.building,
-                        &active_tenants,
-                        self.funds.balance,
-                        panel_offset,
+                        &crate::ui::UnitPanelContext {
+                            building: &self.building,
+                            tenants: &active_tenants,
+                            money: self.funds.balance,
+                            assets,
+                            config: &self.config,
+                            network: &self.tenant_network,
+                            stories: &self.tenant_stories,
+                            disclosure: self.panel_disclosure,
+                        },
                         self.panel_scroll_offset,
-                        assets,
-                        &self.config,
-                        &self.tenant_network,
-                        &self.tenant_stories,
                     );
                     self.panel_scroll_offset = new_scroll;
                     if let Some(action) = action {
@@ -256,10 +270,10 @@ impl GameplayState {
                 let (action, new_scroll) = draw_hallway_panel(
                     &self.building,
                     self.funds.balance,
-                    panel_offset,
                     self.panel_scroll_offset,
                     assets,
                     &self.config,
+                    self.panel_disclosure,
                 );
                 self.panel_scroll_offset = new_scroll;
                 if let Some(action) = action {

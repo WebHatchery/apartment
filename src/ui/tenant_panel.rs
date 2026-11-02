@@ -1,168 +1,85 @@
+//! Resident and vacancy sections of the unit inspector.
+
 use crate::assets::AssetManager;
 use crate::building::Apartment;
 use crate::consequences::TenantNetwork;
 use crate::narrative::{TenantRequest, TenantStory};
-use crate::tenant::Tenant;
+use crate::tenant::{Tenant, TenantArchetype};
 use macroquad::prelude::*;
 use std::collections::HashMap;
 
-use super::theme::scale;
+use super::panel_flow::PanelFlow;
+use super::theme::{scale, Tone};
 use super::{common::*, UiAction};
-use macroquad_toolkit::ui::{draw_ui_text, wrap_text_ex};
+use macroquad_toolkit::ui::draw_ui_text;
 
-pub(super) fn draw_tenant_info(
-    apt: &Apartment,
-    tenants: &[Tenant],
-    assets: &AssetManager,
-    content_x: f32,
-    y: &mut f32,
-    panel_w: f32,
-    content_top: f32,
-    content_bottom: f32,
+const PORTRAIT: f32 = 52.0;
+
+/// Portrait, name, archetype and relationship chips in one fixed row.
+pub(super) fn draw_resident_identity(
+    flow: &mut PanelFlow,
+    tenant: &Tenant,
     network: &TenantNetwork,
-    stories: &HashMap<u32, TenantStory>,
-) -> Option<UiAction> {
-    if *y >= content_top && *y <= content_bottom {
-        draw_line(
-            content_x,
-            *y,
-            content_x + panel_w - 30.0,
-            *y,
-            1.0,
-            colors::TEXT_DIM(),
-        );
-    }
-    *y += 15.0;
-
-    if let Some(tenant_id) = apt.tenant_id {
-        return draw_occupied_tenant_info(
-            apt,
-            tenant_id,
-            tenants,
-            assets,
-            content_x,
-            y,
-            panel_w,
-            content_top,
-            content_bottom,
-            network,
-            stories,
-        );
-    }
-
-    draw_vacant_unit_actions(apt, content_x, y, panel_w, content_top, content_bottom)
-}
-
-fn draw_occupied_tenant_info(
-    apt: &Apartment,
-    tenant_id: u32,
-    tenants: &[Tenant],
     assets: &AssetManager,
-    content_x: f32,
-    y: &mut f32,
-    panel_w: f32,
-    content_top: f32,
-    content_bottom: f32,
-    network: &TenantNetwork,
-    stories: &HashMap<u32, TenantStory>,
-) -> Option<UiAction> {
-    let tenant = tenants.iter().find(|t| t.id == tenant_id)?;
-    let w = panel_w - 30.0;
-
-    if *y >= content_top && *y + 22.0 <= content_bottom {
-        crate::ui::widgets::section_label(content_x, *y, "TENANT");
-    }
-    *y += 22.0;
-
-    // Portrait + name/archetype/relationship block — a fixed 84px-tall row so
-    // nothing that follows can draw on top of it.
-    let row_top = *y;
-    if row_top >= content_top && row_top + 84.0 <= content_bottom {
+) {
+    let row_h = PORTRAIT + 4.0;
+    if flow.fits(row_h) {
+        let (x, y) = (flow.x, flow.y);
         let has_portrait = super::resident_sprite::draw_face_portrait(
             tenant,
-            Rect::new(content_x, row_top, 80.0, 80.0),
+            Rect::new(x, y, PORTRAIT, PORTRAIT),
             assets,
         );
         if !has_portrait {
-            draw_rectangle(
-                content_x,
-                row_top,
-                4.0,
-                60.0,
-                archetype_color(&tenant.archetype),
-            );
+            draw_rectangle(x, y, 4.0, PORTRAIT, archetype_color(&tenant.archetype));
         }
         let text_x = if has_portrait {
-            content_x + 92.0
+            x + PORTRAIT + 10.0
         } else {
-            content_x + 12.0
+            x + 12.0
         };
-        draw_ui_text(
+        let name = macroquad_toolkit::ui::truncate_text_to_width(
             &tenant.name,
-            text_x,
-            row_top + 20.0,
-            scale::TITLE,
-            colors::TEXT(),
+            flow.x + flow.w - text_x,
+            scale::HEADING,
         );
+        draw_ui_text(&name, text_x, y + 18.0, scale::HEADING, colors::TEXT());
         draw_ui_text(
-            tenant.archetype.name(),
+            &format!(
+                "{} · {} months",
+                tenant.archetype.name(),
+                tenant.months_residing
+            ),
             text_x,
-            row_top + 40.0,
+            y + 36.0,
             scale::LABEL,
             colors::TEXT_DIM(),
         );
-        draw_relationship_icons(tenant.id, network, text_x, row_top + 50.0);
+        draw_relationship_icons(tenant.id, network, text_x, y + 42.0);
     }
-    *y += 88.0;
+    flow.advance(row_h);
+}
 
-    draw_tenant_happiness(
-        tenant,
-        assets,
-        content_x,
-        y,
-        panel_w,
-        content_top,
-        content_bottom,
-    );
-
-    if *y >= content_top && *y + 20.0 <= content_bottom {
-        crate::ui::widgets::kv_row(
-            content_x,
-            *y,
-            w,
-            "Rent fit",
-            &format!("${} / ${} limit", apt.rent_price, tenant.rent_tolerance),
-            if apt.rent_price <= tenant.rent_tolerance {
-                colors::POSITIVE()
-            } else {
-                colors::WARNING()
-            },
-        );
-    }
-    *y += 26.0;
-
-    if *y >= content_top && *y + 20.0 <= content_bottom {
-        crate::ui::widgets::kv_row(
-            content_x,
-            *y,
-            w,
-            "Tenure",
-            &format!("{} months", tenant.months_residing),
+/// Who they are beyond the lease: background from their story.
+pub(super) fn draw_resident_details(
+    flow: &mut PanelFlow,
+    tenant: &Tenant,
+    stories: &HashMap<u32, TenantStory>,
+) {
+    if let Some(story) = stories.get(&tenant.id) {
+        flow.kv("Work", &story.job_title, colors::TEXT());
+        flow.kv("From", &story.hometown, colors::TEXT());
+        flow.paragraph(
+            &format!("Moved in: {}", story.move_reason),
+            scale::LABEL,
             colors::TEXT_DIM(),
         );
     }
-    *y += 26.0;
-
-    // Pending request as its own section, below the tenant info.
-    draw_pending_request(
-        tenant,
-        stories,
-        content_x,
-        y,
-        panel_w,
-        content_top,
-        content_bottom,
-    )
+    flow.kv(
+        "Tenure",
+        &format!("{} months", tenant.months_residing),
+        colors::TEXT_DIM(),
+    );
 }
 
 fn draw_relationship_icons(tenant_id: u32, network: &TenantNetwork, text_x: f32, icon_y: f32) {
@@ -210,84 +127,32 @@ fn draw_relationship_icons(tenant_id: u32, network: &TenantNetwork, text_x: f32,
     }
 }
 
-fn draw_pending_request(
+/// A resident's open request is a decision, so it follows the repair.
+pub(super) fn draw_pending_request(
+    flow: &mut PanelFlow,
     tenant: &Tenant,
     stories: &HashMap<u32, TenantStory>,
-    content_x: f32,
-    y: &mut f32,
-    panel_w: f32,
-    content_top: f32,
-    content_bottom: f32,
 ) -> Option<UiAction> {
-    let story = stories.get(&tenant.id)?;
-    let request = story.pending_request.as_ref()?;
-    let w = panel_w - 30.0;
-
-    // Divider + section header.
-    if *y >= content_top && *y <= content_bottom {
-        draw_line(content_x, *y, content_x + w, *y, 1.0, colors::BORDER());
-    }
-    *y += 14.0;
-    if *y >= content_top && *y + 18.0 <= content_bottom {
-        crate::ui::widgets::section_label(content_x, *y, "PENDING REQUEST");
-    }
-    *y += 22.0;
-
-    // Wrapped request text.
-    let req_text = request_text(request);
-    for line in wrap_text_ex(&req_text, w, None, scale::BODY) {
-        if *y >= content_top && *y + scale::BODY <= content_bottom {
-            draw_ui_text(
-                &line,
-                content_x,
-                *y + scale::BODY,
-                scale::BODY,
-                colors::TEXT(),
-            );
-        }
-        *y += scale::BODY * 1.35;
-    }
-    *y += 4.0;
-
-    let effect_text = request_effect_text(request);
-    if !effect_text.is_empty() {
-        if *y >= content_top && *y + 16.0 <= content_bottom {
-            draw_ui_text(
-                &effect_text,
-                content_x,
-                *y + scale::LABEL,
-                scale::LABEL,
-                colors::ACCENT(),
-            );
-        }
-        *y += 24.0;
-    }
-
-    *y += 6.0;
-    let btn_w = ((w - 10.0) / 2.0).min(140.0);
-    if crate::ui::widgets::button_at(
-        Rect::new(content_x, *y, btn_w, 40.0),
-        "Approve",
-        true,
-        crate::ui::theme::Tone::Positive,
-    ) {
-        return Some(UiAction::ApproveRequest {
+    let request = stories.get(&tenant.id)?.pending_request.as_ref()?;
+    flow.divider();
+    flow.section_label("PENDING REQUEST");
+    flow.paragraph(&request_text(request), scale::BODY, colors::TEXT());
+    flow.paragraph(
+        &request_effect_text(request),
+        scale::LABEL,
+        colors::ACCENT(),
+    );
+    match flow.button_row(&[
+        ("Approve", true, Tone::Positive),
+        ("Deny", true, Tone::Danger),
+    ])? {
+        0 => Some(UiAction::ApproveRequest {
             tenant_id: tenant.id,
-        });
-    }
-    if crate::ui::widgets::button_at(
-        Rect::new(content_x + btn_w + 10.0, *y, btn_w, 40.0),
-        "Deny",
-        true,
-        crate::ui::theme::Tone::Danger,
-    ) {
-        return Some(UiAction::DenyRequest {
+        }),
+        _ => Some(UiAction::DenyRequest {
             tenant_id: tenant.id,
-        });
+        }),
     }
-
-    *y += 38.0;
-    None
 }
 
 fn request_text(request: &TenantRequest) -> String {
@@ -348,195 +213,72 @@ fn append_effect_text(effect_text: &mut String, value: &str) {
     effect_text.push_str(value);
 }
 
-fn draw_tenant_happiness(
-    tenant: &Tenant,
-    _assets: &AssetManager,
-    content_x: f32,
-    y: &mut f32,
-    panel_w: f32,
-    content_top: f32,
-    content_bottom: f32,
-) {
-    let w = panel_w - 30.0;
-    if *y >= content_top && *y + 22.0 <= content_bottom {
-        crate::ui::widgets::section_label(content_x, *y, "HAPPINESS");
-    }
-    *y += 22.0;
-    if *y >= content_top && *y + 20.0 <= content_bottom {
-        crate::ui::widgets::stat_meter(
-            content_x,
-            *y,
-            w,
-            tenant.happiness,
-            100,
-            happiness_color(tenant.happiness),
-        );
-    }
-    *y += 28.0;
-}
-
-fn draw_vacant_unit_actions(
-    apt: &Apartment,
-    content_x: f32,
-    y: &mut f32,
-    panel_w: f32,
-    content_top: f32,
-    content_bottom: f32,
-) -> Option<UiAction> {
-    if *y >= content_top && *y + 18.0 <= content_bottom {
-        draw_ui_text("VACANT", content_x, *y, 18.0, colors::WARNING());
-    }
-    *y += 25.0;
-
-    let btn_w = panel_w - 30.0;
-
+/// Listing, pricing and applications for an empty unit.
+pub(super) fn draw_vacancy_actions(flow: &mut PanelFlow, apt: &Apartment) -> Option<UiAction> {
     if apt.is_listed_for_lease {
-        return draw_listed_vacancy_actions(apt, content_x, y, btn_w, content_top, content_bottom);
-    }
-
-    draw_unlisted_vacancy_actions(apt, content_x, y, btn_w, content_top, content_bottom)
-}
-
-fn draw_listed_vacancy_actions(
-    apt: &Apartment,
-    content_x: f32,
-    y: &mut f32,
-    btn_w: f32,
-    content_top: f32,
-    content_bottom: f32,
-) -> Option<UiAction> {
-    if *y >= content_top && *y + 16.0 <= content_bottom {
-        draw_ui_text("Status: LISTED", content_x, *y, 16.0, colors::POSITIVE());
-    }
-    *y += 20.0;
-
-    if *y >= content_top && *y + 14.0 <= content_bottom {
-        let target_text = if let Some(pref) = &apt.preferred_archetype {
-            format!("Target: {}", pref.name())
-        } else {
-            "Target: Open (Any)".to_string()
-        };
-        draw_ui_text(&target_text, content_x, *y, 14.0, colors::TEXT());
-    }
-    *y += 30.0;
-
-    if *y >= content_top
-        && *y + 40.0 <= content_bottom
-        && button(content_x, *y, btn_w, 40.0, "View Applications", true)
-    {
-        return Some(UiAction::SelectApplications(Some(apt.id)));
-    }
-    *y += 46.0;
-
-    if *y >= content_top
-        && *y + 40.0 <= content_bottom
-        && button(content_x, *y, btn_w, 40.0, "Unlist Property", true)
-    {
-        return Some(UiAction::UnlistApartment {
-            apartment_id: apt.id,
-        });
-    }
-    *y += 46.0;
-
-    None
-}
-
-fn draw_unlisted_vacancy_actions(
-    apt: &Apartment,
-    content_x: f32,
-    y: &mut f32,
-    btn_w: f32,
-    content_top: f32,
-    content_bottom: f32,
-) -> Option<UiAction> {
-    if *y >= content_top && *y + 14.0 <= content_bottom {
-        draw_ui_text(
-            "Status: OFF MARKET",
-            content_x,
-            *y,
-            14.0,
-            colors::TEXT_DIM(),
-        );
-    }
-    *y += 30.0;
-
-    if *y >= content_top && *y + 20.0 <= content_bottom {
-        draw_ui_text(
-            &format!("Rent: ${}", apt.rent_price),
-            content_x,
-            *y,
-            20.0,
-            colors::TEXT(),
-        );
-
-        let btn_size = 40.0;
-        let controls_x = content_x + btn_w - btn_size * 2.0 - 8.0;
-        if button(controls_x, *y - 25.0, btn_size, btn_size, "-", true) {
-            return Some(UiAction::SetRent {
+        let target = apt
+            .preferred_archetype
+            .as_ref()
+            .map_or("any tenant", TenantArchetype::name);
+        flow.kv("Looking for", target, colors::TEXT());
+        if flow.button("View applications", true, Tone::Primary) {
+            return Some(UiAction::SelectApplications(Some(apt.id)));
+        }
+        if flow.button("Take off the market", true, Tone::Secondary) {
+            return Some(UiAction::UnlistApartment {
                 apartment_id: apt.id,
-                new_rent: apt.rent_price - 50,
             });
         }
-        if button(
-            controls_x + btn_size + 8.0,
-            *y - 25.0,
-            btn_size,
-            btn_size,
-            "+",
-            true,
-        ) {
-            return Some(UiAction::SetRent {
-                apartment_id: apt.id,
-                new_rent: apt.rent_price + 50,
-            });
-        }
+        return None;
     }
-    *y += 48.0;
 
-    if *y >= content_top && *y + 14.0 <= content_bottom {
-        draw_ui_text("List for Lease:", content_x, *y, 14.0, colors::ACCENT());
-    }
-    *y += 20.0;
-
-    if *y >= content_top
-        && *y + 40.0 <= content_bottom
-        && button(content_x, *y, btn_w, 40.0, "Any Tenant", true)
-    {
+    if flow.button("List for any tenant", true, Tone::Primary) {
         return Some(UiAction::ListApartment {
             apartment_id: apt.id,
             preference: None,
         });
     }
-    *y += 46.0;
-
-    let tenant_types = [
-        (crate::tenant::TenantArchetype::Student, "Student"),
-        (crate::tenant::TenantArchetype::Professional, "Pro"),
-        (crate::tenant::TenantArchetype::Artist, "Artist"),
-        (crate::tenant::TenantArchetype::Family, "Family"),
-        (crate::tenant::TenantArchetype::Elderly, "Elderly"),
+    match flow.button_row(&[
+        ("Rent -$50", true, Tone::Secondary),
+        ("Rent +$50", true, Tone::Secondary),
+    ]) {
+        Some(0) => {
+            return Some(UiAction::SetRent {
+                apartment_id: apt.id,
+                new_rent: apt.rent_price - 50,
+            })
+        }
+        Some(_) => {
+            return Some(UiAction::SetRent {
+                apartment_id: apt.id,
+                new_rent: apt.rent_price + 50,
+            })
+        }
+        None => {}
+    }
+    flow.section_label("OR LIST FOR ONE KIND OF TENANT");
+    let rows: [&[(TenantArchetype, &str)]; 2] = [
+        &[
+            (TenantArchetype::Student, "Student"),
+            (TenantArchetype::Professional, "Pro"),
+            (TenantArchetype::Artist, "Artist"),
+        ],
+        &[
+            (TenantArchetype::Family, "Family"),
+            (TenantArchetype::Elderly, "Elderly"),
+        ],
     ];
-    let small_btn_w = (btn_w - 10.0) / 2.0;
-
-    for (index, (archetype, label)) in tenant_types.iter().enumerate() {
-        let col = index % 2;
-        let x = content_x + col as f32 * (small_btn_w + 10.0);
-
-        if *y >= content_top
-            && *y + 40.0 <= content_bottom
-            && button(x, *y, small_btn_w, 40.0, label, true)
-        {
+    for row in rows {
+        let labels: Vec<_> = row
+            .iter()
+            .map(|(_, label)| (*label, true, Tone::Secondary))
+            .collect();
+        if let Some(index) = flow.button_row(&labels) {
             return Some(UiAction::ListApartment {
                 apartment_id: apt.id,
-                preference: Some(archetype.clone()),
+                preference: Some(row[index].0.clone()),
             });
         }
-
-        if col == 1 || index == tenant_types.len() - 1 {
-            *y += 46.0;
-        }
     }
-    *y += 10.0;
-
     None
 }

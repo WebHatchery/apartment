@@ -5,10 +5,10 @@
 //! - `Neighborhood`: Specific districts with unique modifiers and demographics.
 //! - `Market`: The real estate market for buying new properties.
 
-mod city;
 mod market;
 mod neighborhood;
+mod registry;
 
-pub use city::City;
 pub use market::{BuildingCondition, FinancingOption, PropertyListing, PropertyMarket};
 pub use neighborhood::{Neighborhood, NeighborhoodType};
+pub use registry::City;

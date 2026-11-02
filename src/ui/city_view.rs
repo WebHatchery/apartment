@@ -54,11 +54,7 @@ pub fn draw_city_map(
         if let Some(a) = draw_neighborhood_cell(
             neighborhood,
             selected_neighborhood_id == Some(neighborhood.id),
-            x,
-            y,
-            cell_width,
-            cell_height,
-            city,
+            Rect::new(x, y, cell_width, cell_height),
             assets,
             narrative,
         ) {
@@ -73,14 +69,16 @@ pub fn draw_city_map(
 fn draw_neighborhood_cell(
     neighborhood: &Neighborhood,
     selected: bool,
-    x: f32,
-    y: f32,
-    width: f32,
-    height: f32,
-    _city: &City,
+    cell: Rect,
     assets: &AssetManager,
     narrative: &NarrativeEventSystem,
 ) -> Option<CityMapAction> {
+    let Rect {
+        x,
+        y,
+        w: width,
+        h: height,
+    } = cell;
     let mouse = mouse_position();
     let hovered = mouse.0 >= x && mouse.0 <= x + width && mouse.1 >= y && mouse.1 <= y + height;
 

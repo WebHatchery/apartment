@@ -9,14 +9,17 @@ use macroquad_toolkit::ui::{draw_surface, draw_ui_text_ex, truncate_text_to_widt
 
 pub(super) fn draw_listing_card(
     listing: &PropertyListing,
-    x: f32,
-    y: f32,
-    width: f32,
-    height: f32,
+    card: Rect,
     neighborhoods: &[Neighborhood],
     player_funds: i32,
     assets: &AssetManager,
 ) -> Option<CityMapAction> {
+    let Rect {
+        x,
+        y,
+        w: width,
+        h: height,
+    } = card;
     let mouse = mouse_position();
     let hovered = mouse.0 >= x && mouse.0 <= x + width && mouse.1 >= y && mouse.1 <= y + height;
     let neighborhood = neighborhoods

@@ -258,97 +258,9 @@ impl TenantNetwork {
         events_config: &RelationshipEventsConfig,
         current_month: u32,
     ) -> (Vec<RelationshipChange>, Vec<NarrativeEvent>) {
-        let mut changes = Vec::new();
-        let mut events = Vec::new(); // Phase 4
-        let active_tenant_ids: std::collections::HashSet<u32> =
-            tenants.iter().map(|tenant| tenant.id).collect();
-
-        // Update existing relationships
-        for relationship in self.relationships.iter_mut().filter(|relationship| {
-            active_tenant_ids.contains(&relationship.tenant_a_id)
-                && active_tenant_ids.contains(&relationship.tenant_b_id)
-        }) {
-            relationship.tick(config);
-
-            // Phase 4D: Detect relationship changes (e.g. Hostile -> Neutral)
-            // This would require tracking old state, which we can add later
-        }
-
-        // Chance to form new relationships between neighbors
-        for tenant_a in tenants {
-            for tenant_b in tenants {
-                if tenant_a.id >= tenant_b.id {
-                    continue; // Avoid duplicates
-                }
-
-                // Check if they're already related
-                if self
-                    .relationship_between(tenant_a.id, tenant_b.id)
-                    .is_some()
-                {
-                    continue;
-                }
-
-                // Check if they can form a relationship
-                if !TenantRelationship::can_form(tenant_a, tenant_b) {
-                    continue;
-                }
-
-                // Chance per month for new relationship
-                if rng::gen_range(0, 100) < config.formation_chance {
-                    let rel_type =
-                        self.determine_initial_relationship(tenant_a, tenant_b, building, config);
-                    if let Some(actual_type) =
-                        self.add_relationship(tenant_a.id, tenant_b.id, rel_type.clone())
-                    {
-                        let is_positive = !matches!(actual_type, RelationshipType::Hostile);
-
-                        changes.push(RelationshipChange::NewRelationship {
-                            tenant_a_name: tenant_a.name.clone(),
-                            tenant_b_name: tenant_b.name.clone(),
-                            relationship_type: format!("{:?}", actual_type),
-                            is_positive,
-                        });
-                    }
-                }
-            }
-        }
-
-        // Phase 4: Generate relationship events
-        for rel in &self.relationships {
-            let possible_events = match rel.relationship_type {
-                RelationshipType::Hostile => &events_config.hostile,
-                RelationshipType::Friendly => &events_config.friendly,
-                RelationshipType::Romantic | RelationshipType::Family => &events_config.romance,
-                _ => continue,
-            };
-
-            for template in possible_events {
-                // Check probability
-                if rng::gen_range(0, 100) >= template.probability {
-                    continue;
-                }
-
-                // Check triggers
-                if let Some(min) = template.trigger_strength_min {
-                    if rel.strength < min {
-                        continue;
-                    }
-                }
-                if let Some(max) = template.trigger_strength_max {
-                    if rel.strength > max {
-                        continue;
-                    }
-                }
-
-                // Generate event
-                if let Some(event) =
-                    self.generate_event_from_template(template, rel, tenants, building)
-                {
-                    events.push(event);
-                }
-            }
-        }
+        self.age_relationships(tenants, config);
+        let changes = self.form_new_relationships(tenants, building, config);
+        let mut events = self.roll_relationship_events(tenants, building, events_config);
 
         // Emergent dilemma: a premium-rent tenant whose hostile relationships
         // are draining the building forces a keep-or-evict choice.
@@ -363,6 +275,95 @@ impl TenantNetwork {
         }
 
         (changes, events)
+    }
+
+    /// Advance relationships whose tenants both still live here.
+    fn age_relationships(
+        &mut self,
+        tenants: &[crate::tenant::Tenant],
+        config: &RelationshipsConfig,
+    ) {
+        let active_tenant_ids: std::collections::HashSet<u32> =
+            tenants.iter().map(|tenant| tenant.id).collect();
+        for relationship in self.relationships.iter_mut().filter(|relationship| {
+            active_tenant_ids.contains(&relationship.tenant_a_id)
+                && active_tenant_ids.contains(&relationship.tenant_b_id)
+        }) {
+            relationship.tick(config);
+        }
+    }
+
+    /// Give each unrelated, compatible pair of neighbours a monthly chance to
+    /// form a relationship.
+    fn form_new_relationships(
+        &mut self,
+        tenants: &[crate::tenant::Tenant],
+        building: &crate::building::Building,
+        config: &RelationshipsConfig,
+    ) -> Vec<RelationshipChange> {
+        let mut changes = Vec::new();
+        for tenant_a in tenants {
+            for tenant_b in tenants {
+                if tenant_a.id >= tenant_b.id
+                    || self
+                        .relationship_between(tenant_a.id, tenant_b.id)
+                        .is_some()
+                    || !TenantRelationship::can_form(tenant_a, tenant_b)
+                    || rng::gen_range(0, 100) >= config.formation_chance
+                {
+                    continue;
+                }
+                let rel_type =
+                    self.determine_initial_relationship(tenant_a, tenant_b, building, config);
+                if let Some(actual_type) = self.add_relationship(tenant_a.id, tenant_b.id, rel_type)
+                {
+                    changes.push(RelationshipChange::NewRelationship {
+                        tenant_a_name: tenant_a.name.clone(),
+                        tenant_b_name: tenant_b.name.clone(),
+                        relationship_type: format!("{:?}", actual_type),
+                        is_positive: !matches!(actual_type, RelationshipType::Hostile),
+                    });
+                }
+            }
+        }
+        changes
+    }
+
+    /// Roll each relationship's authored event templates.
+    fn roll_relationship_events(
+        &self,
+        tenants: &[crate::tenant::Tenant],
+        building: &crate::building::Building,
+        events_config: &RelationshipEventsConfig,
+    ) -> Vec<NarrativeEvent> {
+        let mut events = Vec::new();
+        for rel in &self.relationships {
+            let possible_events = match rel.relationship_type {
+                RelationshipType::Hostile => &events_config.hostile,
+                RelationshipType::Friendly => &events_config.friendly,
+                RelationshipType::Romantic | RelationshipType::Family => &events_config.romance,
+                _ => continue,
+            };
+
+            for template in possible_events {
+                if rng::gen_range(0, 100) >= template.probability
+                    || template
+                        .trigger_strength_min
+                        .is_some_and(|min| rel.strength < min)
+                    || template
+                        .trigger_strength_max
+                        .is_some_and(|max| rel.strength > max)
+                {
+                    continue;
+                }
+                if let Some(event) =
+                    self.generate_event_from_template(template, rel, tenants, building)
+                {
+                    events.push(event);
+                }
+            }
+        }
+        events
     }
 
     /// Determine what kind of relationship forms between two tenants

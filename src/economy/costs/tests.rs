@@ -38,15 +38,14 @@ fn stale_upgrade_action_cannot_bypass_size_requirements_or_charge_funds() {
 
 #[test]
 fn property_tax_escalates_each_year() {
-    let building = Building::new("Test", 1, 1);
     let config = OperatingCostsConfig {
         property_tax_rate: 0.10,
         property_tax_annual_increase: 0.02,
         ..OperatingCostsConfig::default()
     };
 
-    let year0 = OperatingCosts::calculate_property_tax(&building, 1000, &config, 0);
-    let year2 = OperatingCosts::calculate_property_tax(&building, 1000, &config, 24);
+    let year0 = OperatingCosts::calculate_property_tax(1000, &config, 0);
+    let year2 = OperatingCosts::calculate_property_tax(1000, &config, 24);
 
     assert_eq!(year0, 100); // 10% of 1000
     assert_eq!(year2, 140); // (0.10 + 0.02*2) * 1000

@@ -13,7 +13,6 @@ impl GameplayState {
             self.current_tick,
             &self.city.neighborhoods,
             &self.city.buildings,
-            &self.tenants,
         );
         for (headline, effect) in self.narrative_events.process_immediate_events() {
             self.apply_narrative_effect(&effect);

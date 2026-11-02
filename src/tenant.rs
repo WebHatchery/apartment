@@ -10,11 +10,11 @@ mod application;
 mod archetype;
 pub mod happiness;
 pub mod matching;
-mod tenant;
+mod resident;
 pub mod vetting;
 
 pub use archetype::{ArchetypePreferences, TenantArchetype};
 pub use happiness::calculate_happiness;
-pub use tenant::Tenant;
+pub use resident::Tenant;
 // pub use matching::MatchResult;
 pub use application::{generate_applications, process_departures, TenantApplication};

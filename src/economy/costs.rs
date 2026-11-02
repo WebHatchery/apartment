@@ -9,7 +9,6 @@ impl OperatingCosts {
     /// Calculate monthly property tax based on rent income.
     /// The effective rate escalates yearly as the property is reassessed.
     pub fn calculate_property_tax(
-        _building: &Building,
         rent_income: i32,
         config: &OperatingCostsConfig,
         current_tick: u32,
@@ -82,7 +81,7 @@ pub fn process_upgrade(
 ) -> Result<i32, String> {
     // Calculate cost using central logic
     let cost = action
-        .cost(building, &config.economy, &config.upgrades)
+        .cost(&config.economy, &config.upgrades)
         .ok_or("Invalid upgrade")?;
 
     // Additional Validation

@@ -51,17 +51,6 @@ pub mod layout {
     }
 }
 
-/// Draw a standard secondary button (returns true on click). Restyled to the
-/// theme tone system so every call site picks up the new look at once.
-pub fn button(x: f32, y: f32, w: f32, h: f32, text: &str, enabled: bool) -> bool {
-    crate::ui::widgets::button_at(
-        Rect::new(x, y, w, h),
-        text,
-        enabled,
-        crate::ui::theme::Tone::Secondary,
-    )
-}
-
 /// Draw a titled panel using the theme's card + header style.
 pub fn panel(x: f32, y: f32, w: f32, h: f32, title: &str) {
     crate::ui::widgets::draw_panel(Rect::new(x, y, w, h), title);

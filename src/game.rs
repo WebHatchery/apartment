@@ -23,7 +23,7 @@ impl Game {
         crate::release_mode::apply_config(&mut config);
 
         Self {
-            state: GameState::Menu(MenuState::new()),
+            state: GameState::Menu(Box::new(MenuState::new())),
             config,
             assets,
             capture_resident_gallery: false,
@@ -35,7 +35,7 @@ impl Game {
             return;
         }
         let transition = match &mut self.state {
-            GameState::Menu(s) => s.update(&self.assets, &self.config),
+            GameState::Menu(s) => s.update(&self.config),
             GameState::Gameplay(s) => s.update(&self.assets),
         };
 
@@ -57,7 +57,7 @@ impl Game {
 
     fn transition(&mut self, transition: StateTransition) {
         self.state = match transition {
-            StateTransition::ToMenu => GameState::Menu(MenuState::new()),
+            StateTransition::ToMenu => GameState::Menu(Box::new(MenuState::new())),
             StateTransition::ToGameplay(mut s) => {
                 s.apply_settings(&crate::save::load_settings());
                 GameState::Gameplay(s)

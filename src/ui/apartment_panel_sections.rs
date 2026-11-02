@@ -1,308 +1,144 @@
+//! Unit inspector sections: sold-condo buyback, unit facts and improvements.
+
 use crate::assets::AssetManager;
-use crate::building::{Apartment, ApartmentSize, Building, DesignType, NoiseLevel, UpgradeAction};
+use crate::building::{Apartment, ApartmentSize, Building, NoiseLevel, UpgradeAction};
 use macroquad::prelude::*;
 
-use super::{common::*, UiAction};
-use macroquad_toolkit::ui::{draw_ui_text, measure_ui_text, truncate_text_to_width};
+use super::apartment_panel::UnitPanelContext;
+use super::panel_flow::{PanelFlow, BUTTON_H};
+use super::theme::{scale, Tone};
+use super::{common::*, Disclosure, UiAction};
+use macroquad_toolkit::ui::{draw_ui_text, truncate_text_to_width};
 
+/// A sold condo can only be bought back; everything else is read-only.
 pub(super) fn draw_sold_condo_panel(
     apt: &Apartment,
     building: &Building,
     money: i32,
-    panel_x: f32,
-    panel_y: f32,
-    panel_w: f32,
-    panel_h: f32,
+    bounds: Rect,
 ) -> Option<UiAction> {
-    panel(
-        panel_x,
-        panel_y,
-        panel_w,
-        panel_h,
-        &format!("Unit {} - SOLD", apt.unit_number),
-    );
-
-    let content_x = panel_x + 15.0;
-    let mut y = panel_y + 60.0;
-
-    draw_ui_text(
-        "CONDO - PRIVATELY OWNED",
-        content_x,
-        y,
-        20.0,
-        colors::WARNING(),
-    );
-    y += 35.0;
-
+    let title = format!("Unit {} · sold", apt.unit_number);
+    panel(bounds.x, bounds.y, bounds.w, bounds.h, &title);
+    let mut flow = PanelFlow::new(bounds, 0.0);
+    let mut action = None;
+    flow.line("Privately owned condo", scale::HEADING, colors::WARNING());
+    flow.gap();
     if let Some((owner_name, purchase_price)) = building.get_condo_info(apt.id) {
-        draw_ui_text(
-            &format!("Owner: {}", owner_name),
-            content_x,
-            y,
-            18.0,
-            colors::TEXT(),
-        );
-        y += 25.0;
-        draw_ui_text(
-            &format!("Purchased for: ${}", purchase_price),
-            content_x,
-            y,
-            16.0,
+        flow.kv("Owner", &owner_name, colors::TEXT());
+        flow.kv(
+            "Sold for",
+            &format!("${purchase_price}"),
             colors::TEXT_DIM(),
         );
-        y += 35.0;
-
         let buyback_price = (purchase_price as f32 * 1.1) as i32;
-        draw_ui_text("Buyback Option:", content_x, y, 16.0, colors::ACCENT());
-        y += 25.0;
-
-        let can_afford = money >= buyback_price;
-        let btn_label = format!("Buy Back (${})", buyback_price);
-
-        if button(content_x, y, panel_w - 30.0, 40.0, &btn_label, can_afford) {
-            return Some(UiAction::BuybackCondo {
+        let label = if money >= buyback_price {
+            format!("Buy back · ${buyback_price}")
+        } else {
+            format!(
+                "Buy back · ${buyback_price} (need ${} more)",
+                buyback_price - money
+            )
+        };
+        if flow.button(&label, money >= buyback_price, Tone::Primary) {
+            action = Some(UiAction::BuybackCondo {
                 apartment_id: apt.id,
             });
         }
-        y += 45.0;
-
-        if !can_afford {
-            draw_ui_text("Insufficient funds", content_x, y, 14.0, colors::NEGATIVE());
-        }
     }
-
-    y += 30.0;
-    draw_ui_text(
-        "You cannot modify or rent this unit",
-        content_x,
-        y,
-        14.0,
+    flow.paragraph(
+        "You cannot modify or rent this unit while it is privately owned.",
+        scale::LABEL,
         colors::TEXT_DIM(),
     );
-    y += 20.0;
-    draw_ui_text(
-        "while it is privately owned.",
-        content_x,
-        y,
-        14.0,
-        colors::TEXT_DIM(),
-    );
-
-    None
+    super::widgets::draw_panel_header(bounds, &title);
+    action
 }
 
-pub(super) fn draw_apartment_stats(
-    apt: &Apartment,
-    building: &Building,
-    _assets: &AssetManager,
-    content_x: f32,
-    y: &mut f32,
-    panel_w: f32,
-    content_top: f32,
-    content_bottom: f32,
-) {
-    use crate::ui::widgets::{kv_row, section_label, stat_meter};
-    let w = panel_w - 30.0;
-    let vis = |yy: f32| yy >= content_top && yy + 22.0 <= content_bottom;
-
-    if vis(*y) {
-        section_label(content_x, *y, "CONDITION");
-    }
-    *y += 22.0;
-    if vis(*y) {
-        stat_meter(
-            content_x,
-            *y,
-            w,
-            apt.condition,
-            100,
-            condition_color(apt.condition),
-        );
-    }
-    *y += 28.0;
-
-    let design_text = match apt.design {
-        DesignType::Bare => "Bare",
-        DesignType::Practical => "Practical",
-        DesignType::Cozy => "Cozy",
-        DesignType::Luxury => "Luxury",
-        DesignType::Opulent => "Opulent",
-    };
-    if vis(*y) {
-        kv_row(content_x, *y, w, "Design", design_text, colors::TEXT());
-    }
-    *y += 24.0;
-
-    let size_text = match apt.size {
+/// Fixed facts about the room, shown on request.
+pub(super) fn draw_unit_details(flow: &mut PanelFlow, apt: &Apartment, building: &Building) {
+    let size = match apt.size {
         ApartmentSize::Small => "Small",
         ApartmentSize::Medium => "Medium",
         ApartmentSize::Large => "Large",
         ApartmentSize::Penthouse => "Penthouse",
     };
-    if vis(*y) {
-        kv_row(content_x, *y, w, "Size", size_text, colors::TEXT());
-    }
-    *y += 24.0;
-
-    let (noise_text, noise_color) = match apt.effective_noise() {
+    flow.kv("Design", &format!("{:?}", apt.design), colors::TEXT());
+    flow.kv("Size", size, colors::TEXT());
+    let (noise, noise_color) = match apt.effective_noise() {
         NoiseLevel::Low => ("Quiet", colors::POSITIVE()),
         NoiseLevel::High => ("Noisy", colors::WARNING()),
     };
-    if vis(*y) {
-        kv_row(content_x, *y, w, "Noise", noise_text, noise_color);
-    }
-    *y += 24.0;
-
+    flow.kv("Noise", noise, noise_color);
     if apt.has_soundproofing {
-        if vis(*y) {
-            kv_row(content_x, *y, w, "Soundproofing", "Yes", colors::POSITIVE());
-        }
-        *y += 24.0;
+        flow.kv("Soundproofing", "Yes", colors::POSITIVE());
     }
-
     if apt.kitchen_level > 0 {
-        if vis(*y) {
-            kv_row(
-                content_x,
-                *y,
-                w,
-                "Kitchen",
-                if apt.kitchen_level >= 2 {
-                    "Renovated"
-                } else {
-                    "Improved"
-                },
-                colors::POSITIVE(),
-            );
-        }
-        *y += 24.0;
+        let kitchen = if apt.kitchen_level >= 2 {
+            "Renovated"
+        } else {
+            "Improved"
+        };
+        flow.kv("Kitchen", kitchen, colors::POSITIVE());
     }
-
     if apt.flags.contains("has_better_lighting") {
-        if vis(*y) {
-            kv_row(content_x, *y, w, "Lighting", "Upgraded", colors::POSITIVE());
-        }
-        *y += 24.0;
+        flow.kv("Lighting", "Upgraded", colors::POSITIVE());
     }
-
     if building.has_laundry {
-        if vis(*y) {
-            kv_row(content_x, *y, w, "Laundry", "On site", colors::POSITIVE());
-        }
-        *y += 24.0;
+        flow.kv("Laundry", "On site", colors::POSITIVE());
     }
-
-    if vis(*y) {
-        kv_row(
-            content_x,
-            *y,
-            w,
-            "Rent",
-            &format!("${}/mo", apt.rent_price),
-            colors::PRIMARY(),
-        );
-    }
-    *y += 24.0;
-
-    if vis(*y) {
-        kv_row(
-            content_x,
-            *y,
-            w,
-            "Quality Score",
-            &apt.quality_score().to_string(),
-            colors::TEXT_DIM(),
-        );
-    }
-    *y += 30.0;
+    flow.kv(
+        "Quality score",
+        &apt.quality_score().to_string(),
+        colors::TEXT_DIM(),
+    );
 }
 
-pub(super) fn draw_upgrades(
+/// Optional improvements (never the repair, which leads the panel) behind
+/// one disclosure that names how many are available.
+pub(super) fn draw_improvements(
+    flow: &mut PanelFlow,
     apt: &Apartment,
-    building: &Building,
-    money: i32,
-    content_x: f32,
-    y: &mut f32,
-    panel_w: f32,
-    content_top: f32,
-    content_bottom: f32,
-    current_scroll: f32,
-    config: &crate::data::config::GameConfig,
-    assets: &AssetManager,
-) -> (Option<UiAction>, f32, f32) {
-    let w = panel_w - 30.0;
-    if *y > content_top && *y < content_bottom {
-        draw_line(content_x, *y, content_x + w, *y, 1.0, colors::BORDER());
+    ctx: &UnitPanelContext,
+) -> Option<UiAction> {
+    let options: Vec<(UpgradeAction, i32)> =
+        crate::building::upgrades::available_apartment_upgrades(apt, &ctx.config.upgrades)
+            .into_iter()
+            .filter(|upgrade| !matches!(upgrade, UpgradeAction::RepairApartment { .. }))
+            .filter_map(|upgrade| {
+                let cost = upgrade.cost(&ctx.config.economy, &ctx.config.upgrades)?;
+                Some((upgrade, cost))
+            })
+            .collect();
+    if options.is_empty() {
+        return None;
     }
-    *y += 14.0;
-
-    // Section header is drawn after the buttons (so the scroll hint can reflect
-    // overflow), but reserve its row here.
-    let header_y = *y;
-    *y += 24.0;
-
-    let btn_w = w;
-    let btn_h = 40.0;
-    let available = crate::building::upgrades::available_apartment_upgrades(apt, &config.upgrades);
-
-    let upgrades_start_y = *y;
-    let mut total_upgrade_height = 0.0;
-    for upgrade in &available {
-        if upgrade
-            .cost(building, &config.economy, &config.upgrades)
-            .is_some()
-        {
-            total_upgrade_height += btn_h + 8.0;
-        }
-    }
-
-    let max_scroll =
-        (upgrades_start_y + total_upgrade_height - content_bottom + current_scroll).max(0.0);
-    let final_scroll = current_scroll.min(max_scroll);
+    let open = ctx.disclosure.is_open(Disclosure::Improvements);
     let mut action = None;
-
-    for upgrade in available {
-        if let Some(cost) = upgrade.cost(building, &config.economy, &config.upgrades) {
-            let can_afford = money >= cost;
-            let label = format!(
-                "{} — ${}",
-                upgrade.label(building, &config.ui, &config.upgrades),
-                cost
-            );
-
-            if *y >= content_top
-                && *y + btn_h <= content_bottom
-                && upgrade_button(
-                    Rect::new(content_x, *y, btn_w, btn_h),
-                    &label,
-                    can_afford,
-                    &upgrade,
-                    assets,
-                )
-            {
-                action = Some(UiAction::UpgradeAction(upgrade));
-            }
-            *y += btn_h + 8.0;
-        }
+    if flow.disclosure(
+        "Improvements",
+        &format!("{} available", options.len()),
+        open,
+    ) {
+        action = Some(UiAction::ToggleDisclosure(Disclosure::Improvements));
     }
-
-    // UPGRADES header + right-aligned scroll hint (no longer overlaps buttons).
-    if header_y >= content_top && header_y + 20.0 <= content_bottom {
-        crate::ui::widgets::section_label(content_x, header_y, "UPGRADES");
-        if max_scroll > final_scroll + 5.0 {
-            let hint = "MORE BELOW";
-            let hw = measure_ui_text(hint, None, 13, 1.0).width;
-            draw_ui_text(
-                hint,
-                content_x + w - hw,
-                header_y + 13.0,
-                13.0,
-                colors::TEXT_DIM(),
-            );
-        }
+    if !open {
+        return action;
     }
-
-    (action, final_scroll, max_scroll)
+    for (upgrade, cost) in options {
+        let label = format!(
+            "{} · ${}",
+            upgrade.label(&ctx.config.ui, &ctx.config.upgrades),
+            cost
+        );
+        let rect = Rect::new(flow.x, flow.y, flow.w, BUTTON_H);
+        if flow.fits(BUTTON_H)
+            && upgrade_button(rect, &label, ctx.money >= cost, &upgrade, ctx.assets)
+        {
+            action = Some(UiAction::UpgradeAction(upgrade));
+        }
+        flow.advance(BUTTON_H + 6.0);
+    }
+    action
 }
 
 fn upgrade_icon_tile(action: &UpgradeAction) -> (f32, f32) {

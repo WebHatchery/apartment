@@ -72,10 +72,7 @@ pub fn draw_market_panel(
 
         if let Some(a) = draw_listing_card(
             listing,
-            x,
-            y,
-            listing_width,
-            listing_height,
+            Rect::new(x, y, listing_width, listing_height),
             neighborhoods,
             player_funds,
             assets,

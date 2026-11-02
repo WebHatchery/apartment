@@ -82,16 +82,18 @@ impl Sim {
         let occupancy = self.occupancy();
         let avg_happiness = self.avg_happiness() as f32;
         let building_count = self.city.buildings.len();
-        let completed = self.missions.evaluate_active(
-            self.current_tick,
-            0,
-            &self.tenants,
-            occupancy,
-            avg_happiness,
-            perfect_collection,
-            &repaired,
-            building_count,
-        );
+        let completed = self
+            .missions
+            .evaluate_active(&crate::narrative::MissionSnapshot {
+                current_month: self.current_tick,
+                active_building_id: 0,
+                active_tenants: &self.tenants,
+                occupancy,
+                avg_happiness,
+                perfect_collection,
+                fully_repaired_by_building: &repaired,
+                building_count,
+            });
         for mission in completed {
             self.missions_completed += 1;
             match mission.reward {

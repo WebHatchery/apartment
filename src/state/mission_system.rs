@@ -37,16 +37,18 @@ pub fn update_missions(state: &mut GameplayState) {
     } else {
         0.0
     };
-    let completed_missions = state.missions.evaluate_active(
-        current_month,
-        active_building_id,
-        &active_tenants,
-        occupancy,
-        avg_happiness,
-        perfect_collection,
-        &fully_repaired_by_building,
-        state.city.buildings.len(),
-    );
+    let completed_missions = state
+        .missions
+        .evaluate_active(&crate::narrative::MissionSnapshot {
+            current_month,
+            active_building_id,
+            active_tenants: &active_tenants,
+            occupancy,
+            avg_happiness,
+            perfect_collection,
+            fully_repaired_by_building: &fully_repaired_by_building,
+            building_count: state.city.buildings.len(),
+        });
 
     for mission in completed_missions {
         state.missions.record_legacy_event(

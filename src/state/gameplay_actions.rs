@@ -2,15 +2,16 @@
 
 use crate::economy::process_upgrade;
 use crate::simulation::GameEvent;
-use crate::ui::{colors, Selection, UiAction};
+use crate::ui::{colors, UiAction};
 use macroquad::prelude::*;
 
-use super::gameplay::{GameplayState, ViewMode};
+use super::gameplay::GameplayState;
 use super::mission_system;
 use super::tutorial_system;
 
 mod applications;
 mod city;
+mod navigation;
 mod story;
 
 use applications::VettingCheck;
@@ -18,44 +19,10 @@ use applications::VettingCheck;
 impl GameplayState {
     /// Process a UI action
     pub(super) fn process_action(&mut self, action: UiAction) {
+        let Some(action) = self.navigate(action) else {
+            return;
+        };
         match action {
-            UiAction::SelectApartment(id) => {
-                self.selection = Selection::Apartment(id);
-                self.panel_scroll_offset = 0.0;
-            }
-            UiAction::OpenTenantUnit(id) => {
-                self.view_mode = ViewMode::Building;
-                self.selection = Selection::Apartment(id);
-                self.panel_scroll_offset = 0.0;
-            }
-            UiAction::SelectTenant(id) => {
-                self.selected_tenant_id = Some(id);
-            }
-            UiAction::ClearTenantSelection => {
-                self.selected_tenant_id = None;
-            }
-            UiAction::SelectApplications(filter) => {
-                self.view_mode = ViewMode::Building;
-                self.selection = Selection::Applications(filter);
-                self.panel_scroll_offset = 0.0;
-                self.application_page = 0;
-            }
-            UiAction::SelectBuilding => {
-                self.view_mode = ViewMode::Building;
-                self.selection = Selection::Building;
-                self.panel_scroll_offset = 0.0;
-            }
-            UiAction::SelectHallway => {
-                self.selection = Selection::Hallway;
-                self.panel_scroll_offset = 0.0;
-            }
-            UiAction::ClearSelection => {
-                self.selection = Selection::None;
-            }
-            UiAction::ToggleActivityDrawer => {
-                self.activity_drawer_open = !self.activity_drawer_open;
-            }
-
             UiAction::ListApartment {
                 apartment_id,
                 preference,
@@ -89,8 +56,7 @@ impl GameplayState {
             }
 
             UiAction::UpgradeAction(upgrade) => {
-                let description =
-                    upgrade.label(&self.building, &self.config.ui, &self.config.upgrades);
+                let description = upgrade.label(&self.config.ui, &self.config.upgrades);
                 match process_upgrade(
                     &upgrade,
                     &mut self.building,
@@ -147,63 +113,6 @@ impl GameplayState {
             UiAction::EndTurn => {
                 self.end_turn();
             }
-            UiAction::OpenPauseMenu => {
-                self.show_pause_menu = true;
-            }
-            UiAction::ReturnToMenu => {
-                self.pending_quit_to_menu = true;
-            }
-
-            // Workspace navigation
-            UiAction::OpenBuilding => {
-                self.view_mode = ViewMode::Building;
-                self.selection = Selection::None;
-            }
-            UiAction::OpenTenants => {
-                self.view_mode = ViewMode::Tenants;
-                self.selection = Selection::None;
-            }
-            UiAction::OpenFinances => {
-                self.view_mode = ViewMode::Finances;
-                self.selection = Selection::None;
-            }
-            UiAction::OpenCityMap => {
-                self.save_building_to_city();
-                self.view_mode = ViewMode::CityMap;
-                self.selection = Selection::None;
-            }
-            UiAction::OpenMail => {
-                self.view_mode = ViewMode::Mail;
-            }
-            UiAction::OpenTasks => {
-                self.view_mode = ViewMode::Tasks;
-            }
-            UiAction::OpenMailItem { mail_id } => {
-                if self.mailbox.mark_read(mail_id) {
-                    self.selected_mail_id = Some(mail_id);
-                }
-            }
-            UiAction::ClearSelectedMail => {
-                self.selected_mail_id = None;
-            }
-            UiAction::SetInboxPage { page } => {
-                self.inbox_page = page;
-            }
-            UiAction::SetTasksPage { page } => {
-                self.tasks_page = page;
-            }
-            UiAction::SetApplicationPage { page } => {
-                self.application_page = page;
-            }
-            UiAction::SetTenantsPage { page } => {
-                self.tenants_page = page;
-            }
-            UiAction::SetRequestsPage { page } => {
-                self.requests_page = page;
-            }
-            UiAction::SetCareerBadgesPage { page } => {
-                self.career_badges_page = page;
-            }
             UiAction::AcceptMission { mission_id } => {
                 if !self.missions.accept_mission(mission_id, self.current_tick) {
                     self.report_action_failure("That task is no longer available");
@@ -211,46 +120,8 @@ impl GameplayState {
             }
             UiAction::PurchaseBuilding { listing_id } => self.purchase_listing(listing_id),
 
-            // Phase 3: Tenant requests
-            UiAction::ApproveRequest { tenant_id } => {
-                let effect = self.tenant_stories.get_mut(&tenant_id).and_then(|story| {
-                    story.pending_request.take().map(|request| {
-                        let effect = request.approval_effect();
-                        story.add_event(
-                            self.current_tick,
-                            "Request approved by landlord",
-                            effect.clone(),
-                        );
-                        effect
-                    })
-                });
-
-                if let Some(effect) = effect {
-                    self.apply_story_impact(tenant_id, effect);
-                }
-            }
-            UiAction::DenyRequest { tenant_id } => {
-                let effect = self.tenant_stories.get_mut(&tenant_id).and_then(|story| {
-                    story.pending_request.take().map(|request| {
-                        let effect = request.denial_effect();
-                        story.add_event(
-                            self.current_tick,
-                            "Request denied by landlord",
-                            effect.clone(),
-                        );
-                        effect
-                    })
-                });
-
-                if let Some(effect) = effect {
-                    self.apply_story_impact(tenant_id, effect);
-                }
-            }
-
-            // Phase 3: Ownership
-            UiAction::SelectOwnership => {
-                self.selection = Selection::Ownership;
-            }
+            UiAction::ApproveRequest { tenant_id } => self.resolve_request(tenant_id, true),
+            UiAction::DenyRequest { tenant_id } => self.resolve_request(tenant_id, false),
             UiAction::SetMarketing { strategy } => {
                 self.set_marketing_strategy(strategy);
             }
@@ -306,6 +177,8 @@ impl GameplayState {
                     );
                 }
             }
+            // Navigation intents were consumed by `navigate` above.
+            _ => {}
         }
     }
 

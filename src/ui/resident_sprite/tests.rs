@@ -62,23 +62,15 @@ fn animation_anchors_follow_the_body_neck() {
         style,
         ResidentPose::Standing,
         55,
-        body_x,
-        body_y,
-        body_w,
-        sprite_h,
-        head_w,
-        head_h,
+        Rect::new(body_x, body_y, body_w, sprite_h),
+        vec2(head_w, head_h),
     );
     let sitting = resident_anchor(
         style,
         ResidentPose::Sitting,
         55,
-        body_x,
-        body_y,
-        body_w,
-        sprite_h,
-        head_w,
-        head_h,
+        Rect::new(body_x, body_y, body_w, sprite_h),
+        vec2(head_w, head_h),
     );
     assert_ne!(standing, sitting);
     assert!(
@@ -124,12 +116,8 @@ fn reduced_heads_are_lifted_back_over_the_neck() {
         style,
         ResidentPose::Sitting,
         55,
-        20.0,
-        36.0,
-        80.0,
-        100.0,
-        28.0,
-        39.0,
+        Rect::new(20.0, 36.0, 80.0, 100.0),
+        vec2(28.0, 39.0),
     );
     let neck_y = 36.0 + style.body_anchor_y[1] * 100.0;
     assert_eq!(head_y, neck_y - style.face_anchor_y[2] * 39.0);

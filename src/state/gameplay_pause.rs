@@ -105,7 +105,7 @@ impl GameplayState {
 
         if std::mem::take(&mut self.pending_load_game) {
             match load_game() {
-                Ok(state) => return Some(StateTransition::ToGameplay(state)),
+                Ok(state) => return Some(StateTransition::ToGameplay(Box::new(state))),
                 Err(error) => {
                     eprintln!("Failed to load game: {error}");
                     self.floating_texts.spawn(
