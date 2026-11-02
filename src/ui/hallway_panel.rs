@@ -10,7 +10,7 @@ use macroquad::prelude::*;
 use super::panel_flow::{PanelFlow, BUTTON_H};
 use super::theme::{scale, Tone};
 use super::{common::*, Disclosure, PanelDisclosure, UiAction};
-use apartment::text::t;
+use crate::text::t;
 use macroquad_toolkit::ui::draw_ui_text;
 
 pub fn draw_hallway_panel(

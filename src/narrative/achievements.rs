@@ -133,3 +133,9 @@ fn load_achievements_config() -> Vec<Achievement> {
 
 #[cfg(test)]
 mod tests;
+
+impl Default for AchievementSystem {
+    fn default() -> Self {
+        Self::new()
+    }
+}

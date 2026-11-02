@@ -10,7 +10,7 @@ use super::widgets::{button_at, draw_panel, kv_row, line_height, wrap};
 use super::UiAction;
 use crate::simulation::EventSeverity;
 use crate::state::MonthSummary;
-use apartment::text::{t, tr};
+use crate::text::{t, tr};
 
 pub(crate) fn severity_color(severity: &EventSeverity) -> Color {
     match severity {

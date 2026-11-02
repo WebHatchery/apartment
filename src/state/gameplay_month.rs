@@ -2,7 +2,7 @@
 //! the building, gathered once so the summary card and the history drawer
 //! show the same thing. Also the footer's "unresolved right now" status.
 
-use apartment::text::{t, tr};
+use crate::text::{t, tr};
 
 use crate::economy::MonthlyReport;
 use crate::simulation::{EventSeverity, GameEvent};

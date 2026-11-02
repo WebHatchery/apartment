@@ -306,7 +306,7 @@ impl Game {
                 self.capture_resident_gallery = true;
                 return;
             }
-            CaptureBase::Menu => self.state = GameState::Menu(Box::new(MenuState::new())),
+            CaptureBase::Menu => self.state = GameState::Menu(Box::default()),
             CaptureBase::MenuScreen => {
                 self.state = GameState::Menu(Box::new(MenuState::for_capture(key)))
             }
@@ -329,7 +329,7 @@ impl Game {
         let template = crate::data::templates::load_templates()
             .and_then(|templates| templates.templates.into_iter().nth(template));
         let Some(template) = template else {
-            self.state = GameState::Menu(Box::new(MenuState::new()));
+            self.state = GameState::Menu(Box::default());
             return;
         };
         // Capture scenes are regression evidence, so their residents, events,

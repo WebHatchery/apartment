@@ -340,3 +340,9 @@ fn draw_title_logo(assets: &AssetManager) {
 
 #[cfg(test)]
 mod tests;
+
+impl Default for MenuState {
+    fn default() -> Self {
+        Self::new()
+    }
+}

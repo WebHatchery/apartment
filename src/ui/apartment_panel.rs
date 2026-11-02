@@ -7,7 +7,7 @@ use crate::consequences::TenantNetwork;
 use crate::data::config::GameConfig;
 use crate::narrative::TenantStory;
 use crate::tenant::Tenant;
-use apartment::text::{t, tr};
+use crate::text::{t, tr};
 use macroquad::prelude::*;
 use std::collections::HashMap;
 

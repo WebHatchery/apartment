@@ -33,13 +33,13 @@ pub mod layout {
     }
 
     pub fn HEADER_HEIGHT() -> f32 {
-        apartment::screen_layout::header_height(macroquad::prelude::screen_width())
+        crate::screen_layout::header_height(macroquad::prelude::screen_width())
     }
     pub fn FOOTER_HEIGHT() -> f32 {
         44.0
     }
-    pub fn building(selected: bool) -> apartment::screen_layout::BuildingLayout {
-        apartment::screen_layout::BuildingLayout::new(
+    pub fn building(selected: bool) -> crate::screen_layout::BuildingLayout {
+        crate::screen_layout::BuildingLayout::new(
             macroquad::prelude::screen_width(),
             macroquad::prelude::screen_height(),
             selected,

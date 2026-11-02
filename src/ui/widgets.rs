@@ -115,7 +115,7 @@ pub fn button_width(text: &str, height: f32) -> f32 {
     (w + space::MD * 2.0).max(height * 1.6)
 }
 
-pub use apartment::screen_layout::touch_rect;
+pub use crate::screen_layout::touch_rect;
 
 /// Draw a tone button in a rect (grown to the touch minimum). Triggers on
 /// release inside it, so dragging away before release cancels. Returns true

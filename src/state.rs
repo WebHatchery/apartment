@@ -28,7 +28,7 @@ mod settings_screen; // Settings page shared by the title and pause menus
 pub mod tutorial_system; // Tutorial logic // Mission logic
 
 pub use gameplay::GameplayState;
-pub(crate) use gameplay::ViewMode;
+pub use gameplay::ViewMode;
 pub use gameplay_month::{MonthSummary, SummaryLine};
 pub use menu::MenuState;
 pub(crate) use settings_screen::{centered_top as centered_settings_top, SettingsScreen};

@@ -35,7 +35,7 @@ pub(super) fn default_floating_text_layer() -> FloatingTextLayer {
 
 /// View mode for the gameplay screen
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
-pub(crate) enum ViewMode {
+pub enum ViewMode {
     #[default]
     Building, // Current single-building view
     Tenants,
@@ -563,5 +563,12 @@ fn default_starter_template() -> crate::data::templates::BuildingTemplate {
             },
         ],
         initial_tenant: None,
+    }
+}
+
+#[cfg(test)]
+impl Default for GameplayState {
+    fn default() -> Self {
+        Self::new()
     }
 }

@@ -2,7 +2,7 @@
 
 use crate::assets::AssetManager;
 use crate::data::config::{load_config, GameConfig};
-use crate::state::{GameState, MenuState, StateTransition};
+use crate::state::{GameState, StateTransition};
 
 mod capture;
 mod capture_seeds;
@@ -23,7 +23,7 @@ impl Game {
         crate::release_mode::apply_config(&mut config);
 
         Self {
-            state: GameState::Menu(Box::new(MenuState::new())),
+            state: GameState::Menu(Box::default()),
             config,
             assets,
             capture_resident_gallery: false,
@@ -57,7 +57,7 @@ impl Game {
 
     fn transition(&mut self, transition: StateTransition) {
         self.state = match transition {
-            StateTransition::ToMenu => GameState::Menu(Box::new(MenuState::new())),
+            StateTransition::ToMenu => GameState::Menu(Box::default()),
             StateTransition::ToGameplay(mut s) => {
                 s.apply_settings(&crate::save::load_settings());
                 GameState::Gameplay(s)

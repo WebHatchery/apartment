@@ -28,7 +28,7 @@ pub fn draw_workspace_nav(
     let y = if desktop {
         0.0
     } else {
-        apartment::screen_layout::status_height(screen_width())
+        crate::screen_layout::status_height(screen_width())
     };
     let h = if desktop { 56.0 } else { 48.0 };
     if desktop {

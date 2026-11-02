@@ -3,29 +3,8 @@
 use macroquad::prelude::*;
 use macroquad_toolkit::capture;
 
-mod building;
-mod data;
-mod economy;
-mod game;
-mod release_mode;
-mod simulation;
-mod state;
-mod tenant;
-mod ui;
-
-mod assets;
-mod save;
-
-// Headless balance-simulation harness (test-only).
-#[cfg(test)]
-mod sim_harness;
-
-// Phase 3 modules
-mod city;
-mod consequences;
-mod narrative;
-
-use game::Game;
+use apartment::game::Game;
+use apartment::{save, ui};
 
 fn window_conf() -> Conf {
     capture::capture_window_conf("APARTMENT", "Second Story", 1280, 720)

@@ -192,3 +192,9 @@ impl AssetManager {
         self.textures.get(id)
     }
 }
+
+impl Default for AssetManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}

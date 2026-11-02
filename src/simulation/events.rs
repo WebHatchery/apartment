@@ -126,7 +126,7 @@ impl GameEvent {
     /// Get a short message for display
     /// The event as the player reads it, from `text_strings.json`.
     pub fn message(&self) -> String {
-        use apartment::text::{t, tr};
+        use crate::text::{t, tr};
         match self {
             GameEvent::RentPaid {
                 tenant_name,

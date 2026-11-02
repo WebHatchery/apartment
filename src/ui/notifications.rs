@@ -8,7 +8,7 @@ use super::UiAction;
 use crate::assets::AssetManager;
 use crate::simulation::{EventLog, GameEvent};
 use crate::state::{MonthSummary, SummaryLine};
-use apartment::text::{t, tr};
+use crate::text::{t, tr};
 use macroquad::prelude::*;
 use macroquad_toolkit::ui::{draw_ui_text, truncate_text_to_width};
 
