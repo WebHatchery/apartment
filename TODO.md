@@ -281,7 +281,7 @@ engineering backlog. Findings below were traced in code, not reproduced in play.
   is. This follows the shared "clear, recoverable error, never silent" save
   rule.
 
-- [ ] **CR-05 — Remove dead turn scaffolding and debug stdout.**
+- [x] **CR-05 — Remove dead turn scaffolding and debug stdout.**
   **Evidence:** `simulation/tick.rs` has an empty
   `if building.update_ownership(..) {}` branch. `EventSystem` is a field-less
   struct with a "could track cooldowns" stub, recreated every tick.

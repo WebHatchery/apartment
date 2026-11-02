@@ -1,4 +1,4 @@
-use super::{decay, win_condition, EventLog, EventSystem, GameEvent, GameOutcome};
+use super::{decay, random_events, win_condition, EventLog, GameEvent, GameOutcome};
 use crate::building::Building;
 use crate::economy::{
     collect_rent, FinancialLedger, OperatingCosts, PlayerFunds, Transaction, TransactionType,
@@ -85,14 +85,14 @@ impl GameTick {
         );
 
         // 3. Random Events
-        let mut event_system = EventSystem::new();
-        let random_events = event_system.check_events(building, funds, current_tick);
-        result.events.extend(random_events);
+        result.events.extend(random_events::roll_random_events(
+            building,
+            funds,
+            current_tick,
+        ));
 
         // 4. Decay & Ownership
-        if building.update_ownership(current_tick) {
-            // Logic for handling ownership updates could go here
-        }
+        building.update_ownership(current_tick);
         let decay_events = decay::apply_decay(building, &config.decay, &config.thresholds);
         result.events.extend(decay_events);
 

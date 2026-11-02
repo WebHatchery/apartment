@@ -56,7 +56,6 @@ impl GameplayState {
         }
 
         self.apply_monthly_social_happiness();
-        self.log_monthly_status();
         self.update_context_hints();
         self.complete_building_on_victory(&result);
         // Record the tick result before evaluating missions so goals like
@@ -311,18 +310,6 @@ impl GameplayState {
             let cohesion_bonus = if cohesion > 20 { 1 } else { 0 };
             tenant.happiness =
                 (tenant.happiness + relationship_bonus + cohesion_bonus).clamp(0, 100);
-        }
-    }
-
-    fn log_monthly_status(&self) {
-        let marketing_name = self.building.marketing_strategy.name();
-        if marketing_name != "None" {
-            println!("Active marketing campaign: {}", marketing_name);
-        }
-
-        let pending_count = self.dialogue_system.pending_dialogues().len();
-        if pending_count > 0 {
-            println!("Pending dialogues: {}", pending_count);
         }
     }
 

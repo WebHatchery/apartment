@@ -17,5 +17,4 @@ pub use tick::{advance_tick, TickResult};
 pub use events::{
     ActiveWorldEvent, ActiveWorldEventKind, EventLog, EventSeverity, GameEvent, NotificationLevel,
 };
-pub use random_events::EventSystem;
 pub use win_condition::GameOutcome;

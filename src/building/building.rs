@@ -259,14 +259,12 @@ impl Building {
         }
         converted
     }
-    pub fn update_ownership(&mut self, current_month: u32) -> bool {
-        match &mut self.ownership_model {
-            OwnershipType::MixedOwnership(board) | OwnershipType::FullCondo(board) => {
-                board.collect_fees();
-                board.resolve_votes(current_month);
-                true
-            }
-            _ => false,
+    pub fn update_ownership(&mut self, current_month: u32) {
+        if let OwnershipType::MixedOwnership(board) | OwnershipType::FullCondo(board) =
+            &mut self.ownership_model
+        {
+            board.collect_fees();
+            board.resolve_votes(current_month);
         }
     }
 
