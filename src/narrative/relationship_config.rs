@@ -1,3 +1,5 @@
+//! Relationship event templates loaded from `relationship_events.json`.
+
 use crate::narrative::events::NarrativeEffect;
 use macroquad_toolkit::data_loader::{load_json_file_with_fallback_sync, JsonFallbackPolicy};
 use serde::{Deserialize, Serialize};

@@ -1,4 +1,4 @@
-// Building inspections and the regulatory fines they produce.
+//! Building inspections and the regulatory fines they produce.
 
 use crate::economy::{Transaction, TransactionType};
 use crate::simulation::GameEvent;

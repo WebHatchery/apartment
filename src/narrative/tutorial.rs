@@ -1,3 +1,5 @@
+//! Tutorial milestones, the mentor and rival NPCs, and pending messages.
+
 use serde::{Deserialize, Serialize};
 
 /// An NPC character in the narrative system

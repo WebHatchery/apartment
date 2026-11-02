@@ -1,3 +1,5 @@
+//! Monthly operating costs: overhead, utilities, insurance, staff and tax.
+
 use super::{PlayerFunds, Transaction, TransactionType};
 use crate::building::{apply_upgrade, Building, UpgradeAction};
 use crate::data::config::OperatingCostsConfig;

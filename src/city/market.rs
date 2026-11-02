@@ -1,3 +1,5 @@
+//! The property market: listings, their condition, pricing and financing.
+
 use super::{Neighborhood, NeighborhoodType};
 use crate::building::Building;
 use macroquad_toolkit::rng;

@@ -1,3 +1,5 @@
+//! Rent collection, including residents who skip or cannot pay.
+
 use super::{PlayerFunds, Transaction, TransactionType};
 use crate::building::Building;
 use crate::data::config::TenantRiskConfig;

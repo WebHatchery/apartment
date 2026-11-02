@@ -1,3 +1,5 @@
+//! The city: neighborhoods plus the player's owned buildings and the active one.
+
 use super::{Neighborhood, NeighborhoodType, PropertyMarket};
 use crate::building::Building;
 use macroquad_toolkit::rng;

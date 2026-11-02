@@ -1,3 +1,5 @@
+//! Save files on disk or browser storage, with versioned, recoverable loads.
+
 use crate::state::GameplayState;
 use macroquad_toolkit::persistence::{json_key_exists, load_json_key, save_json_key};
 use macroquad_toolkit::settings::GameSettings;

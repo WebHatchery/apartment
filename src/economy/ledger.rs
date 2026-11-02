@@ -1,3 +1,5 @@
+//! The monthly ledger: closing each month into an exhaustive report.
+
 use super::{PlayerFunds, Transaction, TransactionType};
 use serde::{Deserialize, Serialize};
 

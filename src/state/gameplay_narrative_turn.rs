@@ -1,5 +1,5 @@
-// The narrative half of the monthly turn: events, mail, dialogue, missions,
-// and tenant requests.
+//! The narrative half of the monthly turn: events, mail, dialogue, missions,
+//! and tenant requests.
 
 use macroquad_toolkit::rng;
 

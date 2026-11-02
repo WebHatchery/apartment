@@ -1,3 +1,5 @@
+//! Month-end mission evaluation and reward payout.
+
 use super::GameplayState;
 use crate::narrative::{ActiveTaxBreak, MissionReward};
 use crate::simulation::GameEvent;

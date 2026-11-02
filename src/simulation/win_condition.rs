@@ -1,3 +1,5 @@
+//! Campaign outcomes: victory score, bankruptcy and mass departure.
+
 use crate::building::Building;
 use crate::economy::{PlayerFunds, TransactionType};
 use crate::tenant::Tenant;

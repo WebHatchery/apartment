@@ -1,3 +1,5 @@
+//! Paid applicant screening: credit and background checks.
+
 use super::application::TenantApplication;
 use crate::data::config::VettingConfig;
 use crate::economy::{PlayerFunds, Transaction, TransactionType};

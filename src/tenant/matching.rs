@@ -1,3 +1,5 @@
+//! How well an applicant fits a unit, and whether they accept an offer.
+
 use super::{happiness, Tenant};
 use crate::building::Apartment;
 use crate::data::config::MatchingConfig;

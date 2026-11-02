@@ -1,3 +1,5 @@
+//! The mailbox: letters, notices and offers delivered each month.
+
 use macroquad_toolkit::rng;
 use serde::{Deserialize, Serialize};
 

@@ -1,3 +1,5 @@
+//! Monthly wear on units and the lobby, with milestone events.
+
 use super::GameEvent;
 use crate::building::Building;
 use crate::data::config::{DecayConfig, ThresholdsConfig};

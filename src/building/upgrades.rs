@@ -1,3 +1,5 @@
+//! Repairs and data-driven upgrades: labels, prices, requirements and effects.
+
 use super::{Apartment, ApartmentSize, Building, DesignType};
 use crate::data::config::{
     EconomyConfig, UiConfig, UpgradeDefinition, UpgradeRequirement, UpgradeTarget,

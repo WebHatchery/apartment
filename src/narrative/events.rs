@@ -1,3 +1,5 @@
+//! Narrative events: neighborhood news and choices with lasting effects.
+
 use macroquad_toolkit::rng;
 use serde::{Deserialize, Serialize};
 

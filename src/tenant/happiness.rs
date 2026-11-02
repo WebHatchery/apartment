@@ -1,3 +1,5 @@
+//! Resident happiness from rent, condition, noise, staff and neighbours.
+
 use super::{ArchetypePreferences, Tenant};
 use crate::building::{Apartment, Building, DesignType, NoiseLevel};
 

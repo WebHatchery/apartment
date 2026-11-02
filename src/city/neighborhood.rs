@@ -1,3 +1,5 @@
+//! Districts: type, statistics, reputation and available lots.
+
 use macroquad_toolkit::data_loader::{load_json_file_with_fallback_sync, JsonFallbackPolicy};
 use macroquad_toolkit::rng;
 use serde::{Deserialize, Serialize};

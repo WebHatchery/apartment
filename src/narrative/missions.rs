@@ -1,3 +1,5 @@
+//! Missions: availability, acceptance, monthly evaluation and rewards.
+
 use serde::{Deserialize, Serialize};
 
 /// Status of a mission

@@ -1,3 +1,5 @@
+//! Building regulations, inspections, warnings and fines.
+
 use crate::data::config::RegulationsConfig;
 use serde::{Deserialize, Serialize};
 

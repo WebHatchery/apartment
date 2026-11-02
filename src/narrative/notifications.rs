@@ -1,7 +1,8 @@
+//! Game notification system for relationship changes and contextual hints
+//! Uses pop-up modals similar to the tutorial system
+
 use macroquad_toolkit::data_loader::{load_json_file_with_fallback_sync, JsonFallbackPolicy};
 use macroquad_toolkit::rng;
-// Game notification system for relationship changes and contextual hints
-// Uses pop-up modals similar to the tutorial system
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

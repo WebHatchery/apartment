@@ -1,3 +1,5 @@
+//! Ownership models (rental, condo board, co-op) and condo-board votes.
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]

@@ -1,3 +1,5 @@
+//! Saving and loading games, settings and cross-run player progress.
+
 pub mod manager;
 
 pub use manager::{

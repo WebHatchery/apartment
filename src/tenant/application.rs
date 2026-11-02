@@ -1,3 +1,5 @@
+//! Rental applications: generation, expiry and tenant departures.
+
 use super::{matching::MatchResult, Tenant, TenantArchetype};
 use crate::building::Building;
 use crate::data::config::{GameConfig, TenantRiskConfig};

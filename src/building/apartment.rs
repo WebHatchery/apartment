@@ -1,3 +1,5 @@
+//! A rentable unit: design, size, noise, condition, rent and lease listing.
+
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 

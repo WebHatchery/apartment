@@ -1,3 +1,5 @@
+//! A resident: identity, finances, behaviour, happiness and tenure.
+
 use super::TenantArchetype;
 use macroquad_toolkit::rng;
 use serde::{Deserialize, Serialize};

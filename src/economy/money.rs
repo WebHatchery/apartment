@@ -1,3 +1,5 @@
+//! Player funds and the typed transaction history behind them.
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]

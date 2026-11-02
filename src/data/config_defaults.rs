@@ -1,3 +1,5 @@
+//! Built-in defaults for `GameConfig`, used when JSON is missing a block.
+
 use super::config::*;
 use std::collections::HashMap;
 

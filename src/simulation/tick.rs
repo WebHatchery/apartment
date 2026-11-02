@@ -1,3 +1,5 @@
+//! One month of building simulation: rent, costs, wear, tenants and outcome.
+
 use super::{decay, random_events, win_condition, EventLog, GameEvent, GameOutcome};
 use crate::building::Building;
 use crate::economy::{collect_rent, OperatingCosts, PlayerFunds, Transaction, TransactionType};

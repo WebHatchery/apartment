@@ -1,3 +1,5 @@
+//! Texture loading: the bundled asset pack on the web, loose files natively.
+
 use macroquad::prelude::*;
 use macroquad_toolkit::assets::{load_texture_from_pack_or_file, AssetPack};
 use std::collections::HashMap;

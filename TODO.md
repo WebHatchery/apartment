@@ -36,10 +36,6 @@ with the `APARTMENT_CAPTURE_MANIFEST` harness (scenes in `src/game.rs`).
   public seams. Preserve useful coverage; for suites with more than five cases
   per feature, use table-driven assertions or document why cases stay distinct.
 
-- [ ] Add a short `//!` purpose comment to each of the 62 production Rust files
-  that lack module-level documentation, including child modules created by the
-  test and size migrations.
-
 - [ ] Make JSON the single runtime source of truth for content, configuration,
   and player-facing text: wire `assets/text_strings.json` through the toolkit
   loader with typed semantic validation, then migrate hardcoded UI/status text

@@ -1,5 +1,5 @@
-// Monthly turn advancement for gameplay state. The narrative, inspection,
-// neighborhood, and awards halves of the turn live in sibling modules.
+//! Monthly turn advancement for gameplay state. The narrative, inspection,
+//! neighborhood, and awards halves of the turn live in sibling modules.
 
 use crate::economy::{Transaction, TransactionType};
 use crate::simulation::{advance_tick, ActiveWorldEvent, ActiveWorldEventKind, GameEvent};

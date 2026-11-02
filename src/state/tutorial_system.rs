@@ -1,3 +1,5 @@
+//! Tutorial progression: milestone checks and mentor messages.
+
 use super::GameplayState;
 use crate::narrative::TutorialMilestone;
 use crate::ui::colors;

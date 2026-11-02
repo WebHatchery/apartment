@@ -1,3 +1,5 @@
+//! Simulation events, their severity and the event log.
+
 use super::GameOutcome;
 use serde::{Deserialize, Serialize};
 

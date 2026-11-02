@@ -1,3 +1,5 @@
+//! The building: its units, lobby, flags, marketing and condo conversions.
+
 use super::ownership::OwnershipType;
 use super::{Apartment, ApartmentSize, NoiseLevel};
 use crate::data::config::MarketingConfig;

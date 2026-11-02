@@ -1,3 +1,5 @@
+//! The blocking event modal for narrative choices.
+
 use crate::assets::AssetManager;
 use crate::narrative::events::{NarrativeEvent, NarrativeEventType};
 use crate::ui::theme::{color, scale, space, Tone};

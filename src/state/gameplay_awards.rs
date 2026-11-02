@@ -1,5 +1,5 @@
-// Periodic payoffs and reckonings: mission tax breaks each month, and the
-// annual awards / tenant-council check.
+//! Periodic payoffs and reckonings: mission tax breaks each month, and the
+//! annual awards / tenant-council check.
 
 use crate::economy::{Transaction, TransactionType};
 use crate::simulation::GameEvent;

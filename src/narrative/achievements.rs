@@ -1,3 +1,5 @@
+//! Achievements: unlock conditions checked against the campaign state.
+
 use crate::building::Building;
 use crate::city::City;
 use crate::data::config::GameConfig;

@@ -1,5 +1,5 @@
-// Reads and writes of the active building's neighborhood standing, and the
-// market conditions derived from it.
+//! Reads and writes of the active building's neighborhood standing, and the
+//! market conditions derived from it.
 
 use crate::ui::colors;
 use macroquad::prelude::*;

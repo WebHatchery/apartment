@@ -1,3 +1,5 @@
+//! Shared UI helpers: palette re-exports, responsive layout adapters, panels.
+
 use macroquad::prelude::*;
 
 pub use macroquad_toolkit::input::{is_hovered, was_clicked};

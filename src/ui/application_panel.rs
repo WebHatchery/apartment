@@ -1,3 +1,5 @@
+//! Applications inspector: one applicant at a time with their decisions.
+
 use super::{common::*, UiAction};
 use crate::assets::AssetManager;
 use crate::building::Building;

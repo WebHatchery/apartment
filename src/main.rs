@@ -1,3 +1,5 @@
+//! Second Story entry point: window setup, the capture harness and the frame loop.
+
 use macroquad::prelude::*;
 use macroquad_toolkit::capture;
 

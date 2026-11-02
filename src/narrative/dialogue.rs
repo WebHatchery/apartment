@@ -1,3 +1,5 @@
+//! Face-to-face dialogues: requests, conflicts and rent negotiations.
+
 use macroquad_toolkit::rng;
 use serde::{Deserialize, Serialize};
 

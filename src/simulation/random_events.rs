@@ -1,3 +1,5 @@
+//! Random monthly building events such as emergencies and heatwaves.
+
 use crate::building::Building;
 use crate::data::config::TurnEffectsConfig;
 use crate::economy::{PlayerFunds, Transaction, TransactionType};

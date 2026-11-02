@@ -1,3 +1,5 @@
+//! Gentrification pressure, displacement and demographic tracking.
+
 use crate::data::config::GentrificationConfig;
 use crate::tenant::{Tenant, TenantArchetype};
 use serde::{Deserialize, Serialize};
