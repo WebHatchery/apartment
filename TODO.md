@@ -240,7 +240,7 @@ engineering backlog. Findings below were traced in code, not reproduced in play.
   **Accept:** finishing month 36 marks the building completed in
   `player_progress.json` and the next property appears unlocked in the menu.
 
-- [ ] **CR-02 — "Last closed month" figures leave out the player's own spending.**
+- [x] **CR-02 — "Last closed month" figures leave out the player's own spending.**
   **Evidence:** player actions (repairs, upgrades, vetting) are tagged with the
   pre-increment `current_tick`, but `advance_tick` increments first and reports
   only `transactions_for_tick(new_tick)`. Spending made during a month therefore

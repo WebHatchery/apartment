@@ -17,7 +17,7 @@ use crate::city::City;
 use crate::consequences::{ComplianceSystem, InspectionTrigger};
 use crate::data::config::GameConfig;
 use crate::data::templates::BuildingTemplate;
-use crate::economy::{process_upgrade, FinancialLedger, PlayerFunds, Transaction, TransactionType};
+use crate::economy::{process_upgrade, PlayerFunds, Transaction, TransactionType};
 use crate::simulation::{advance_tick, EventLog, GameOutcome};
 use crate::tenant::matching::{evaluate_lease_offer, LeaseOffer};
 use crate::tenant::vetting::{perform_background_check, perform_credit_check};
@@ -63,7 +63,6 @@ struct Sim {
     tenants: Vec<Tenant>,
     applications: Vec<TenantApplication>,
     funds: PlayerFunds,
-    ledger: FinancialLedger,
     event_log: EventLog,
     compliance: ComplianceSystem,
     current_tick: u32,
@@ -101,7 +100,6 @@ impl Sim {
             tenants: state.tenants.clone(),
             applications: state.applications.clone(),
             funds: state.funds.clone(),
-            ledger: state.ledger.clone(),
             event_log: state.event_log.clone(),
             compliance: state.compliance.clone(),
             current_tick: state.current_tick,
@@ -596,7 +594,6 @@ impl Sim {
                 &mut self.tenants,
                 &mut self.applications,
                 &mut self.funds,
-                &mut self.ledger,
                 &mut self.event_log,
                 &mut self.current_tick,
                 &mut self.next_tenant_id,

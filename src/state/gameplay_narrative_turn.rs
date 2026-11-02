@@ -27,8 +27,8 @@ impl GameplayState {
         }
 
         let expenses = self
-            .funds
-            .transactions_for_tick(self.current_tick)
+            .ledger
+            .unreported(&self.funds)
             .iter()
             .filter(|transaction| transaction.amount < 0)
             .map(|transaction| transaction.amount.abs())

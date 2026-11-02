@@ -669,6 +669,7 @@ fn seed_showcase_finances(state: &mut crate::state::GameplayState) {
         .map(|transaction| transaction.amount.abs())
         .sum();
     state.funds.transactions = transactions;
+    state.ledger.mark_reported(&state.funds);
 }
 
 fn seed_showcase_mail(state: &mut crate::state::GameplayState) {

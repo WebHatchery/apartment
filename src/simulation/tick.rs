@@ -1,8 +1,6 @@
 use super::{decay, random_events, win_condition, EventLog, GameEvent, GameOutcome};
 use crate::building::Building;
-use crate::economy::{
-    collect_rent, FinancialLedger, OperatingCosts, PlayerFunds, Transaction, TransactionType,
-};
+use crate::economy::{collect_rent, OperatingCosts, PlayerFunds, Transaction, TransactionType};
 use crate::tenant::{
     calculate_happiness, generate_applications, process_departures, Tenant, TenantApplication,
 };
@@ -45,7 +43,6 @@ impl GameTick {
         tenants: &mut Vec<Tenant>,
         applications: &mut Vec<TenantApplication>,
         funds: &mut PlayerFunds,
-        ledger: &mut FinancialLedger,
         event_log: &mut EventLog,
         current_tick: u32,
         next_tenant_id: &mut u32,
@@ -147,18 +144,8 @@ impl GameTick {
         }
         applications.extend(new_apps);
 
-        // 8. Monthly Report
-        let tick_transactions: Vec<_> = funds.transactions_for_tick(current_tick);
-        let report = ledger.generate_report(current_tick, &tick_transactions, funds.balance);
-
-        result.events.push(GameEvent::MonthEnd {
-            tick: current_tick,
-            income: report.rent_income,
-            expenses: report.repair_costs + report.upgrade_costs,
-            balance: report.ending_balance,
-        });
-
-        // 9. Win/Lose check
+        // 8. Win/Lose check (the month's report is closed by the caller once
+        //    every part of the turn has posted its transactions)
         result.outcome = win_condition::check_win_condition(
             building_id,
             building,
@@ -551,7 +538,6 @@ pub fn advance_tick(
     tenants: &mut Vec<Tenant>,
     applications: &mut Vec<TenantApplication>,
     funds: &mut PlayerFunds,
-    ledger: &mut FinancialLedger,
     event_log: &mut EventLog,
     current_tick: &mut u32,
     next_tenant_id: &mut u32,
@@ -567,7 +553,6 @@ pub fn advance_tick(
         tenants,
         applications,
         funds,
-        ledger,
         event_log,
         *current_tick,
         next_tenant_id,

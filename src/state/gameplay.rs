@@ -388,6 +388,7 @@ impl GameplayState {
                 .map(|template| template.id)
                 .unwrap_or_else(|| "mvp_default".to_string());
         }
+        self.ledger.align_unreported(&self.funds);
         self.config = crate::data::config::load_config();
         crate::release_mode::apply_config(&mut self.config);
         // config isn't serialized, so re-apply the building's difficulty

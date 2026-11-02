@@ -28,7 +28,6 @@ impl GameplayState {
             &mut self.tenants,
             &mut self.applications,
             &mut self.funds,
-            &mut self.ledger,
             &mut self.event_log,
             &mut self.current_tick,
             &mut self.next_tenant_id,
@@ -62,7 +61,23 @@ impl GameplayState {
         // PerfectCollection can inspect this month's rent outcome.
         self.last_tick_result = Some(result);
         self.update_missions();
+        self.close_month();
         self.autosave_current_game();
+    }
+
+    /// Close the ledger month after every turn step has posted its money, so
+    /// the report matches the balance change across the month.
+    fn close_month(&mut self) {
+        let report = self.ledger.close_month(self.current_tick, &self.funds);
+        self.event_log.log(
+            GameEvent::MonthEnd {
+                tick: report.tick,
+                income: report.rent_income,
+                expenses: report.repair_costs + report.upgrade_costs,
+                balance: report.ending_balance,
+            },
+            self.current_tick,
+        );
     }
 
     fn spawn_tick_feedback(&mut self, events: &[GameEvent]) {

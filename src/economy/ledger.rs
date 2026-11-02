@@ -1,4 +1,4 @@
-use super::{Transaction, TransactionType};
+use super::{PlayerFunds, Transaction, TransactionType};
 use serde::{Deserialize, Serialize};
 
 /// Monthly financial summary
@@ -16,13 +16,52 @@ pub struct MonthlyReport {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FinancialLedger {
     pub reports: Vec<MonthlyReport>,
+    /// Count of `PlayerFunds::transactions` already covered by a closed month.
+    /// Everything after it belongs to the month in progress, whatever tick the
+    /// transaction was tagged with. `None` only for saves from before this
+    /// field existed; `post_load` aligns it with the current transactions.
+    #[serde(default)]
+    reported_transactions: Option<usize>,
 }
 
 impl FinancialLedger {
     pub fn new() -> Self {
         Self {
             reports: Vec::new(),
+            reported_transactions: Some(0),
         }
+    }
+
+    /// Start the month in progress at the current end of the transaction list
+    /// when a save predates month tracking.
+    pub fn align_unreported(&mut self, funds: &PlayerFunds) {
+        if self.reported_transactions.is_none() {
+            self.mark_reported(funds);
+        }
+    }
+
+    /// Treat every existing transaction as belonging to a closed month.
+    pub fn mark_reported(&mut self, funds: &PlayerFunds) {
+        self.reported_transactions = Some(funds.transactions.len());
+    }
+
+    /// Transactions recorded since the last closed month.
+    pub fn unreported<'a>(&self, funds: &'a PlayerFunds) -> &'a [Transaction] {
+        let start = self
+            .reported_transactions
+            .unwrap_or(0)
+            .min(funds.transactions.len());
+        &funds.transactions[start..]
+    }
+
+    /// Close the month in progress: report every transaction since the last
+    /// close, including spending made before End Month and anything the
+    /// turn added after the simulation tick.
+    pub fn close_month(&mut self, tick: u32, funds: &PlayerFunds) -> MonthlyReport {
+        let month: Vec<&Transaction> = self.unreported(funds).iter().collect();
+        let report = self.generate_report(tick, &month, funds.balance);
+        self.mark_reported(funds);
+        report
     }
 
     /// Generate a monthly report from transactions
