@@ -200,6 +200,9 @@ pub(super) fn seed_showcase_residents(state: &mut crate::state::GameplayState) {
         let mut tenant = Tenant::new(tenant_id, name, archetype.clone());
         tenant.happiness = *happiness;
         tenant.move_into_building(building_id, apartment.id);
+        // Mixed tenure: long-stayers show a photo, the last resident has
+        // just moved in.
+        tenant.months_residing = [14, 3, 26, 8, 30, 0][index % 6];
         apartment.move_in(tenant_id);
         apartment.design = designs[index % designs.len()].clone();
         apartment.condition = conditions[index % conditions.len()];

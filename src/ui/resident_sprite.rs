@@ -212,7 +212,12 @@ pub(super) fn draw_resident(
     assets: &AssetManager,
 ) {
     let style = style_for(tenant.id);
-    let pose = animated_pose(apartment, tenant.id, get_time());
+    let elapsed = if macroquad_toolkit::settings::reduced_motion_enabled() {
+        0.0
+    } else {
+        get_time()
+    };
+    let pose = animated_pose(apartment, tenant.id, elapsed);
     draw_resident_layers(style, pose, tenant.happiness, room, assets);
 }
 

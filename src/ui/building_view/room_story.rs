@@ -1,6 +1,6 @@
 //! Visual state layers for everything the player can change inside a unit.
 
-use crate::building::Apartment;
+use crate::building::{Apartment, DesignType};
 use macroquad::prelude::*;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -23,6 +23,9 @@ fn room_features(apartment: &Apartment) -> RoomFeatures {
 
 pub(super) fn draw_room_story(apartment: &Apartment, room: Rect) {
     let features = room_features(apartment);
+    if features.cared_for && matches!(apartment.design, DesignType::Bare) {
+        draw_fresh_paint(room);
+    }
     super::condition_art::draw_condition(room, apartment.condition, apartment.id);
     if features.upgraded_lighting {
         draw_lighting(room);
@@ -36,6 +39,25 @@ pub(super) fn draw_room_story(apartment: &Apartment, room: Rect) {
     if features.cared_for {
         super::condition_art::draw_plant(room);
     }
+}
+
+/// The Bare art has scuffs painted in; once repaired, a fresh coat on the
+/// walls and a swept floor keep the room from contradicting its condition.
+fn draw_fresh_paint(room: Rect) {
+    draw_rectangle(
+        room.x,
+        room.y,
+        room.w,
+        room.h * 0.64,
+        Color::new(0.93, 0.89, 0.82, 0.45),
+    );
+    draw_rectangle(
+        room.x,
+        room.y + room.h * 0.64,
+        room.w,
+        room.h * 0.36,
+        Color::new(0.80, 0.72, 0.62, 0.35),
+    );
 }
 
 fn draw_lighting(room: Rect) {

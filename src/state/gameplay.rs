@@ -174,6 +174,9 @@ pub struct GameplayState {
     /// The tutorial step whose target the tower last scrolled to.
     #[serde(skip)]
     pub coach_framed_step: Option<String>,
+    /// Units emptied by the latest month, for the tower's move-out cue.
+    #[serde(skip)]
+    pub recently_vacated: Vec<u32>,
     /// Player preference from settings; applied on entering gameplay.
     #[serde(skip, default = "default_autosave_enabled")]
     pub autosave_enabled: bool,
@@ -358,6 +361,7 @@ impl GameplayState {
             coach_hidden: false,
             help_open: false,
             coach_framed_step: None,
+            recently_vacated: Vec::new(),
             autosave_enabled: true,
             pending_quit_to_menu: false,
             pending_load_game: false,

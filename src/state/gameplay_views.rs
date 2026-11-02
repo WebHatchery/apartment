@@ -244,6 +244,8 @@ impl GameplayState {
             &self.selection,
             assets,
             self.tower_scroll_offset,
+            self.current_tick,
+            &self.recently_vacated,
         );
         self.tower_scroll_offset = tower_scroll;
         if let Some(action) = tower_action {

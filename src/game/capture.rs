@@ -136,6 +136,11 @@ fn adjust_scene(key: &str, state: &mut GameplayState) {
             select_unit(state, 0);
             state.funds.balance = 40;
         }
+        "move_out" => {
+            let id = unit_id(state, 1);
+            vacate(state, id, false);
+            state.recently_vacated = vec![id];
+        }
         "unit_vacant" | "unit_listed" => {
             let id = unit_id(state, 1);
             vacate(state, id, key == "unit_listed");
@@ -268,6 +273,10 @@ fn adjust_scene(key: &str, state: &mut GameplayState) {
             }
         }
         "help" => state.help_open = true,
+        "season_spring" => state.current_tick = 1,
+        "season_summer" => state.current_tick = 4,
+        "season_autumn" => state.current_tick = 7,
+        "season_winter" => state.current_tick = 11,
         "event" => seed_showcase_event(state),
         "event_notice" => seed_showcase_notice(state),
         "notification" => {

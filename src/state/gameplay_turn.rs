@@ -12,6 +12,13 @@ impl GameplayState {
     /// End the current turn and advance time.
     pub fn end_turn(&mut self) {
         let building_id = self.active_building_id();
+        let occupied_before: Vec<u32> = self
+            .building
+            .apartments
+            .iter()
+            .filter(|unit| !unit.is_vacant())
+            .map(|unit| unit.id)
+            .collect();
         // Latch once the building has ever been occupied, so the "all tenants left"
         // loss can distinguish real mass-departure from a not-yet-filled building.
         if self.active_tenant_count() > 0 {
@@ -63,6 +70,14 @@ impl GameplayState {
         // PerfectCollection can inspect this month's rent outcome.
         self.last_tick_result = Some(result);
         self.update_missions();
+        self.recently_vacated = occupied_before
+            .into_iter()
+            .filter(|id| {
+                self.building
+                    .get_apartment(*id)
+                    .is_some_and(|unit| unit.is_vacant())
+            })
+            .collect();
         self.close_month();
         self.autosave_current_game();
     }

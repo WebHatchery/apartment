@@ -1,6 +1,8 @@
 //! Scrollable tower cutaway and fixed building navigation.
+mod backdrop;
 mod condition_art;
 mod geometry;
+mod resident_dressing;
 mod room_story;
 
 #[cfg(test)]
@@ -29,10 +31,12 @@ pub fn draw_building_view(
     selection: &Selection,
     assets: &AssetManager,
     scroll_offset: f32,
+    month: u32,
+    recently_vacated: &[u32],
 ) -> (Option<UiAction>, f32) {
     let geometry = TowerGeometry::new(building, selection);
     let view = geometry.view;
-    draw_sunset_backdrop(view);
+    backdrop::draw_backdrop(view, month);
     let viewport = geometry.viewport;
     let max_scroll = geometry.max_scroll;
     let mouse = mouse_position();
@@ -46,7 +50,15 @@ pub fn draw_building_view(
     let ui = macroquad_toolkit::ui::VirtualUi::new(screen_width(), screen_height());
     let mut action = ui
         .with_clip(viewport, || {
-            draw_cutaway(content, metrics, building, tenants, selection, assets)
+            draw_cutaway(
+                content,
+                metrics,
+                building,
+                tenants,
+                selection,
+                assets,
+                recently_vacated,
+            )
         })
         .filter(|_| over_tower);
     if geometry.overflow {
@@ -80,6 +92,7 @@ fn draw_cutaway(
     tenants: &[Tenant],
     selection: &Selection,
     assets: &AssetManager,
+    recently_vacated: &[u32],
 ) -> Option<UiAction> {
     let max_floor = building
         .apartments
@@ -90,14 +103,16 @@ fn draw_cutaway(
     draw_building_shell(content, metrics, max_floor);
     let mut action = None;
     for (apartment, room) in unit_rooms(building, metrics) {
-        if let Some(unit_action) = draw_apartment(
-            apartment,
-            building.is_unit_sold(apartment.id),
-            tenants,
-            room,
-            selection,
-            assets,
-        ) {
+        let vacancy = if building.is_unit_sold(apartment.id) {
+            Vacancy::Sold
+        } else if recently_vacated.contains(&apartment.id) {
+            Vacancy::JustVacated
+        } else {
+            Vacancy::ForRent
+        };
+        if let Some(unit_action) =
+            draw_apartment(apartment, vacancy, tenants, room, selection, assets)
+        {
             action = Some(unit_action);
         }
     }
@@ -106,47 +121,6 @@ fn draw_cutaway(
         action = Some(hallway_action);
     }
     action
-}
-
-fn draw_sunset_backdrop(view: Rect) {
-    let top = Color::new(0.38, 0.42, 0.55, 1.0);
-    let bottom = Color::new(0.88, 0.58, 0.39, 1.0);
-    for index in 0..24 {
-        let t = index as f32 / 23.0;
-        let band_h = view.h / 24.0 + 1.0;
-        draw_rectangle(
-            view.x,
-            view.y + index as f32 * view.h / 24.0,
-            view.w,
-            band_h,
-            Color::new(
-                top.r + (bottom.r - top.r) * t,
-                top.g + (bottom.g - top.g) * t,
-                top.b + (bottom.b - top.b) * t,
-                1.0,
-            ),
-        );
-    }
-
-    let skyline_y = view.bottom() - 86.0;
-    for index in 0..10 {
-        let width = view.w / 9.0;
-        let height = 30.0 + ((index * 29) % 52) as f32;
-        let x = view.x + index as f32 * width - 8.0;
-        draw_rectangle(
-            x,
-            skyline_y - height,
-            width - 5.0,
-            height + 86.0,
-            Color::new(0.20, 0.20, 0.25, 0.42),
-        );
-    }
-    draw_circle(
-        view.w * 0.12,
-        view.y + 82.0,
-        25.0,
-        Color::new(1.0, 0.72, 0.42, 0.58),
-    );
 }
 
 fn draw_building_shell(view: Rect, metrics: CutawayMetrics, floors: u32) {
@@ -200,9 +174,17 @@ fn draw_building_shell(view: Rect, metrics: CutawayMetrics, floors: u32) {
     );
 }
 
+/// How an empty room presents itself in the tower.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Vacancy {
+    ForRent,
+    JustVacated,
+    Sold,
+}
+
 fn draw_apartment(
     apartment: &Apartment,
-    sold: bool,
+    vacancy: Vacancy,
     tenants: &[Tenant],
     room: Rect,
     selection: &Selection,
@@ -218,6 +200,16 @@ fn draw_apartment(
 
     draw_rectangle(room.x - 4.0, room.y - 4.0, room.w + 8.0, room.h + 8.0, BEAM);
     if let Some(texture) = assets.get_texture(design_id) {
+        // The Practical art is a framed picture on a white margin; draw only
+        // the picture so it meets the room's beams without a visible seam.
+        let source = (design_id == "design_practical").then(|| {
+            Rect::new(
+                texture.width() * 0.219,
+                texture.height() * 0.086,
+                texture.width() * 0.563,
+                texture.height() * 0.824,
+            )
+        });
         draw_texture_ex(
             texture,
             room.x,
@@ -225,6 +217,7 @@ fn draw_apartment(
             WHITE,
             DrawTextureParams {
                 dest_size: Some(room.size()),
+                source,
                 ..Default::default()
             },
         );
@@ -245,6 +238,7 @@ fn draw_apartment(
 
     if let Some(tenant_id) = apartment.tenant_id {
         if let Some(tenant) = tenants.iter().find(|tenant| tenant.id == tenant_id) {
+            resident_dressing::draw_resident_dressing(room, tenant, get_time());
             super::resident_sprite::draw_resident(apartment, tenant, room, assets);
             let name = truncate_text_to_width(&tenant.name, room.w * 0.42, scale::CAPTION);
             let name_metrics = measure_text(&name, None, scale::CAPTION as u16, 1.0);
@@ -264,7 +258,7 @@ fn draw_apartment(
             );
         }
     } else {
-        draw_vacancy(apartment, sold, room, assets);
+        draw_vacancy(apartment, vacancy, room, assets);
     }
 
     if selected {
@@ -333,7 +327,7 @@ fn draw_unit_plaque(apartment: &Apartment, room: Rect) {
 }
 
 /// An empty room: for rent at its asking price, or a privately owned condo.
-fn draw_vacancy(apartment: &Apartment, sold: bool, room: Rect, assets: &AssetManager) {
+fn draw_vacancy(apartment: &Apartment, vacancy: Vacancy, room: Rect, assets: &AssetManager) {
     let window_id = if matches!(apartment.effective_noise(), NoiseLevel::High) {
         "window_street"
     } else {
@@ -352,24 +346,55 @@ fn draw_vacancy(apartment: &Apartment, sold: bool, room: Rect, assets: &AssetMan
             },
         );
     }
-    draw_ui_text(
-        if sold { "CONDO · OWNED" } else { "VACANT" },
-        room.x + space::SM,
-        room.bottom() - 8.0,
-        scale::CAPTION,
-        color::TEXT_DIM(),
-    );
-    if sold {
+    if vacancy == Vacancy::JustVacated {
+        // A box left behind: someone moved out this month.
+        let size = (room.h * 0.16).clamp(10.0, 20.0);
+        let x = room.x + room.w * 0.18;
+        let y = room.bottom() - size - 6.0;
+        draw_rectangle(x, y, size * 1.4, size, Color::new(0.66, 0.50, 0.32, 1.0));
+        draw_rectangle(
+            x + size * 0.63,
+            y,
+            size * 0.14,
+            size,
+            Color::new(0.86, 0.79, 0.62, 1.0),
+        );
+    }
+    let label = match vacancy {
+        Vacancy::Sold => "CONDO · OWNED",
+        Vacancy::JustVacated => "JUST VACATED",
+        Vacancy::ForRent => "VACANT",
+    };
+    draw_room_chip(label, room.x + space::XS, room, color::TEXT());
+    if vacancy == Vacancy::Sold {
         return;
     }
     let rent = format!("${}", apartment.rent_price);
     let rent_w = measure_ui_text(&rent, None, scale::CAPTION as u16, 1.0).width;
-    draw_ui_text(
+    draw_room_chip(
         &rent,
-        room.right() - rent_w - space::SM,
+        room.right() - rent_w - space::SM * 2.0 - space::XS,
+        room,
+        color::PRIMARY(),
+    );
+}
+
+/// A caption on a dark chip along the room's floor, readable on any art.
+fn draw_room_chip(text: &str, x: f32, room: Rect, text_color: Color) {
+    let width = measure_ui_text(text, None, scale::CAPTION as u16, 1.0).width;
+    draw_rectangle(
+        x,
+        room.bottom() - 23.0,
+        width + space::SM * 2.0,
+        19.0,
+        Color::new(0.04, 0.04, 0.05, 0.76),
+    );
+    draw_ui_text(
+        text,
+        x + space::SM,
         room.bottom() - 8.0,
         scale::CAPTION,
-        color::PRIMARY(),
+        text_color,
     );
 }
 

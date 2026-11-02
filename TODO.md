@@ -8,34 +8,10 @@ with the `APARTMENT_CAPTURE_MANIFEST` harness (scenes in `src/game.rs`).
 
 ## UI tasks
 
-- [ ] **UI-09 — Extend tenant identity and passage of time using existing state.**
-  **Scope:** `src/ui/resident_sprite.rs::{style_for,animated_pose}`,
-  `src/ui/building_view/room_story.rs`, `src/ui/building_view.rs::draw_sunset_backdrop`,
-  `src/ui/building_view/condition_art.rs`, assets and presentation configuration.
-   
-  **Problem:** resident styling and pose cycling exist, but same-design rooms
-  repeat their furnishings, room-story inputs are only apartment features, and
-  the exterior uses a fixed sunset. (Residents, wear and upgrade art are done —
-  don't redo them.)
-  **Change:** add restrained identity/archetype/tenure-based dressing, small
-  ambient behaviors and move-in/out feedback, with decorative randomness
-  separate from simulation RNG. Add seasonal lighting/background variation
-  tied to campaign time. Fix conspicuous base-art/overlay joins and baked-in
-  wear that contradicts repaired state; never imply independently repairable
-  lamps or invented fixture/history systems. Consolidate obsolete LayoutConfig
-  tuning instead of creating a second layout authority.
-  **Accept:** occupants and earned improvements are visibly distinct; Month 1
-  versus later months communicates care and time without new stats, panels,
-  simulation mechanics, currencies or save-format changes.
-  **Verify:** same-seed worn/repaired comparisons, same-design different tenants,
-  vacancy/move-in/out, upgrades and seasons at 1280x720, 1920x1080 and 390x844;
-  small-room silhouettes, labels and resident selection stay clear, and
-  cosmetic changes do not alter simulated results.
-
 - [ ] **UI-10 — Finish shared readability, touch feedback and restrained motion.**
   **Scope:** `src/ui/theme.rs`, `src/ui/widgets.rs`, `src/ui/common.rs`, panel
   drawing/input in `src/state/gameplay_views.rs`, and the screens above.
-  After UI-09; polish, not another redesign.
+  Builds on UI-05–UI-09; polish, not another redesign.
   **Problem:** bordered buttons, panel headings, stat labels and orange
   scrolling/navigation controls compete with decisions in selected views. The
   selection Close button is 34px high while most actions are 40px; real touch

@@ -310,14 +310,7 @@
     "shadow": [0.0, 0.0, 0.0, 0.46]
   },
   "layout": {
-    "header_height": 108.0,
-    "footer_height": 100.0,
-    "panel_split": 0.6,
-    "padding": 10.0,
-    "unit_width": 300.0,
-    "unit_height": 148.0,
-    "unit_gap": 10.0,
-    "floor_height": 158.0
+    "unit_gap": 10.0
   },
   "ui_thresholds": {
     "happiness_ecstatic": 85,

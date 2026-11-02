@@ -72,28 +72,14 @@ impl Default for ThemeConfig {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LayoutConfig {
-    pub header_height: f32,
-    pub footer_height: f32,
-    pub panel_split: f32,
-    pub padding: f32,
-    pub unit_width: f32,
-    pub unit_height: f32,
+    /// Gap between rooms in the tower cutaway. Every other piece of layout
+    /// geometry lives in `screen_layout` and the building view.
     pub unit_gap: f32,
-    pub floor_height: f32,
 }
 
 impl Default for LayoutConfig {
     fn default() -> Self {
-        Self {
-            header_height: 60.0,
-            footer_height: 100.0,
-            panel_split: 0.6,
-            padding: 10.0,
-            unit_width: 300.0,
-            unit_height: 148.0,
-            unit_gap: 10.0,
-            floor_height: 158.0,
-        }
+        Self { unit_gap: 10.0 }
     }
 }
 
