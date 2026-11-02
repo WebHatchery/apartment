@@ -1,4 +1,5 @@
-use apartment::screen_layout::{header_height, BuildingLayout};
+use apartment::screen_layout::{header_height, touch_rect, BuildingLayout, TOUCH_MIN};
+use macroquad::prelude::Rect;
 
 #[test]
 fn unselected_building_recovers_the_full_workspace() {
@@ -56,4 +57,19 @@ fn panel_clicks_cannot_be_building_clicks() {
             assert!(!layout.world.contains(point));
         }
     }
+}
+
+#[test]
+fn small_controls_grow_to_a_touch_target_about_their_centre() {
+    for rect in [
+        Rect::new(10.0, 20.0, 64.0, 34.0),
+        Rect::new(0.0, 0.0, 30.0, 30.0),
+        Rect::new(5.0, 5.0, 200.0, 40.0),
+    ] {
+        let grown = touch_rect(rect);
+        assert!(grown.w >= TOUCH_MIN && grown.h >= TOUCH_MIN);
+        assert!((grown.center() - rect.center()).length() < 1e-4);
+    }
+    let roomy = Rect::new(0.0, 0.0, 120.0, 48.0);
+    assert_eq!(touch_rect(roomy), roomy);
 }

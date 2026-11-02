@@ -152,7 +152,8 @@ impl MenuState {
         }
 
         let pointer = vec2(mouse_position().0, mouse_position().1);
-        let clicked = is_mouse_button_pressed(MouseButton::Left);
+        // Release, like every themed button: dragging off cancels a choice.
+        let clicked = is_mouse_button_released(MouseButton::Left);
 
         match self.screen {
             MenuScreen::Home => {

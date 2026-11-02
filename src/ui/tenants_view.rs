@@ -175,7 +175,7 @@ pub(super) fn draw_tenants_narrow(
             Rect::new(inner.right() - button_w, button_y, button_w, 40.0),
             "Next resident",
             page + 1 < page_count,
-            Tone::Primary,
+            Tone::Secondary,
         ) {
             return Some(UiAction::SetTenantsPage { page: page + 1 });
         }

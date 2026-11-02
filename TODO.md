@@ -8,33 +8,11 @@ with the `APARTMENT_CAPTURE_MANIFEST` harness (scenes in `src/game.rs`).
 
 ## UI tasks
 
-- [ ] **UI-10 — Finish shared readability, touch feedback and restrained motion.**
-  **Scope:** `src/ui/theme.rs`, `src/ui/widgets.rs`, `src/ui/common.rs`, panel
-  drawing/input in `src/state/gameplay_views.rs`, and the screens above.
-  Builds on UI-05–UI-09; polish, not another redesign.
-  **Problem:** bordered buttons, panel headings, stat labels and orange
-  scrolling/navigation controls compete with decisions in selected views. The
-  selection Close button is 34px high while most actions are 40px; real touch
-  usability is unverified.
-  **Change:** remove residual nested borders/repeated labels, use spacing and
-  a coherent readable type scale, keep full decision text accessible, and make
-  selected/navigation/paging treatment quieter than consequential actions.
-  Make essential controls at least 44 CSS px after browser scaling. Add subtle
-  selection/action feedback and optional panel transitions only with
-  synchronized draw/hit bounds and reduced-motion support. Share release
-  activation with the engineering task below rather than duplicating it.
-  **Accept:** no tiny text, invisible gestures or hover-only help; every
-  necessary action is readable, touchable and acknowledged, with at most 2–3
-  strong attention regions during ordinary play. Pixel art remains coherent.
-  **Verify:** every review size and browser display scaling; tap edges of Close,
-  repair, pagination and choice controls, drag away before release, resize during
-  transition, and check reduced motion. No double action or mismatched hit area.
-
 - [ ] **UI-11 — Close browser, dense-state and recovery verification gaps.**
   **Scope:** `src/game.rs` capture scenes, `src/state/menu.rs` and
   `src/state/menu/building_select.rs`, `src/ui/career_summary.rs`,
   `src/ui/ownership_panel.rs`, `src/ui/application_panel.rs`, `game_page.json`,
-  and `docs/verification/`. Run alongside each task above; finish after UI-10.
+  and `docs/verification/`. 
   **Problem:** verification so far is native captures and source reading — no
   live browser/touch, embedded canvas, zoom/display-scale, animation, portrait
   secondary screens, dense endgame or full-campaign check.
@@ -67,12 +45,6 @@ with the `APARTMENT_CAPTURE_MANIFEST` harness (scenes in `src/game.rs`).
   loader with typed semantic validation, then migrate hardcoded UI/status text
   and duplicate archetype/config defaults, keeping only intentional schema
   fallbacks.
-
-- [ ] Standardize interactive controls on the toolkit's release semantics.
-  Audit the direct `is_mouse_button_pressed` checks (including the title menu,
-  settings page and pause-settings routing) and `ButtonTrigger::Press`; keep
-  press-only behavior only where immediate feedback is intentional, and add
-  regression coverage for touch/click activation without duplicate actions.
 
 - [ ] Extend `tests/code_standards.rs` or CI with enforceable checks for module
   docs, forbidden `mod.rs` files, in-source tests, undocumented `#[allow]`

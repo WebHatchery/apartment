@@ -324,7 +324,7 @@ fn draw_achievements(
             Rect::new(page.x + button_w + gap, controls_y, button_w, 40.0),
             "More badges",
             badge_page + 1 < page_count,
-            Tone::Primary,
+            Tone::Secondary,
         ) {
             return Some(UiAction::SetCareerBadgesPage {
                 page: badge_page + 1,

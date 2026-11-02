@@ -372,3 +372,13 @@ impl GameplayState {
         }
     }
 }
+
+/// Where to acknowledge a player's action: just above the point they
+/// tapped, kept on screen, instead of the middle of the screen.
+pub(super) fn feedback_point() -> Vec2 {
+    let (x, y) = mouse_position();
+    vec2(
+        x.clamp(60.0, screen_width() - 60.0),
+        (y - 24.0).clamp(40.0, screen_height() - 40.0),
+    )
+}

@@ -154,7 +154,7 @@ fn draw_narrow_missions(
         }
         if mission.status == MissionStatus::Available
             && button_at(
-                Rect::new(card.right() - 104.0, card.y + 16.0, 92.0, 40.0),
+                Rect::new(card.right() - 104.0, card.bottom() - 52.0, 92.0, 44.0),
                 "Accept",
                 true,
                 Tone::Primary,
@@ -181,7 +181,7 @@ fn draw_narrow_missions(
             Rect::new(inner.right() - button_w, y, button_w, 40.0),
             "Next mission",
             page + 1 < page_count,
-            Tone::Primary,
+            Tone::Secondary,
         ) {
             return Some(UiAction::SetTasksPage { page: page + 1 });
         }
@@ -272,7 +272,7 @@ fn draw_narrow_requests(
             Rect::new(inner.right() - button_w, pager_y, button_w, 40.0),
             "Next request",
             page + 1 < page_count,
-            Tone::Primary,
+            Tone::Secondary,
         ) {
             return Some(UiAction::SetRequestsPage { page: page + 1 });
         }

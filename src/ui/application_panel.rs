@@ -101,7 +101,7 @@ pub fn draw_application_panel(
                 Rect::new(content_x + button_w + gap, controls_y, button_w, 40.0),
                 "Next applicant",
                 true,
-                Tone::Primary,
+                Tone::Secondary,
             )
         {
             action = Some(UiAction::SetApplicationPage { page: page + 1 });

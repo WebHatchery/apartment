@@ -115,8 +115,13 @@ pub fn button_width(text: &str, height: f32) -> f32 {
     (w + space::MD * 2.0).max(height * 1.6)
 }
 
-/// Draw a tone button in a rect. Triggers on release. Returns true if clicked.
+pub use apartment::screen_layout::touch_rect;
+
+/// Draw a tone button in a rect (grown to the touch minimum). Triggers on
+/// release inside it, so dragging away before release cancels. Returns true
+/// if clicked.
 pub fn button_at(rect: Rect, text: &str, enabled: bool, tone: Tone) -> bool {
+    let rect = touch_rect(rect);
     let style = theme::button_style(tone);
     let text_style = TextStyle::new(scale::LABEL, style.text_color);
     button_rect_enabled_styled_ex(
@@ -171,7 +176,7 @@ pub fn scroll_controls(
         Rect::new(rect.x + button_w + gap, rect.y, button_w, rect.h),
         later_label,
         current + 1.0 < max,
-        Tone::Primary,
+        Tone::Secondary,
     ) {
         next = (current + 120.0).min(max);
     }

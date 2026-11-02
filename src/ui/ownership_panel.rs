@@ -126,7 +126,7 @@ pub fn draw_ownership_panel(
             Rect::new(pager_x + button_w + gap, footer_y, button_w, footer_h),
             "Next unit",
             first < max_first,
-            Tone::Primary,
+            Tone::Secondary,
         ) {
             next_offset = (first + visible).min(max_first) as f32 * row_h;
         }

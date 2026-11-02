@@ -102,7 +102,7 @@ impl GameplayState {
     pub(super) fn update_pause_menu(&mut self) -> Option<StateTransition> {
         if let Some(settings) = self.pause_settings.as_mut() {
             let pointer = vec2(mouse_position().0, mouse_position().1);
-            if is_mouse_button_pressed(MouseButton::Left) && settings.update(pointer) {
+            if is_mouse_button_released(MouseButton::Left) && settings.update(pointer) {
                 self.close_pause_settings();
             }
         }

@@ -1,5 +1,6 @@
 //! Transaction-safe condo sale and buyback operations.
 
+use super::gameplay_turn::feedback_point;
 use crate::economy::{Transaction, TransactionType};
 use crate::simulation::{GameEvent, NotificationLevel};
 use crate::ui::colors;
@@ -70,7 +71,7 @@ impl GameplayState {
         ));
         self.floating_texts.spawn(
             format!("+${}", sale_price),
-            vec2(screen_width() / 2.0, screen_height() / 2.0),
+            feedback_point(),
             colors::POSITIVE(),
         );
         self.save_building_to_city();
@@ -93,7 +94,7 @@ impl GameplayState {
             );
             self.floating_texts.spawn(
                 "Cannot Afford Buyback",
-                vec2(screen_width() / 2.0, screen_height() / 2.0),
+                feedback_point(),
                 colors::NEGATIVE(),
             );
             return;
@@ -121,7 +122,7 @@ impl GameplayState {
         }
         self.floating_texts.spawn(
             format!("-${}", buyback_cost),
-            vec2(screen_width() / 2.0, screen_height() / 2.0),
+            feedback_point(),
             colors::NEGATIVE(),
         );
         self.floating_texts.spawn(

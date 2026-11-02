@@ -177,7 +177,7 @@ pub fn draw_tasks_view(state: &mut GameplayState, assets: &AssetManager) -> Opti
             Rect::new(missions.x + button_w + gap, pager_y, button_w, 40.0),
             "Next mission",
             page + 1 < page_count,
-            Tone::Primary,
+            Tone::Secondary,
         ) {
             return Some(UiAction::SetTasksPage { page: page + 1 });
         }
@@ -292,7 +292,7 @@ pub fn draw_tasks_view(state: &mut GameplayState, assets: &AssetManager) -> Opti
             Rect::new(request_panel.x + button_w + gap, pager_y, button_w, 40.0),
             "Next request",
             request_page + 1 < request_page_count,
-            Tone::Primary,
+            Tone::Secondary,
         ) {
             return Some(UiAction::SetRequestsPage {
                 page: request_page + 1,

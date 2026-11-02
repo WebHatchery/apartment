@@ -59,3 +59,19 @@ impl BuildingLayout {
         Self { world, panel }
     }
 }
+
+/// Smallest comfortable touch target for any essential control.
+pub const TOUCH_MIN: f32 = 44.0;
+
+/// Grow `rect` about its centre to the minimum touch size, so a control is
+/// drawn and hit-tested at the same, touchable bounds.
+pub fn touch_rect(rect: Rect) -> Rect {
+    let w = rect.w.max(TOUCH_MIN);
+    let h = rect.h.max(TOUCH_MIN);
+    Rect::new(
+        rect.x - (w - rect.w) * 0.5,
+        rect.y - (h - rect.h) * 0.5,
+        w,
+        h,
+    )
+}

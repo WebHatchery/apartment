@@ -332,7 +332,7 @@ impl GameplayState {
         if self.selection != Selection::None {
             let panel = crate::ui::layout::context_panel();
             if crate::ui::widgets::button_at(
-                Rect::new(panel.right() - 68.0, panel.y + 2.0, 64.0, 34.0),
+                Rect::new(panel.right() - 76.0, panel.y - 3.0, 72.0, 44.0),
                 "Close",
                 true,
                 crate::ui::theme::Tone::Secondary,

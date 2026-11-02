@@ -48,7 +48,9 @@ async fn main() {
         return;
     }
 
-    if save::load_settings().fullscreen {
+    let settings = save::load_settings();
+    settings.apply_effects();
+    if settings.fullscreen {
         set_fullscreen(true);
     }
 

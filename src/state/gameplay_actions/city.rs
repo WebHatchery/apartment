@@ -1,5 +1,6 @@
 //! City-map navigation and property purchases.
 
+use crate::state::gameplay_turn::feedback_point;
 use macroquad::prelude::*;
 
 use crate::city::NeighborhoodType;
@@ -41,7 +42,7 @@ impl GameplayState {
 
                     self.floating_texts.spawn(
                         "Building Purchased!",
-                        vec2(screen_width() / 2.0, screen_height() / 2.0),
+                        feedback_point(),
                         colors::POSITIVE(),
                     );
 

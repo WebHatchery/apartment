@@ -8,11 +8,11 @@ use macroquad_toolkit::settings::GameSettings;
 use macroquad_toolkit::ui::{draw_ui_text, truncate_text_to_width};
 
 const PANEL_MAX_W: f32 = 520.0;
-const PANEL_H: f32 = 256.0;
+const PANEL_H: f32 = 320.0;
 const HEADER_H: f32 = 38.0;
 const ROW_H: f32 = 64.0;
 const TOGGLE_W: f32 = 96.0;
-const TOGGLE_H: f32 = 40.0;
+const TOGGLE_H: f32 = 44.0;
 const BACK_W: f32 = 160.0;
 const BACK_H: f32 = 44.0;
 
@@ -20,15 +20,21 @@ const BACK_H: f32 = 44.0;
 enum Setting {
     Fullscreen,
     Autosave,
+    ReducedMotion,
 }
 
-const SETTINGS: [Setting; 2] = [Setting::Fullscreen, Setting::Autosave];
+const SETTINGS: [Setting; 3] = [
+    Setting::Fullscreen,
+    Setting::Autosave,
+    Setting::ReducedMotion,
+];
 
 impl Setting {
     fn label(self) -> &'static str {
         match self {
             Setting::Fullscreen => "Fullscreen",
             Setting::Autosave => "Monthly autosave",
+            Setting::ReducedMotion => "Reduced motion",
         }
     }
 
@@ -36,6 +42,7 @@ impl Setting {
         match self {
             Setting::Fullscreen => "Fill the whole screen with the game.",
             Setting::Autosave => "Save automatically when each month closes.",
+            Setting::ReducedMotion => "Hold residents, steam and floating text still.",
         }
     }
 
@@ -43,6 +50,7 @@ impl Setting {
         match self {
             Setting::Fullscreen => settings.fullscreen,
             Setting::Autosave => settings.autosave_enabled,
+            Setting::ReducedMotion => settings.reduced_motion,
         }
     }
 }
@@ -129,6 +137,10 @@ impl SettingsScreen {
             Setting::Fullscreen => self.settings.toggle_fullscreen(),
             Setting::Autosave => {
                 self.settings.autosave_enabled = !self.settings.autosave_enabled;
+            }
+            Setting::ReducedMotion => {
+                self.settings.reduced_motion = !self.settings.reduced_motion;
+                self.settings.apply_effects();
             }
         }
         self.save_error = crate::save::save_settings(&self.settings)

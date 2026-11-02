@@ -1,5 +1,6 @@
 //! Application decisions: accepting offers, rejecting applicants and vetting.
 
+use crate::state::gameplay_turn::feedback_point;
 use macroquad::prelude::*;
 use macroquad_toolkit::rng;
 
@@ -77,13 +78,8 @@ impl GameplayState {
                     },
                     self.current_tick,
                 );
-
-                let mouse = mouse_position();
-                self.floating_texts.spawn(
-                    "Offer Declined",
-                    vec2(mouse.0, mouse.1 - 20.0),
-                    colors::WARNING(),
-                );
+                self.floating_texts
+                    .spawn("Offer Declined", feedback_point(), colors::WARNING());
                 return;
             }
 
@@ -105,13 +101,8 @@ impl GameplayState {
                 },
                 self.current_tick,
             );
-
-            let mouse = mouse_position();
-            self.floating_texts.spawn(
-                "Welcome!",
-                vec2(mouse.0, mouse.1 - 20.0),
-                colors::POSITIVE(),
-            );
+            self.floating_texts
+                .spawn("Welcome!", feedback_point(), colors::POSITIVE());
 
             let story = TenantStory::generate(tenant.id, &tenant.archetype);
             self.tenant_stories.insert(tenant.id, story);
@@ -162,7 +153,6 @@ impl GameplayState {
                 )
             }),
         };
-        let center = vec2(screen_width() / 2.0, screen_height() / 2.0);
         match outcome {
             Some((score, text)) => {
                 let tone = if score >= 75 {
@@ -172,14 +162,15 @@ impl GameplayState {
                 } else {
                     colors::NEGATIVE()
                 };
-                self.floating_texts.spawn(text, center, tone);
+                self.floating_texts.spawn(text, feedback_point(), tone);
             }
             None => {
                 let label = match check {
                     VettingCheck::Credit => "Cannot perform credit check",
                     VettingCheck::Background => "Cannot perform background check",
                 };
-                self.floating_texts.spawn(label, center, colors::NEGATIVE());
+                self.floating_texts
+                    .spawn(label, feedback_point(), colors::NEGATIVE());
             }
         }
     }

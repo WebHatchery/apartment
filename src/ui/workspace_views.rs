@@ -177,7 +177,7 @@ pub fn draw_tenants_view(state: &GameplayState, assets: &AssetManager) -> Option
                 Rect::new(roster_inner.x + button_w + gap, button_y, button_w, 40.0),
                 "Next resident",
                 true,
-                Tone::Primary,
+                Tone::Secondary,
             )
         {
             return Some(UiAction::SetTenantsPage { page: page + 1 });

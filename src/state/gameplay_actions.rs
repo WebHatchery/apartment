@@ -1,9 +1,9 @@
 //! UI intent dispatch: routes each `UiAction` to the state change it requests.
 
+use super::gameplay_turn::feedback_point;
 use crate::economy::process_upgrade;
 use crate::simulation::GameEvent;
 use crate::ui::{colors, UiAction};
-use macroquad::prelude::*;
 
 use super::gameplay::GameplayState;
 use super::mission_system;
@@ -36,7 +36,7 @@ impl GameplayState {
 
                     self.floating_texts.spawn(
                         "Listed for Lease",
-                        vec2(screen_width() / 2.0, screen_height() / 2.0),
+                        feedback_point(),
                         colors::POSITIVE(),
                     );
                 }
@@ -49,7 +49,7 @@ impl GameplayState {
 
                     self.floating_texts.spawn(
                         "Property Unlisted",
-                        vec2(screen_width() / 2.0, screen_height() / 2.0),
+                        feedback_point(),
                         colors::TEXT(),
                     );
                 }
@@ -69,11 +69,9 @@ impl GameplayState {
                             GameEvent::UpgradeCompleted { description, cost },
                             self.current_tick,
                         );
-
-                        let mouse = mouse_position();
                         self.floating_texts.spawn(
                             format!("-${}", cost),
-                            vec2(mouse.0, mouse.1 - 20.0),
+                            feedback_point(),
                             colors::NEGATIVE(),
                         );
                     }
@@ -86,7 +84,7 @@ impl GameplayState {
             } => match self.set_apartment_rent(apartment_id, new_rent) {
                 Ok((old, new)) if old != new => self.floating_texts.spawn(
                     format!("Rent ${} → ${}", old, new),
-                    vec2(screen_width() / 2.0, screen_height() / 2.0),
+                    feedback_point(),
                     if new > old {
                         colors::WARNING()
                     } else {
@@ -129,7 +127,7 @@ impl GameplayState {
             UiAction::StartOpenHouse => match self.start_open_house() {
                 Ok(cost) => self.floating_texts.spawn(
                     format!("Open House -${}", cost),
-                    vec2(screen_width() / 2.0, screen_height() / 2.0),
+                    feedback_point(),
                     colors::ACCENT(),
                 ),
                 Err(reason) => self.report_action_failure(&reason),
@@ -160,7 +158,7 @@ impl GameplayState {
 
                     self.floating_texts.spawn(
                         "Dialogue Resolved",
-                        vec2(screen_width() / 2.0, screen_height() / 2.0),
+                        feedback_point(),
                         colors::ACCENT(),
                     );
                 }
@@ -191,11 +189,8 @@ impl GameplayState {
             },
             self.current_tick,
         );
-        self.floating_texts.spawn(
-            reason,
-            vec2(screen_width() / 2.0, screen_height() / 2.0),
-            colors::NEGATIVE(),
-        );
+        self.floating_texts
+            .spawn(reason, feedback_point(), colors::NEGATIVE());
     }
 
     /// Update tutorial state based on game conditions (called every frame)
