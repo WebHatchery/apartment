@@ -105,11 +105,18 @@ impl MenuState {
     pub fn new() -> Self {
         let templates = load_templates().map(|t| t.templates).unwrap_or_default();
 
+        // Unreadable progress still lets the player start the first building;
+        // the file is left untouched and the problem is shown on the menu.
+        let (progress, load_error) = match load_player_progress() {
+            Ok(progress) => (progress, None),
+            Err(error) => (PlayerProgress::new(), Some(error)),
+        };
+
         Self {
             has_save: has_save_game(),
-            progress: load_player_progress(),
+            progress,
             templates,
-            load_error: None,
+            load_error,
         }
     }
 

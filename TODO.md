@@ -269,7 +269,7 @@ engineering backlog. Findings below were traced in code, not reproduced in play.
   **Accept:** after one approval, no paid vetting or accept control remains for
   that unit.
 
-- [ ] **CR-04 — Unreadable player progress is silently reset, then overwritten.**
+- [x] **CR-04 — Unreadable player progress is silently reset, then overwritten.**
   **Evidence:** `save/manager.rs::load_player_progress` turns every load error
   into `PlayerProgress::new()`. The next `unlock_next_building`,
   `unlock_building_by_order`, or achievement save then writes that default over

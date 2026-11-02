@@ -521,7 +521,7 @@ impl GameplayState {
         }
     }
 
-    fn report_action_failure(&mut self, reason: &str) {
+    pub(super) fn report_action_failure(&mut self, reason: &str) {
         self.event_log.log(
             GameEvent::Notification {
                 message: reason.to_string(),

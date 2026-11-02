@@ -580,44 +580,34 @@ impl GameplayState {
 
     /// Unlock a specific building (by its template `unlock_order`) in the
     /// persistent player progress — used by `MissionReward::UnlockBuilding`.
-    pub(super) fn unlock_building_by_order(&self, unlock_order: u32) {
-        use crate::data::templates::load_templates;
-        use crate::save::{load_player_progress, save_player_progress};
-
-        let mut progress = load_player_progress();
-        if let Some(templates) = load_templates() {
+    pub(super) fn unlock_building_by_order(&self, unlock_order: u32) -> Result<(), String> {
+        let templates = crate::data::templates::load_templates();
+        crate::save::update_player_progress(|progress| {
             if let Some(template) = templates
-                .templates
                 .iter()
+                .flat_map(|templates| &templates.templates)
                 .find(|t| t.unlock_order == unlock_order)
             {
                 progress.unlock_building(&template.id);
             }
-        }
-        let _ = save_player_progress(&progress);
+        })
     }
 
-    /// Unlock the next building after completing the current one
-    pub fn unlock_next_building(&self) {
-        use crate::data::templates::load_templates;
-        use crate::save::{load_player_progress, save_player_progress};
-
-        let mut progress = load_player_progress();
-
-        // Mark current building as completed
-        progress.mark_completed(&self.current_building_id);
-
-        // Find the next building to unlock based on unlock_order
-        if let Some(templates) = load_templates() {
-            // Find current building's unlock_order
+    /// Mark the current building completed and unlock the next one in
+    /// `unlock_order`.
+    pub fn unlock_next_building(&self) -> Result<(), String> {
+        let templates = crate::data::templates::load_templates();
+        crate::save::update_player_progress(|progress| {
+            progress.mark_completed(&self.current_building_id);
+            let Some(templates) = &templates else {
+                return;
+            };
             let current_order = templates
                 .templates
                 .iter()
                 .find(|t| t.id == self.current_building_id)
                 .map(|t| t.unlock_order)
                 .unwrap_or(0);
-
-            // Find the next building in sequence
             if let Some(next_template) = templates
                 .templates
                 .iter()
@@ -625,10 +615,7 @@ impl GameplayState {
             {
                 progress.unlock_building(&next_template.id);
             }
-        }
-
-        // Save progress
-        let _ = save_player_progress(&progress);
+        })
     }
 }
 

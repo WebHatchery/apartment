@@ -151,13 +151,27 @@ pub fn has_save_game() -> bool {
     json_key_exists(crate::release_mode::save_namespace(), SAVE_FILE_NAME)
 }
 
-/// Load player progress (persistent unlock state)
-pub fn load_player_progress() -> PlayerProgress {
-    let mut progress: PlayerProgress =
-        load_json_key(crate::release_mode::save_namespace(), PROGRESS_FILE_NAME)
-            .unwrap_or_else(|_| PlayerProgress::new());
+/// Load player progress (persistent unlock state). A missing file is a fresh
+/// player; a file that exists but cannot be decoded is an error, so callers
+/// never mistake it for a fresh player and overwrite the real unlocks.
+pub fn load_player_progress() -> Result<PlayerProgress, String> {
+    let namespace = crate::release_mode::save_namespace();
+    if !json_key_exists(namespace, PROGRESS_FILE_NAME) {
+        return Ok(PlayerProgress::new());
+    }
+    let mut progress: PlayerProgress = load_json_key(namespace, PROGRESS_FILE_NAME)
+        .map_err(|error| format!("Unlock progress could not be read: {error}"))?;
     progress.sanitize();
-    progress
+    Ok(progress)
+}
+
+/// Load, change, and save player progress. Refuses to write when the existing
+/// file cannot be read.
+pub fn update_player_progress(change: impl FnOnce(&mut PlayerProgress)) -> Result<(), String> {
+    let mut progress = load_player_progress()?;
+    change(&mut progress);
+    save_player_progress(&progress)
+        .map_err(|error| format!("Unlock progress could not be saved: {error}"))
 }
 
 /// Save player progress (persistent unlock state)

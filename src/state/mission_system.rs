@@ -72,12 +72,14 @@ pub fn update_missions(state: &mut GameplayState) {
                 );
             }
             MissionReward::UnlockBuilding(unlock_order) => {
-                state.unlock_building_by_order(unlock_order);
-                state.floating_texts.spawn(
-                    "New property unlocked!",
-                    vec2(screen_width() / 2.0, screen_height() / 2.0 + 30.0),
-                    colors::ACCENT(),
-                );
+                match state.unlock_building_by_order(unlock_order) {
+                    Ok(()) => state.floating_texts.spawn(
+                        "New property unlocked!",
+                        vec2(screen_width() / 2.0, screen_height() / 2.0 + 30.0),
+                        colors::ACCENT(),
+                    ),
+                    Err(error) => state.report_action_failure(&error),
+                }
             }
             MissionReward::Reputation(amount) => {
                 // Reward reputation in the active building's neighborhood.

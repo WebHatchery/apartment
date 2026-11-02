@@ -338,12 +338,15 @@ impl GameplayState {
     /// building as finished and unlocks the next property. Outcomes reached
     /// outside the tick, such as selling every building, do not unlock. The
     /// career-summary transition and its achievement check happen in `update`.
-    fn complete_building_on_victory(&self, result: &crate::simulation::TickResult) {
-        if matches!(
+    fn complete_building_on_victory(&mut self, result: &crate::simulation::TickResult) {
+        if !matches!(
             result.outcome,
             Some(crate::simulation::GameOutcome::Victory { .. })
         ) {
-            self.unlock_next_building();
+            return;
+        }
+        if let Err(error) = self.unlock_next_building() {
+            self.report_action_failure(&error);
         }
     }
 }
