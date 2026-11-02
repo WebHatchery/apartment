@@ -27,6 +27,7 @@ pub mod ownership_panel; // Phase 3 ownership
 mod resident_sprite;
 mod tenant_panel;
 mod tenants_view;
+pub mod workspace_finances;
 pub mod workspace_inbox;
 pub mod workspace_nav;
 pub mod workspace_tasks;

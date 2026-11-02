@@ -12,6 +12,7 @@ mod gameplay_effects; // Narrative event effect application
 mod gameplay_input; // Input dispatch, pause, and modal ownership
 mod gameplay_inspections; // Building inspections and regulatory fines
 mod gameplay_life_events; // Emergent tenant life events
+mod gameplay_load; // Post-load save repair
 mod gameplay_narrative_turn; // Monthly narrative, mail, dialogue, requests
 mod gameplay_neighborhood; // Neighborhood reputation and market conditions
 mod gameplay_ownership; // Safe condo sale and buyback transactions

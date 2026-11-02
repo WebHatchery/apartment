@@ -172,17 +172,10 @@ with the `APARTMENT_CAPTURE_MANIFEST` harness (scenes in `src/game.rs`).
   that lack module-level documentation, including child modules created by the
   test and size migrations.
 
-- [ ] Split the files at the 600-line refactor signal into cohesive modules:
-  `src/ui/workspace_views.rs` (at the 800 limit — split before any edit),
-  `src/sim_harness.rs`, `src/game.rs`, `src/state/gameplay_actions.rs`,
-  `src/ui/workspace_tasks.rs`, `src/ui/city_view.rs`, `src/state/gameplay.rs`,
-  `src/consequences/relationships.rs`, and `src/narrative/stories.rs`. Keep
-  every resulting file comfortably below 800 lines without cosmetic compression.
-
 - [ ] Refactor long and over-arity paths such as `GameplayState::process_action`,
   `GameTick::process`, `MissionManager::evaluate_active`,
   `TenantNetwork::tick`, and the capture-scene dispatcher around context or
-  result structs. Remove the broad `too_many_arguments`, `large_enum_variant`,
+  result structs (the capture-scene dispatcher is already table-driven). Remove the broad `too_many_arguments`, `large_enum_variant`,
   `module_inception`, and `non_snake_case` allowances where possible, document
   any remaining narrow allowance, and remove unused parameters such as the
   `_city` argument in `draw_neighborhood_cell`.

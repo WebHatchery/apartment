@@ -1,0 +1,163 @@
+{
+  "job_titles": {
+    "student": [
+      "University Student",
+      "Graduate Student",
+      "Community College Student",
+      "Trade School Student",
+      "Exchange Student",
+      "Medical Student"
+    ],
+    "professional": [
+      "Software Developer",
+      "Accountant",
+      "Marketing Manager",
+      "Lawyer",
+      "Project Manager",
+      "Financial Analyst",
+      "Consultant",
+      "Doctor",
+      "Engineer",
+      "Architect"
+    ],
+    "artist": [
+      "Painter",
+      "Musician",
+      "Writer",
+      "Photographer",
+      "Graphic Designer",
+      "Sculptor",
+      "Filmmaker",
+      "Dancer",
+      "Potter",
+      "Illustrator"
+    ],
+    "family": [
+      "Teacher",
+      "Nurse",
+      "Small Business Owner",
+      "Sales Representative",
+      "Office Manager",
+      "Electrician",
+      "Chef",
+      "Social Worker"
+    ],
+    "elderly": [
+      "Retired Teacher",
+      "Retired Accountant",
+      "Retired Nurse",
+      "Retired Factory Worker",
+      "Retired Business Owner",
+      "Widower"
+    ]
+  },
+  "hometowns": [
+    "the suburbs",
+    "a small town",
+    "across the country",
+    "overseas",
+    "downtown",
+    "the countryside",
+    "another city",
+    "up north",
+    "the coast",
+    "the midwest"
+  ],
+  "move_reasons": {
+    "student": [
+      "Started at the local university.",
+      "Needed to be closer to campus.",
+      "Looking for affordable housing near school.",
+      "Moving for an internship."
+    ],
+    "professional": [
+      "Got a new job in the area.",
+      "Wanted a shorter commute.",
+      "Looking for a quieter neighborhood.",
+      "Relocated for work."
+    ],
+    "artist": [
+      "Looking for an inspiring space.",
+      "Needed a studio with good light.",
+      "Drawn to the creative community here.",
+      "Escaping the high rents elsewhere."
+    ],
+    "family": [
+      "Needed more space for the kids.",
+      "Moving for the school district.",
+      "Wanted a safer neighborhood.",
+      "Growing family needs."
+    ],
+    "elderly": [
+      "Downsizing after retirement.",
+      "Wanted to be closer to family.",
+      "Looking for a quieter place.",
+      "Needed a ground floor unit."
+    ]
+  },
+  "hobbies": {
+    "student": [
+      "gaming",
+      "studying",
+      "partying",
+      "jogging",
+      "reading",
+      "cooking on a budget",
+      "streaming",
+      "yoga"
+    ],
+    "professional": [
+      "wine tasting",
+      "golf",
+      "reading",
+      "fitness",
+      "travel",
+      "cooking",
+      "podcasts",
+      "networking events"
+    ],
+    "artist": [
+      "painting",
+      "music",
+      "writing",
+      "photography",
+      "sculpting",
+      "gallery hopping",
+      "poetry readings",
+      "experimental cooking"
+    ],
+    "family": [
+      "family outings",
+      "cooking",
+      "gardening",
+      "board games",
+      "soccer practice",
+      "movie nights",
+      "camping"
+    ],
+    "elderly": [
+      "gardening",
+      "crossword puzzles",
+      "watching TV",
+      "knitting",
+      "reading",
+      "bird watching",
+      "walking",
+      "bingo"
+    ]
+  },
+  "personality_traits": [
+    "quiet",
+    "friendly",
+    "private",
+    "social",
+    "neat",
+    "messy",
+    "punctual",
+    "easygoing",
+    "strict",
+    "flexible",
+    "chatty",
+    "reserved"
+  ]
+}

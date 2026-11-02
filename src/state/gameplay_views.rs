@@ -27,7 +27,7 @@ impl GameplayState {
                 }
             }
             ViewMode::Finances => {
-                if let Some(action) = crate::ui::workspace_views::draw_finances_view(self) {
+                if let Some(action) = crate::ui::workspace_finances::draw_finances_view(self) {
                     self.pending_actions.push(action);
                 }
             }
